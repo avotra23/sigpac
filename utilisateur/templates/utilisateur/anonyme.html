@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} PAC Public {% endblock title%}
+{% load my_custom_tags %}
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'public' %}"> <img src="{% static 'image/logo-pac.png'%}" width="50">PAC Public</a>
+    </div>
+</nav>
+
+<div class="plainte-container my-5 p-4 border rounded shadow-lg">
+            <div class="plainte-header text-center mb-4">
+                <h2>{{ form_title|default:"DÉCLARATION PLAINTRE EN LIGNE" }}</h2>
+                <span class="fw-bold text-danger fs-5">POLE ANTI-CORRUPTION</span>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="n_chrono_tkk" class="form-label">N° Chrono TKK</label>
+                        <input type="text" class="form-control" id="n_chrono_tkk" value="{{ n_chrono_tkk }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="date_plainte" class="form-label">Dates</label>
+                        <input type="text" class="form-control" id="date_plainte" value="{{ date_plainte }}" readonly>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.ny_mpitory.id_for_label }}" class="section-label fw-bold">{{ form.ny_mpitory.label }}</label>
+                    {{ form.ny_mpitory }}
+                    {% for error in form.ny_mpitory.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-4">
+                    <label for="{{ form.tranga_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.tranga_kolikoly.label }}</label>
+                    {{ form.tranga_kolikoly }}
+                    {% for error in form.tranga_kolikoly.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.ilay_olona_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.ilay_olona_kolikoly.label }}</label>
+                        {{ form.ilay_olona_kolikoly }}
+                        {% for error in form.ilay_olona_kolikoly.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.toorna_birao.id_for_label }}" class="section-label fw-bold">{{ form.toorna_birao.label }}</label>
+                        {{ form.toorna_birao }}
+                        {% for error in form.toorna_birao.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="{{ form.piece_jointe.id_for_label }}" class="section-label fw-bold">{{ form.piece_jointe.label }}</label>
+                    {{ form.piece_jointe }}
+                    {% for error in form.piece_jointe.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    {% if form.instance.piece_jointe %}
+                        <p class="mt-2">Fichier actuel: <a class="form-control" href="{{ form.instance.piece_jointe.url }}" target="_blank">{{ form.instance.piece_jointe.name|default:"Aucun" }}</a>. <span class="text-muted">(Téléverser un nouveau fichier remplacera l'ancien)</span></p>
+                    {% endif %}
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary btn-lg btn-envoyer">
+                        <i class="bi bi-send-fill"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+</div>
+
+
+{% if request.session.plainte_success %}
+        {% with success_data=request.session.plainte_success %}
+        
+        <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="successModalLabel">✅ Plainte Envoyée avec Succès !</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center p-4">
+                        <p class="lead">Votre plainte a été enregistrée sous le numéro :</p>
+                        <h1 class="display-5 text-primary mb-4">
+                            **{{ success_data.n_chrono_tkk }}**
+                        </h1>
+
+                        <div class="alert alert-info small" role="alert">
+                            **Conservez ce QR Code pour le suivi de votre dossier.**
+                            {% if success_data.mode_anonyme %}
+                                <p class="mt-1 mb-0">Étant donné que votre plainte est anonyme, le numéro de ticket est le **seul moyen** de la suivre.</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="qr-code-section my-3 p-3 rounded d-inline-block">
+                            <h6 class="mb-2 text-muted">Votre Ticket de Suivi (QR Code)</h6>
+                            <img src="data:image/png;base64,{{ success_data.qr_code_base64 }}" 
+                                alt="QR Code de suivi de la plainte" 
+                                class="img-fluid border p-1" 
+                                style="max-width: 180px;">
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        {% comment %} Optionnel : Lien de suivi si implémenté {% endcomment %}
+                        {% comment %} <a href="{{ success_data.url_de_suivi }}" class="btn btn-primary">
+                            Suivre ma plainte
+                        </a> {% endcomment %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Script pour afficher la modale au chargement de la page
+            document.addEventListener('DOMContentLoaded', function () {
+                var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+            });
+        </script>
+        {% endwith %}
+        
+        {% comment %} 
+        IMPORTANT: Supprimer les données de la session immédiatement après le rendu
+        pour que la modale n'apparaisse plus si l'utilisateur recharge la page.
+        {% endcomment %}
+      
+        {% delete_session_key 'plainte_success' %}
+{% endif %}
+{% endblock content %}

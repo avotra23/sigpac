@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title%}LOGIN PAC{% endblock title%}
+{% block content %}
+
+
+
+<div class="wrapper">
+    <div class="card-floating">
+
+        <!-- Left side -->
+        <div class="left-section">
+            <div class="logo-circle">
+                <img src="{%static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+            </div>
+            <div class="subtitle">Pôles Anti-Corruption</div>
+        </div>
+
+        <!-- Right side (form) -->
+        <div class="right-section">
+
+            <h2>Se connecter</h2>
+
+            <form method="POST" action ="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input  type="email" class="form-control" placeholder="exemple@mail.com" name="email">
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Mot de passe</label>
+                    <div class="input-group">
+                        <input type="password" id="password" class="form-control" placeholder="••••••••" name="password">
+                        <button class="btn btn-toggle-password border-0" type="button">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-end mb-3">
+                    <a href="#" class="forgot">Mot de passe oublié ?</a>
+                </div>
+
+                <button type="submit" class="btn btn-login w-100">
+                    Connexion
+                </button>
+            </form>
+
+            <div class="signup-btn">
+                Vous n'avez pas encore de compte ? <a href="{%url 'inscriptionpub'%}">Inscrivez-vous ici</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const toggleBtn = document.querySelector('.btn-toggle-password');
+    const password = document.querySelector('#password');
+
+    toggleBtn.addEventListener('click', () => {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+
+        const icon = toggleBtn.querySelector('i');
+        icon.classList.toggle('bi-eye');
+        icon.classList.toggle('bi-eye-slash');
+    });
+</script>
+{% endblock content %}

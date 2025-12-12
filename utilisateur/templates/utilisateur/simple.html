@@ -1,0 +1,301 @@
+    {% extends "base.html" %}
+    {% load static %}
+
+    {% block title %} Gestion Registre Arrivé {% endblock title %}
+
+    {% block content %} 
+
+
+    <div class="main-container d-flex"> 
+
+        <div class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo text-center mb-5">
+                    <div class="logo-circle">
+                        <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                    </div>
+                    <small>Pôles Anti-Corruption</small>
+                </div>
+                <div class="menu-item {% if menu_active == 'arrive' %}active{% endif %}"> 
+                    <a href="{% url 'simple' %}">Requisition RA</a>
+                </div>
+                <div class="menu-item "><a href="#">Registre ST</a></div>
+                <div class="menu-item"><a href="#">Registre CSCA</a></div>
+                <div class="menu-item"><a href="#">Registre RP</a></div>
+                <div class="menu-item"><a href="#">Registre CCO</a></div>
+                <div class="menu-item"><a href="#">Registre d’Appel</a></div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <a href="{% url 'logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+                <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
+            </div>
+        </div>
+
+        <div class="main-content flex-grow-1">
+
+            <div class="top-bar-pac" style="background-color:marron;">
+                PAC {{ user.localite|default:"[Localité]" }}
+            </div>
+
+            <div class="content-wrapper p-4" style="margin-left:5%;">
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success mt-3" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if mode == 'form' %}
+                    
+                    <form method="post" action="{% url 'simple' %}">
+                        {% csrf_token %}
+                        <div class="form-content">
+                            
+                            <h2>Nouveau Registre Arrivé</h2>
+                            <p class="text-muted"><a href="{% url 'simple' %}">← Retour à la liste</a></p>
+
+                            <div class="row mb-4 align-items-end">
+                                <div class="col-lg-5">
+                                    <label for="date_arrivee" class="form-label">Date d’arrivée</label>
+                                    <input type="date" class="form-control" id="date_arrivee" 
+                                        value="{{ date_arrivee_systeme }}" readonly>
+                                </div>
+                                <div class="col-lg-5">
+                                    <label for="n_enr_arrive" class="form-label">N° ENR Arrivé</label>
+                                    <input type="text" class="form-control" id="n_enr_arrive" 
+                                        value="{{ n_enr_provisoire }}" readonly>
+                                </div>
+                            </div>
+
+                            <fieldset class="fieldset-correspondance mb-4">
+                                <legend class="float-none w-auto px-1">CORRESPONDANCE</legend>
+                                <div class="row">
+                                    <div class="col-lg-5">
+                                        <label for="{{ form.date_correspondance.id_for_label }}" class="form-label">{{ form.date_correspondance.label }}</label>
+                                        {{ form.date_correspondance }}
+                                        {% if form.date_correspondance.errors %}<div class="text-danger small">{{ form.date_correspondance.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label for="{{ form.nature.id_for_label }}" class="form-label">{{ form.nature.label }}</label>
+                                        {{ form.nature }}
+                                        {% if form.nature.errors %}<div class="text-danger small">{{ form.nature.errors }}</div>{% endif %}
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <div class="mb-4">
+                                <label for="{{ form.provenance.id_for_label }}" class="section-label">{{ form.provenance.label }}</label>
+                                {{ form.provenance }}
+                                {% if form.provenance.errors %}<div class="text-danger small">{{ form.provenance.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="{{ form.texte_correspondance.id_for_label }}" class="section-label">{{ form.texte_correspondance.label }}</label>
+                                {{ form.texte_correspondance }}
+                                {% if form.texte_correspondance.errors %}<div class="text-danger small">{{ form.texte_correspondance.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.observation.id_for_label }}" class="section-label">{{ form.observation.label }}</label>
+                                {{ form.observation }}
+                                {% if form.observation.errors %}<div class="text-danger small">{{ form.observation.errors }}</div>{% endif %}
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="{% url 'simple' %}" class="btn btn-secondary btn-annuler">Annuler</a>
+                            <button type="submit" class="btn btn-primary btn-enregistrer">Enregistrer</button>
+                        </div>
+                    </form>
+
+                {% else %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>Registres arrivés</h2>
+                        <a href="{% url 'simple' %}?mode=form" class="btn btn-primary btn-ajouter">
+                            <i class="bi bi-plus-lg"></i> Ajouter
+                        </a>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        {% if registres %}
+                         
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>N° ENR</th>
+                                        <th>Date d’arrivée</th>
+                                        <th>Provenance</th>
+                                        <th>Nature</th>
+                                        <th>Observation</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registre in registres %}
+                                    <tr>
+                                        <td>{{ registre.n_enr_arrive }}</td>
+                                        <td>{{ registre.date_arrivee|date:"d/m/Y" }}</td>
+                                        <td>{{ registre.provenance|truncatechars:50 }}</td>
+                                        <td>{{ registre.get_nature_display }}</td>
+                                        <td>{{ registre.observation|truncatechars:50|default:"-" }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info me-1 btn-detail" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#detailArriveModal" 
+                                                    data-id="{{ registre.id }}"
+                                                    title="Voir les détails">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-success me-1" title="valider"><i class="bi bi-save-fill"></i></button>
+                                            
+                                            <!--MODAL -->
+                                            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la Suppression</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            Êtes-vous sûr de vouloir supprimer le registre {{ registre.n_enr_arrive }}
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                            <form method="POST" action="" style="display:inline;">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                               <div class="modal fade" id="switch" tabindex="-1" aria-labelledby="Switchmodal" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="switchmodal">Switcher le registre {{ registre.n_enr_arrive }} </h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <form method="POST" action="{% url 'acc_dcn' %}?mode=dispatch" style="display:inline;">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="idplainte" value="{{p.pk}}">
+                                                                <select name="pac" id="" class="form-control">
+                                                                    <option value="ST">ST</option>
+                                                                    <option value="CCO">CCO</option>
+                                                                    <option value="CSCA">CSCA</option>
+                                                                    <option value="RP">RP</option>
+                                                                    <option value="RA">REGISTRE APPEL</option>
+                                                                </select>
+                                                                <br>
+                                                                <div style="margin-left: 40%;">
+                                                                    <button type="submit" class="btn btn-danger">Valider</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                            
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                        
+                                            <!--MODAL -->
+                                            <button class="btn btn-sm btn-danger btn-delete"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#confirmDeleteModal"
+                                                    data-record-id="{{ registre.id }}">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-warning btn-switch"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#switch"
+                                                    data-record-id="{{ registre.id }}">
+                                                <i class="bi bi-send-fill"></i>
+                                            </button>
+                                        </td>
+                                    </tr> 
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="alert alert-info">Aucun registre d'arrivée n'a été trouvé.</div>
+                        {% endif %}
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // Assurez-vous que ce script est **APRÈS** le chargement de jQuery et de Bootstrap JS
+    $(document).ready(function() {
+        // Logique pour la modale de SUPPRESSION
+        $('#confirmDeleteModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget); // Bouton qui a déclenché la modale
+            var recordId = button.data('record-id'); // Récupère l'ID
+
+            // Mettre à jour l'action du formulaire de suppression (AJUSTEZ L'URL SELON VOTRE LOGIQUE DJANGO)
+            var deleteUrl = '/votre/url/de/suppression/' + recordId + '/'; 
+            $('#deleteForm').attr('action', deleteUrl);
+
+            // Mettre à jour le message dans le corps de la modale (Optionnel)
+            var nChrono = button.closest('tr').find('td:first').text(); // Tentative de récupérer le N° ENR
+            $('#deleteModalBody').text('Êtes-vous sûr de vouloir supprimer le registre ' + nChrono + ' ?');
+        });
+        
+        // La logique pour #detailArriveModal et #switch irait ici si elles nécessitent AJAX
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        
+        // 1. Écouter le clic sur tous les boutons de switch
+        $('.btn-switch').on('click', function() {
+            // Récupérer les données du bouton cliqué
+            var recordId = $(this).data('record-id');
+            
+            // Tenter de récupérer le N° ENR à partir de la ligne (td:first)
+            // Cela suppose que le bouton est dans un <td> qui est dans un <tr>
+            var nEnrArrive = $(this).closest('tr').find('td:first').text();
+            
+            // Cibler la modale #switch
+            var switchModal = $('#switch');
+            
+            // 2. Mettre à jour le titre de la modale
+            // Note: Nous mettons à jour le contenu HTML ici, car le titre contient une variable Django: {{ registre.n_enr_arrive }}
+            switchModal.find('#switchmodal').text('Switcher le registre ' + nEnrArrive);
+            
+            // 3. Mettre à jour le champ caché du formulaire
+            // Le champ caché est <input type="hidden" name="idplainte" value="{{p.pk}}"> 
+            // Nous supposons ici que le nom est 'idplainte'
+            switchModal.find('input[name="idplainte"]').val(recordId);
+
+            // 4. Afficher la modale (l'attribut data-bs-target peut déjà le faire,
+            // mais c'est une manière propre de s'assurer que c'est géré)
+            // Si la version Bootstrap est compatible, vous pouvez utiliser : 
+            // const modal = new bootstrap.Modal(switchModal[0]);
+            // modal.show();
+
+            // Si vous utilisez data-bs-target, l'affichage se fait automatiquement.
+            // Le code ci-dessus est principalement pour mettre à jour les données AVANT l'affichage.
+            
+            // Une alternative pour afficher (compatible jQuery/vieux Bootstrap):
+            switchModal.modal('show');
+        });
+
+    });
+</script>
+    {% endblock content %}

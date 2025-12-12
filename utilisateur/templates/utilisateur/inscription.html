@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Inscription{% endblock title %}
+{% block content %}
+    <h2 style="text-align:center">INSCRIPTION</h2>
+    <div class="card-floating mx-auto" style="max-width: 600px;">
+                            <div class="right-section">
+                                <h2>{{ title }}</h2>
+                                
+                                <form method="POST" action="{% url 'inscriptionpub' %}">
+                                    {% csrf_token %}
+                                    
+                                    {% if form.non_field_errors %}
+                                        <div class="alert alert-danger">
+                                            {{ form.non_field_errors }}
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="form-row mb-3 d-flex justify-content-between">
+                                        
+                                        <div class="form-group w-50 pe-2">
+                                            <label class="form-label" for="{{ form.nom.id_for_label }}">{{ form.nom.label }}</label>
+                                            {{ form.nom }} 
+                                            <script>document.getElementById('{{ form.nom.id_for_label }}').classList.add('form-control');</script>
+                                            {% if form.nom.errors %}<div class="text-danger small">{{ form.nom.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="form-group w-50 ps-2">
+                                            <label class="form-label" for="{{ form.prenom.id_for_label }}">{{ form.prenom.label }}</label>
+                                            {{ form.prenom }}
+                                            <script>document.getElementById('{{ form.prenom.id_for_label }}').classList.add('form-control');</script>
+                                            {% if form.prenom.errors %}<div class="text-danger small">{{ form.prenom.errors }}</div>{% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                                        {{ form.email }}
+                                        <script>document.getElementById('{{ form.email.id_for_label }}').classList.add('form-control');</script>
+                                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.telephone.id_for_label }}">{{ form.telephone.label }}</label>
+                                        {{ form.telephone }}
+                                        <script>document.getElementById('{{ form.telephone.id_for_label }}').classList.add('form-control');</script>
+                                        {% if form.telephone.errors %}<div class="text-danger small">{{ form.telephone.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                                        <div class="input-group">
+                                            {{ form.password }}
+                                            <button class="btn btn-toggle-password border-0" type="button"><i class="bi bi-eye"></i></button>
+                                            <script>document.getElementById('{{ form.password.id_for_label }}').classList.add('form-control');</script>
+                                        </div>
+                                        {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                                        {{ form.password2 }}
+                                        <script>document.getElementById('{{ form.password2.id_for_label }}').classList.add('form-control');</script>
+                                        {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors }}</div>{% endif %}
+                                    </div>
+                                    
+
+                                    <button type="submit" class="btn btn-primary w-100">Enregistrer l'utilisateur</button>
+                                    <div class="text-center mt-2"><a href="{% url 'acc_admin' mode='utilisateur' %}">Retour à la liste</a></div>
+                                    
+                                </form>
+                            </div>
+                        </div>
+{% endblock content %}

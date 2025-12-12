@@ -1,0 +1,417 @@
+{% extends "base.html"%}
+{% load static %}
+{% block title %} Administrateur {% endblock title %}
+{% block content %}
+<style>
+    .submenu {
+    display: none; 
+    /* Ajoutez d'autres styles comme padding si nécessaire */
+}
+</style>
+<div class="main-container d-flex"> 
+
+    <div class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-logo text-center mb-5">
+                <div class="logo-circle">
+                    <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                </div>
+                <small>Pôles Anti-Corruption</small>
+            </div>
+            <div class="menu-item menu-toggle"> <span>Registre <i class="bi bi-caret-down-fill float-end"></i></span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item"><a href="{% url 'acc_admin' mode='RA' %}">Registre d'Arriver</a></div>
+                <div class="submenu-item"><a href="">Registre ST</a></div>
+                <div class="submenu-item"><a href="">Registre CCO</a></div>
+            </div>
+            <div class="menu-item menu-toggle"> <span>Administrateur <i class="bi bi-caret-down-fill float-end"></i></span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item"><a href="{% url 'acc_admin' mode='groupe' %}">Groupe d’utilisateur</a></div>
+                <div class="submenu-item"><a href="{% url 'acc_admin' mode='localite' %}">Localité</a></div>
+                <div class="submenu-item"><a href="{% url 'acc_admin' mode='utilisateur' %}">Utilisateur</a></div>
+            </div>
+            
+        </div>
+
+        <div class="sidebar-bottom">
+            <a href="{% url 'logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+            <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
+        </div>
+    </div>
+        
+        <div class="main-content flex-grow-1">
+            <div class="top-bar-pac">
+                PAC {{user.localite}}
+            </div>
+            <div class="content-wrapper p-4">
+                
+                {% if messages %}
+                <div class="messages-container mb-3">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center mb-3" style="margin-left:20px;">
+                    <h2 style='text-align:center;'>{{ title }}</h2>
+                    {% if mode == 'utilisateur' %}
+                        <a href="{% url 'acc_admin' mode='ajout' %}" class="btn btn-primary btn-ajouter"><i class="bi bi-plus-lg"></i> Ajouter </a>
+                    {% endif %}
+                </div>
+                <div class="table-responsive mt-3" style="margin-left:20px;">
+
+                    {% if mode == 'utilisateur' %}
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th><th>Nom</th><th>Prenoms</th><th>Telephone</th><th>E-mail</th><th>Poste</th><th>Localite</th><th>Statut</th><th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in data_list %}
+                                    <tr>
+                                        <td>{{i.pk}}</td>
+                                        <td>{{i.nom}}</td>
+                                        <td>{{i.prenom}}</td>
+                                        <td>+261 {{i.telephone}}</td>
+                                        <td>{{i.email}}</td>
+                                        <td>{{i.poste}}</td>
+                                        <td>{{i.localite}}</td>
+                                        <td>
+                                            {% if i.is_superuser %}
+                                                <span class="badge bg-danger">SUPERUTILISATEUR</span>
+                                            {% elif i.groups.all %}
+                                               <span class="badge bg-secondary"> {{ i.groups.first.name|upper }} </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'modifier_utilisateur' i.pk %}" class="btn btn-sm btn-success me-1" title="Modifier"><i class="bi bi-pencil-fill"></i> </a>
+                                            
+                                            <button class="btn btn-sm btn-danger btn-delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal-{{ i.pk }}" title="Supprimer"> <i class="bi bi-trash-fill"></i> </button>
+                                            
+                                            <div class="modal fade" id="confirmDeleteModal-{{ i.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la Suppression</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            Êtes-vous sûr de vouloir supprimer l'utilisateur **{{ i.nom }} {{ i.prenom }}** (ID: {{ i.pk }}) ?
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                            <form method="POST" action="{% url 'supprimer_utilisateur' i.pk %}" style="display:inline;">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                    {% elif mode == 'groupe' %}
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom du Groupe</th>
+                                    <th>Nombre d'Utilisateurs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in data_list %}
+                                    <tr>
+                                        <td>{{ group.pk }}</td>
+                                        <td>{{ group.name }}</td>
+                                        <td>{{ group.user_count }}</td> </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                    {% elif mode == 'localite' %}
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom de la Localité</th>
+                                    <th>Nombre d'Utilisateurs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for localite in data_list %}
+                                    <tr>
+                                        <td>{{ localite.pk }}</td>
+                                        <td>{{ localite.nom_loc }}</td>
+                                        <td>{{ localite.user_count }}</td> </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    
+                    {% elif mode == 'modifier' %}
+                       <div class="card-floating mx-auto" style="max-width: 600px;">
+                            <div class="right-section">
+                                <h2>{{ title }}</h2> 
+                                <form method="POST" action="{% url 'modifier_utilisateur' utilisateur_a_modifier.pk %}">
+                                    {% csrf_token %}
+                                    
+                                    {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% for field in form %}
+                                                    
+                                        {% if field.name not in champs_speciaux_a_exclure %}
+                                            <div class="mb-3">
+                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        
+                                                        {{ field }}
+                                                       
+                                                        {% if field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select_multiple' %}
+                                                            <script>document.getElementById('{{ field.id_for_label }}').classList.add('form-select');</script>
+                                                        {% else %}
+                                                            <script>document.getElementById('{{ field.id_for_label }}').classList.add('form-control');</script>
+                                                        {% endif %}
+                                                        
+                                                        {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %} 
+                                             </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <hr>
+                                    <div class="mb-3">
+                                         <label class="form-label" for="{{ form.groups.id_for_label }}">{{ form.groups.label }}</label>
+                                            {{ form.groups }}
+                                                <script>document.getElementById('{{ form.groups.id_for_label }}').classList.add('form-select');</script>
+                                            {% if form.groups.errors %}<div class="text-danger small">{{ form.groups.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        {{ form.is_active }}
+                                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                                        {% if form.is_active.errors %}<div class="text-danger small">{{ form.is_active.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        {{ form.is_superuser }}
+                                            <label class="form-check-label" for="{{ form.is_superuser.id_for_label }}">{{ form.is_superuser.label }}</label>
+                                        {% if form.is_superuser.errors %}<div class="text-danger small">{{ form.is_superuser.errors }}</div>{% endif %}
+                                    </div>
+                                                
+                                    <hr>
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="submit" class="btn btn-success">Enregistrer les modifications</button>
+                                        <a href="{% url 'acc_admin' mode='utilisateur' %}" class="btn btn-secondary">Annuler</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    {% elif mode == 'ajout' %}
+                        <div class="card-floating mx-auto p-3" style="max-width: 600px; height: 90vh; display: flex; flex-direction: column;">
+                                <div class="right-section border-bottom pb-2 mb-3">
+                                    <h2>Ajout utilisateur</h2>
+                                </div>
+
+                                <div class="card-body-scrollable flex-grow-1" style="overflow-y: auto;">
+                                    <form method="POST" action="{% url 'inscription' %}">
+                                        {% csrf_token %}
+                                        
+                                        {% if form.non_field_errors %}
+                                            <div class="alert alert-danger">
+                                                {{ form.non_field_errors }}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="form-row mb-3 d-flex justify-content-between">
+                                            <div class="form-group w-50 pe-2">
+                                                <label class="form-label" for="{{ form.nom.id_for_label }}">{{ form.nom.label }}</label>
+                                                {{ form.nom }} 
+                                                <script>document.getElementById('{{ form.nom.id_for_label }}').classList.add('form-control');</script>
+                                                {% if form.nom.errors %}<div class="text-danger small">{{ form.nom.errors }}</div>{% endif %}
+                                            </div>
+                                            
+                                            <div class="form-group w-50 ps-2">
+                                                <label class="form-label" for="{{ form.prenom.id_for_label }}">{{ form.prenom.label }}</label>
+                                                {{ form.prenom }}
+                                                <script>document.getElementById('{{ form.prenom.id_for_label }}').classList.add('form-control');</script>
+                                                {% if form.prenom.errors %}<div class="text-danger small">{{ form.prenom.errors }}</div>{% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                                            {{ form.email }}
+                                            <script>document.getElementById('{{ form.email.id_for_label }}').classList.add('form-control');</script>
+                                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.telephone.id_for_label }}">{{ form.telephone.label }}</label>
+                                            {{ form.telephone }}
+                                            <script>document.getElementById('{{ form.telephone.id_for_label }}').classList.add('form-control');</script>
+                                            {% if form.telephone.errors %}<div class="text-danger small">{{ form.telephone.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="form-row mb-3 d-flex justify-content-between">
+                                            <div class="form-group w-50 pe-2">
+                                                <label class="form-label" for="{{ form.poste.id_for_label }}">{{ form.poste.label }}</label>
+                                                {{ form.poste }}
+                                                <script>document.getElementById('{{ form.poste.id_for_label }}').classList.add('form-select');</script>
+                                                {% if form.poste.errors %}<div class="text-danger small">{{ form.poste.errors }}</div>{% endif %}
+                                            </div>
+                                            
+                                            <div class="form-group w-50 ps-2">
+                                                <label class="form-label" for="{{ form.localite.id_for_label }}">{{ form.localite.label }}</label>
+                                                {{ form.localite }}
+                                                <script>document.getElementById('{{ form.localite.id_for_label }}').classList.add('form-select');</script>
+                                                {% if form.localite.errors %}<div class="text-danger small">{{ form.localite.errors }}</div>{% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.group_choice.id_for_label }}">{{ form.group_choice.label }}</label>
+                                            {{ form.group_choice }}
+                                            <script>document.getElementById('{{ form.group_choice.id_for_label }}').classList.add('form-select');</script>
+                                            {% if form.group_choice.errors %}<div class="text-danger small">{{ form.group_choice.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                                            <div class="input-group">
+                                            {{ form.password }}
+                                            <button class="btn btn-toggle-password border-0" type="button"><i class="bi bi-eye"></i></button>
+                                            <script>document.getElementById('{{ form.password.id_for_label }}').classList.add('form-control');</script>
+                                        </div>
+                                        {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                                        {{ form.password2 }}
+                                        <script>document.getElementById('{{ form.password2.id_for_label }}').classList.add('form-control');</script>
+                                        {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">Enregistrer l'utilisateur</button>
+                                </form>
+                            </div>
+
+                            <div class="text-center mt-2 pt-2 border-top">
+                                <a href="{% url 'acc_admin' mode='utilisateur' %}">Retour à la liste</a>
+                            </div>
+                        </div>
+                    {% elif mode == 'RA' %}
+                             <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h2>Registres arrivés</h2>
+                                    
+                                </div>
+
+                                <div class="table-responsive mt-3">
+                                    {% if data_list %}
+                                        <table class="table table-bordered table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>N° ENR</th>
+                                                    <th>Date d’arrivée</th>
+                                                    <th>Provenance</th>
+                                                    <th>Nature</th>
+                                                    <th>Observation</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for registre in data_list %}
+                                                <tr>
+                                                    <td>{{ registre.n_enr_arrive }}</td>
+                                                    <td>{{ registre.date_arrivee|date:"d/m/Y" }}</td>
+                                                    <td>{{ registre.provenance|truncatechars:50 }}</td>
+                                                    <td>{{ registre.get_nature_display }}</td>
+                                                    <td>{{ registre.observation|truncatechars:50|default:"-" }}</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-info me-1 btn-detail" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#detailArriveModal" 
+                                                                data-id="{{ registre.id }}"
+                                                                title="Voir les détails">
+                                                            <i class="bi bi-eye-fill"></i>
+                                                        </button>
+                                                        <!--button class="btn btn-sm btn-success me-1"><i class="bi bi-pencil-fill"></i></-button>
+
+                                                        <button-- class="btn btn-sm btn-danger btn-delete"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#confirmDeleteModal"
+                                                                data-record-id="{{ registre.id }}">
+                                                            <i class="bi bi-trash-fill"></i>
+                                                        </button-->
+                                                    </td>
+                                                </tr> 
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    {% else %}
+                                        <div class="alert alert-info">Aucun registre d'arrivée n'a été trouvé.</div>
+                                    {% endif %}
+                            </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $(".admin-toggle").click(function () {
+        $(".submenu").slideToggle(200);
+        $(this).find("i").toggleClass("bi-caret-down-fill bi-caret-up-fill");
+    });
+    
+    // Script pour le toggle password (si vous en avez besoin)
+    $('.btn-toggle-password').click(function() {
+        const input = $(this).prev('input');
+        const icon = $(this).find('i');
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('bi-eye').addClass('bi-eye-slash');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('bi-eye-slash').addClass('bi-eye');
+        }
+    });
+});
+</script>
+<script>
+// Assurez-vous que la librairie jQuery est incluse dans votre template !
+$(document).ready(function() {
+    
+    // Cible tous les éléments avec la classe .menu-toggle
+    $('.menu-toggle').on('click', function() {
+        
+        // 1. Ouvrir/Fermer le sous-menu cliqué (avec animation)
+        // $(this) est l'élément .menu-toggle cliqué. .next('.submenu') trouve le sous-menu associé.
+        $(this).next('.submenu').slideToggle(300); 
+        
+        // 2. Fermer tous les autres sous-menus ouverts (comportement Accordéon)
+        // .not(...) exclut le sous-menu actuel du repli.
+        $('.submenu').not($(this).next('.submenu')).slideUp(300);
+        
+        // 3. (Optionnel) Changer l'icône de flèche pour indiquer l'état
+        // Bascule l'icône sur l'élément cliqué
+        $(this).find('i').toggleClass('bi-caret-down-fill bi-caret-up-fill');
+        
+        // S'assurer que les flèches des autres éléments fermés sont orientées vers le bas
+        $('.menu-toggle').not(this).find('i').removeClass('bi-caret-up-fill').addClass('bi-caret-down-fill');
+    });
+});
+</script>
+{% endblock content %}
