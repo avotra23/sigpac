@@ -819,7 +819,11 @@ def api_public_plaintes(request):
             except Plainte.DoesNotExist:
                 return Response({"detail": "Plainte non trouvée ou non autorisée à modifier."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PlainteCreationSerializer(instance=plainte_instance, data=request.data)
+        serializer = PlainteCreationSerializer(
+        instance=plainte_instance, 
+        data=request.data,
+        files=request.FILES 
+    )
         # serializer = PlainteCreationSerializer(
         #    instance=plainte_instance, 
         #    data=request.data,

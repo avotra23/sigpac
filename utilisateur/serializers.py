@@ -58,7 +58,7 @@ class PlainteCreationSerializer(serializers.ModelSerializer):
     date_plainte = serializers.DateField(required=False)
     class Meta:
         model = Plainte 
-        fields = ['ny_mpitory', 'tranga_kolikoly', 'ilay_olona_kolikoly', 'toorna_birao','piece_jointe']
+        fields = ['ny_mpitory', 'tranga_kolikoly', 'ilay_olona_kolikoly', 'toorna_birao','piece_jointe','date_plainte']
     def validate_piece_jointe(self, value): 
         if value is None: 
             return value
