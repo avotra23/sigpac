@@ -290,10 +290,6 @@ def simple(request):
          ).order_by('-date_arrivee')
         
     elif mode == 'form' or request.method == 'POST': # Affiche le formulaire (y compris en cas d'erreur POST)
-        # Mode FORMULAIRE: Initialisation du formulaire et des champs en lecture seule
-        
-        # Affichage du N° ENR PROCHAIN (estimation basée sur le max ID + 1)
-        # ATTENTION: Cette estimation est PROVISOIRE et ne doit pas être utilisée pour la base de données.
         try:
             last_enr_id = RegistreArrive.objects.aggregate(Max('id'))['id__max']
             next_enr = str((last_enr_id or 0) + 1).zfill(4)
@@ -303,7 +299,21 @@ def simple(request):
         context['form'] = form # Soit l'instance vide (GET), soit l'instance avec les erreurs (POST)
         context['date_arrivee_systeme'] = timezone.now().strftime("%Y-%m-%d") 
         context['n_enr_provisoire'] = next_enr
+    validation_id = request.GET.get('valider_id')
+    if validation_id:
+        try:
+            registre = RegistreArrive.objects.get(pk=validation_id, 
+                                                  utilisateur_creation__localite=request.user.localite,
+                                                  est_valide=False) # Assurez-vous qu'il n'est pas déjà validé
             
+            n_ra = registre.attribuer_ra() # Appelle la méthode du modèle
+            messages.success(request, f"Registre Arrivé validé et numéroté : **{n_ra}**.")
+            
+        except RegistreArrive.DoesNotExist:
+            messages.error(request, "Le registre à valider n'existe pas ou est déjà validé.")
+        
+        # Redirige toujours vers la liste
+        return redirect('simple')     
     # Le template est maintenant unique
     return render(request, 'utilisateur/simple.html', context)
 

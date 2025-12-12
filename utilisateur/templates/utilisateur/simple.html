@@ -137,7 +137,7 @@
                                 <tbody>
                                     {% for registre in registres %}
                                     <tr>
-                                        <td>{{ registre.n_enr_arrive }}</td>
+                                        <td>{{ registre.n_enr_arrive|default:"EN ATTENTE" }}</td>
                                         <td>{{ registre.date_arrivee|date:"d/m/Y" }}</td>
                                         <td>{{ registre.provenance|truncatechars:50 }}</td>
                                         <td>{{ registre.get_nature_display }}</td>
@@ -150,7 +150,18 @@
                                                     title="Voir les détails">
                                                 <i class="bi bi-eye-fill"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-success me-1" title="valider"><i class="bi bi-save-fill"></i></button>
+                                            {% if not registre.est_valide %}
+                                                <a href="{% url 'simple' %}?valider_id={{ registre.id }}" 
+                                                class="btn btn-sm btn-success me-1" 
+                                                title="Valider et attribuer le N° RA"
+                                                onclick="return confirm('Êtes-vous sûr de vouloir valider ce registre et lui attribuer son numéro RA ?')">
+                                                <i class="bi bi-check-lg"></i> Valider
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-secondary me-1" title="Déjà Validé" disabled>
+                                                <i class="bi bi-check-circle-fill"></i>
+                                                </button>
+                                            {% endif %}
                                             
                                             <!--MODAL -->
                                             <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">

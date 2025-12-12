@@ -243,7 +243,13 @@ class RegistreArrive(models.Model):
         max_length=20, 
         unique=True, 
         editable=False, 
+        null=True,           
+        blank=True,
         verbose_name="N° ENR Arrivé"
+    )
+    est_valide = models.BooleanField(
+        default=False,
+        verbose_name="Validé (avec N° RA)"
     )
     date_arrivee = models.DateField(
         default=timezone.now,
@@ -298,18 +304,14 @@ class RegistreArrive(models.Model):
         return f"ENR N° {self.n_enr_arrive}"
         
     def save(self, *args, **kwargs):
-        is_new = not self.id
-        
-        if is_new:
-           
-            super().save(*args, **kwargs) 
-            
-            
-            new_id = self.id
-            self.n_enr_arrive = f"RA/{str(new_id).zfill(4)}" 
-            
-            super().save(update_fields=['n_enr_arrive', 'utilisateur_creation'])
-            return
-
-        # Sauvegarde normale (pour les modifications)
         super().save(*args, **kwargs)
+
+
+    def attribuer_ra(self, prefixe="RA"):
+        if self.n_enr_arrive is None or self.n_enr_arrive == '':
+            new_id = self.id
+            self.n_enr_arrive = f"{prefixe}/{str(new_id).zfill(4)}" 
+            self.est_valide = True
+            self.save(update_fields=['n_enr_arrive', 'est_valide'])
+            return self.n_enr_arrive
+        return self.n_enr_arrive
