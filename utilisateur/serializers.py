@@ -55,6 +55,7 @@ class PlainteSerializer(serializers.ModelSerializer):
 
 class PlainteCreationSerializer(serializers.ModelSerializer):
     piece_jointe = serializers.FileField(required=False)
+    date_plainte = serializers.DateField(required=False)
     class Meta:
         model = Plainte 
         fields = ['ny_mpitory', 'tranga_kolikoly', 'ilay_olona_kolikoly', 'toorna_birao','piece_jointe']
