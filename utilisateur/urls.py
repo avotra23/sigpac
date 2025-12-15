@@ -29,6 +29,9 @@ urlpatterns = [
 
     #procureur
     path('acc_proc',acc_procureur,name="acc_procureur"),
+
+    #Greffier
+    path('acc_greffier',acc_greffier,name="acc_greffier"),
 # LES API URLS -----------------------------------------------------
 # Authentification
     path('api/login/', api_login_view, name='api_login'),

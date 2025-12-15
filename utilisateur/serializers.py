@@ -55,7 +55,7 @@ class PlainteSerializer(serializers.ModelSerializer):
 
 class PlainteCreationSerializer(serializers.ModelSerializer):
     piece_jointe = serializers.FileField(required=False)
-    date_plainte = serializers.DateField(required=False)
+    date_plainte = serializers.DateField(required=False, input_formats=['%d/%m/%Y'])
     class Meta:
         model = Plainte 
         fields = ['ny_mpitory', 'tranga_kolikoly', 'ilay_olona_kolikoly', 'toorna_birao','piece_jointe','date_plainte']
@@ -70,4 +70,6 @@ class PlainteCreationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f"La taille du fichier ne doit pas dépasser 10 Mo. Taille actuelle : {value.size / (1024 * 1024):.2f} Mo."
             )
+        return value
+    def validate_date_plainte(self, value):
         return value

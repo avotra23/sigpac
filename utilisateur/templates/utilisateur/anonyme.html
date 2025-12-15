@@ -29,10 +29,17 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label for="{{ form.ny_mpitory.id_for_label }}" class="section-label fw-bold">{{ form.ny_mpitory.label }}</label>
-                    {{ form.ny_mpitory }}
-                    {% for error in form.ny_mpitory.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                <div class="mb-4" style="display:none">
+                    <label for="id_{{ form.ny_mpitory.name }}" class="section-label fw-bold">{{ form.ny_mpitory.label }}</label>
+                    
+                    <input type="hidden" 
+                        name="{{ form.ny_mpitory.name }}" 
+                        id="id_{{ form.ny_mpitory.name }}" 
+                        value="anonyme">
+
+                    {% for error in form.ny_mpitory.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
                 </div>
                 <div class="mb-4">
                     <label for="{{ form.tranga_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.tranga_kolikoly.label }}</label>
@@ -81,10 +88,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-center p-4">
-                        <p class="lead">Votre plainte a été enregistrée sous le numéro :</p>
-                        <h1 class="display-5 text-primary mb-4">
-                            **{{ success_data.n_chrono_tkk }}**
-                        </h1>
+                        <p class="lead">Votre plainte a été enregistrée</p>
 
                         <div class="alert alert-info small" role="alert">
                             **Conservez ce QR Code pour le suivi de votre dossier.**
@@ -102,11 +106,9 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-primary"> <i class="bi bi-download"></i> </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        {% comment %} Optionnel : Lien de suivi si implémenté {% endcomment %}
-                        {% comment %} <a href="{{ success_data.url_de_suivi }}" class="btn btn-primary">
-                            Suivre ma plainte
-                        </a> {% endcomment %}
+
                     </div>
                 </div>
             </div>
@@ -120,12 +122,6 @@
             });
         </script>
         {% endwith %}
-        
-        {% comment %} 
-        IMPORTANT: Supprimer les données de la session immédiatement après le rendu
-        pour que la modale n'apparaisse plus si l'utilisateur recharge la page.
-        {% endcomment %}
-      
         {% delete_session_key 'plainte_success' %}
 {% endif %}
 {% endblock content %}

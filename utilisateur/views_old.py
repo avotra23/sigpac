@@ -18,7 +18,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 import base64
 from django.urls import reverse
-
+# Create your views here.
 
 # ----API MODULE  + Ajout de serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -434,8 +434,6 @@ def public(request):
 
 def none(request):
     return render(request, 'utilisateur/none.html')
-
-
 def anonyme(request):
     context = {}
     plainte_instance = None
@@ -857,29 +855,24 @@ def api_public_plaintes(request):
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    # Sauvegarde de l'objet
+                    # 🔑 Injection de l'utilisateur connecté, comme dans la vue standard
                     plainte = serializer.save(
-                        utilisateur_creation=(plainte_instance.utilisateur_creation if is_modification else request.user),
+                        utilisateur_creation=(request.user if not is_modification else plainte_instance.utilisateur_creation),
                         utilisateur_modification=request.user
                     )
                 
-                # --- LA CORRECTION EST ICI ---
-                # 1. On utilise le serializer de lecture
-                # 2. On passe impérativement le contexte 'request'
-                read_serializer = PlainteSerializer(plainte, context={'request': request})
-                
                 detail_msg = f'La plainte N° {plainte.n_chrono_tkk} a été modifiée avec succès.' if is_modification else \
-                            f"Plainte enregistrée sous le N° {plainte.n_chrono_tkk}."
+                             f"Plainte enregistrée sous le N° {plainte.n_chrono_tkk}."
                 
                 return Response({
                     "detail": detail_msg,
-                    "plainte": read_serializer.data  # Utilise le read_serializer avec contexte
+                    "plainte": PlainteSerializer(plainte).data # Renvoyer l'objet mis à jour
                 }, status=status.HTTP_201_CREATED if not is_modification else status.HTTP_200_OK)
             
             except Exception as e:
-                import traceback
-                print(traceback.format_exc()) # Pour voir l'erreur exacte en console
-                return Response({"detail": f"Erreur lors de la génération de la réponse: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"detail": f"Erreur lors de la sauvegarde: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # 2. GESTION DE LA CONSULTATION (Méthode GET)
     else:

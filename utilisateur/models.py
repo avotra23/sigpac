@@ -116,7 +116,7 @@ class Plainte(models.Model):
         verbose_name="N° Chrono TKK"
     )
     date_plainte = models.DateField(
-        default=timezone.now,
+        default=timezone.now().date(),
         editable=False, 
         verbose_name="Dates"
     )
