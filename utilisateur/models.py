@@ -23,7 +23,6 @@ class Poste(models.Model):
     def __str__(self):
         return f"{self.id_fonc.nom_fc} ({self.id_dir.nom_dir})"
 
-
 #Gestion utilisateur personnalise
 class UtilisateurManager(BaseUserManager):
     def create_user(self, email,password=None, **extra_fields):
@@ -72,7 +71,7 @@ class Utilisateur(AbstractBaseUser):
     telephone = models.IntegerField(null=True)
     poste  = models.ForeignKey(Poste,on_delete=models.SET_NULL,null=True)
     localite = models.ForeignKey(Localite,on_delete=models.SET_NULL,null = True)
-    
+    photo = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     
     
     #Configuration du connexion
@@ -104,6 +103,8 @@ STATUT_CHOICES = [
         ('CSS', 'Classer sans suite'),
     ]
 
+
+
 def plainte_directory_path(instance, filename):
     return f'plaintes/{instance.pk}/{filename}'
 
@@ -127,6 +128,7 @@ class Plainte(models.Model):
     ilay_olona_kolikoly = models.TextField(verbose_name="Ilay Olona Manao kolikoly (L'auteur de la corruption)")
     toorna_birao = models.TextField(verbose_name="Toerana - Birao - Sampan-draharaha manao ilay kolikoly (Lieu - Bureau - Service de la corruption)", blank=True, null=True)
 
+    observation = models.TextField(verbose_name="Antony", blank=True, null=True)
     
     statut = models.CharField(
         max_length=10,
@@ -214,18 +216,18 @@ class Plainte(models.Model):
             sequential_part = str(self.id).zfill(8) 
             self.n_chrono_tkk = f"DPL: {sequential_part}/{year}"
             
-            # 3. Seconde sauvegarde (MISE À JOUR) pour enregistrer n_chrono_tkk ET utilisateur_creation
-            # Nous assumons que l'utilisateur_creation est défini avant le premier super().save() dans la vue/form.
-            # Si l'utilisateur est passé via kwargs, récupérez-le ici :
-            # user = kwargs.pop('user', None)
-            # if user and not self.utilisateur_creation: self.utilisateur_creation = user
-            
             super().save(update_fields=['n_chrono_tkk', 'utilisateur_creation']) 
             return
             
         # Sauvegarde normale (Mise à jour d'une instance existante)
         super().save(*args, **kwargs)
-
+    
+    @property
+    def pieces_jointes_url(self):
+        if self.piece_jointe:
+            return self.piece_jointe.url
+        return None
+    
 # Nécessite les STATUT_CHOICES définis ci-dessus
 
 class RegistreArrive(models.Model):
@@ -237,7 +239,23 @@ class RegistreArrive(models.Model):
         ('plainte', 'Plainte en ligne'),
         ('opj', 'OPJ'),
     ]
-    
+    #Champs suivie du plainte 
+    plainte_origine = models.ForeignKey(
+        Plainte, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="registres_entree",
+        verbose_name="Plainte TKK liée"
+    )
+
+    # Ce champ contiendra la valeur textuelle du n_chrono_tkk pour affichage/recherche facile
+    nbe_dossier = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True,
+        verbose_name="N° Dossier (TKK)"
+    )
     # Champs auto-générés et non modifiables
     n_enr_arrive = models.CharField(
         max_length=20, 
@@ -304,6 +322,10 @@ class RegistreArrive(models.Model):
         return f"ENR N° {self.n_enr_arrive}"
         
     def save(self, *args, **kwargs):
+        if self.plainte_origine:
+            self.nbe_dossier = self.plainte_origine.n_chrono_tkk
+            # Optionnel : Forcer la nature à 'plainte' si elle est liée
+            self.nature = 'plainte'
         super().save(*args, **kwargs)
 
 

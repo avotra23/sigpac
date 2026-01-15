@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title%}LOGIN PAC{% endblock title%}
+{% block content %}
+
+
+
+<div class="wrapper">
+    <div class="card-floating">
+
+        <!-- Left side -->
+        <div class="left-section">
+            <div class="logo-circle">
+                <img src="{%static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+            </div>
+            <div class="subtitle">Pôles Anti-Corruption</div>
+        </div>
+
+        <!-- Right side (form) -->
+        <div class="right-section">
+
+            <h2>Se connecter</h2>
+
+            <form id="loginForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input  type="email" class="form-control" placeholder="exemple@mail.com" name="email">
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Mot de passe</label>
+                    <div class="input-group">
+                        <input type="password" id="password" class="form-control" placeholder="••••••••" name="password">
+                        <button class="btn btn-toggle-password border-0" type="button">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-end mb-3">
+                    <a href="#" class="forgot">Mot de passe oublié ?</a>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn btn-login w-100">
+                    Connexion
+                </button>
+            </form>
+
+            <div class="signup-btn">
+                Vous n'avez pas encore de compte ? <a href="{%url 'utilisateur:inscriptionpub'%}">Inscrivez-vous ici</a>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div id="error-message" class="text-danger mt-2" style="display:none;"></div>
+<script>
+    const toggleBtn = document.querySelector('.btn-toggle-password');
+    const password = document.querySelector('#password');
+
+    toggleBtn.addEventListener('click', () => {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+
+        const icon = toggleBtn.querySelector('i');
+        icon.classList.toggle('bi-eye');
+        icon.classList.toggle('bi-eye-slash');
+    });
+</script>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const email = this.querySelector('[name="email"]').value;
+        const password = this.querySelector('[name="password"]').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? 
+                          document.querySelector('[name=csrfmiddlewaretoken]').value : "";
+
+        console.log("Données prêtes :", { email, password });
+
+        fetch("{% url 'utilisateur:api_login' %}", {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(response => {
+            console.log("Réponse reçue, statut :", response.status);
+            return response.json();
+        })
+        .then(result => {
+            console.log("Résultat JSON :", result);
+            if (result.role === 'public') {
+                window.location.href = "{% url 'pac:public' %}";
+            }else if(result.role ==='dcn'){
+                window.location.href = "{% url 'pac:dcn' %}";
+            }else if(result.role ==='procureur'){
+                window.location.href = "{% url 'pac:procureur' %}";
+            }
+             else {
+                alert("Connecté !");
+            }
+        })
+        .catch(error => {
+            console.error("ERREUR CRITIQUE FETCH :");
+            console.log(error.message);
+            console.dir(error);
+        });
+    });
+</script>
+{% endblock content %}

@@ -1,0 +1,21 @@
+{% load static %}
+<div class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-logo text-center mb-5">
+                <div class="logo-circle">
+                    <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                </div>
+                <small>Pôles Anti-Corruption</small>
+            </div>
+            <div class="menu-item {% if menu_active == 'arrive' %}active{% endif %}"> 
+                <a href="">Plainte en ligne</a>
+            </div>
+            <div class="menu-item "><a href="#">Tribunal traitant</a></div>
+            <div class="menu-item"><a href="#">Statistique</a></div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+           
+        </div>
+    </div>

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %} PROCUREUR {% endblock title %}
+
+{% block content %} 
+
+{% include "nav.html" %}
+<div class="main-container d-flex"> 
+
+    {% include "sidebar.html"%}
+
+    <div class="main-content flex-grow-1">
+
+        <div class="top-bar-pac d-flex justify-content-between" style="background-color:marron; color:white; padding: 10px 15px;">
+            <div style="margin-left:50px;">
+                {{ user.nom }} - {{ user.poste }}
+            </div>
+            <div>
+                PAC {{ user.localite|default:"[Localité]" }}
+            </div>
+        </div>
+
+        <div class="content-wrapper p-4" style="margin-left:5%;">
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success mt-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Plainte en ligne</h2>
+                    
+                </div>
+
+                <div class="table-responsive mt-3">
+                    {% if po %}
+                        
+                    {# --- BLOC D'AFFICHAGE DES DÉTAILS (NON TABULAIRE) --- #}
+                        {% if plainte_detail %}
+
+                        {% include "pac/detail_plainte.html"%}
+                        
+                        {% endif %}
+                    {# --- FIN DU BLOC D'AFFICHAGE DES DÉTAILS --- #}
+                        <div class="table-responsive">
+
+                            <table class="table table-striped table-hover" id="registre-plainte">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>N° Chrono TKK</th>
+                                        <th>Date</th>
+                                       
+                                        <th>Auteur présumé</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in po %}
+                                        {% if p.statut != 'ATTENTE' %}
+                                         <tr>
+                                       
+                                        <td class="fw-bold">{{ p.n_chrono_tkk }}</td>
+                                        <td>{{ p.date_plainte|date:"d/m/Y" }}</td>
+                                        <td>{{ p.ilay_olona_kolikoly|truncatechars:50 }}</td>
+                                        <td>
+                                           
+                                            {% if p.statut == 'COURS' %}
+                                                <span class="badge bg-info text-dark">{{ p.get_statut_display }}</span>
+                                            {% elif p.statut == 'DISPATCHE' %}
+                                                <span class="badge bg-primary text-dark">{{ p.get_statut_display }}</span>
+                                            {% elif p.statut == 'TRAITEE' %}
+                                                <span class="badge bg-success">{{ p.get_statut_display }}</span>
+                                            {% elif p.statut == 'CSS' %}
+                                                <span class="badge bg-warning">{{ p.get_statut_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'pac:procureur' %}?mode=list&detail_id={{ p.pk }}" class="btn btn-sm btn-info me-1" title="Voir les détails">
+                                   <i class="bi bi-eye-fill"></i>
+                                            </a>
+                                            {% if p.statut != 'DISPATCHE'%}
+                                            {% else%}
+                                            
+                                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#ra-{{ p.pk }}" title="REGISTRE ARRIVE"> RA</button>
+                                            
+                                                <div class="modal fade" id="ra-{{ p.pk }}" tabindex="-1" aria-labelledby="registrearrive" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="registrearrive">Envoyer en registre arrive {{ p.n_chrono_tkk }} </h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form method="POST" action="{% url 'pac:procureur' %}" style="display:inline;">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="idplainte" value="{{p.pk}}">
+                                                                    <input type="hidden" name="mode" value="ra">
+                                                                    <div class="col">
+                                                                        <label for="observation" class="form-label">Observation</label>
+                                                                        <textarea name="observation" id="observation" class="form-control"></textarea>
+                                                                    </div>
+                                                                    <br>
+                                                                    <div style="margin-left: 40%;">
+                                                                        <button type="submit" class="btn btn-danger">Valider</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                                
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#css-{{ p.pk }}" title="css"> CSS</button>
+                                            
+                                                <div class="modal fade" id="css-{{ p.pk }}" tabindex="-1" aria-labelledby="classementsanssuite" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="classementsanssuite">Classer sans suite le plainte {{ p.n_chrono_tkk }} </h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form method="POST" action="{% url 'pac:procureur' %}" style="display:inline;">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="idplainte" value="{{p.pk}}">
+                                                                    <input type="hidden" name="mode" value="css">
+                                                                    <div class="col">
+                                                                        <label for="observation" class="form-label">Observation</label>
+                                                                        <textarea name="observation" id="observation" class="form-control"></textarea>
+                                                                    </div>
+                                                                    <br>
+                                                                    <div style="margin-left: 40%;">
+                                                                        <button type="submit" class="btn btn-danger">Valider</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                                
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                            {% endif %}
+                                         </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                         <div class="alert alert-info">Aucun plainte n'a été trouvé.</div>
+                    {% endif %}
+                </div>
+
+            
+
+        </div>
+
+    </div>
+</div>
+
+
+
+
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+        $('#registre-plainte').DataTable();
+    });
+    </script>
+{% endblock extra_js %}
+{% endblock content %}

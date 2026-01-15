@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} PAC Public {% endblock title%}
+{% load my_custom_tags %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'pac:anonyme' %}"> 
+            <img src="{% static 'image/logo-pac.png'%}" width="50"> PAC Public
+        </a>
+    </div>
+</nav>
+
+<div class="plainte-container my-5 p-4 border rounded shadow-lg">
+    <div class="plainte-header text-center mb-4">
+        <h2>{{ form_title|default:"DÉCLARATION PLAINTE EN LIGNE" }}</h2>
+        <span class="fw-bold text-danger fs-5">POLE ANTI-CORRUPTION</span>
+    </div>
+    
+    <form id="anonymePlainteForm" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="n_chrono_tkk" class="form-label">N° Chrono TKK</label>
+                <input type="text" class="form-control" id="n_chrono_tkk" value="{{ n_chrono_tkk }}" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="date_plainte" class="form-label">Dates</label>
+                <input type="text" class="form-control" id="date_plainte" value="{{ date_plainte }}" readonly>
+            </div>
+        </div>
+
+        <div class="mb-4" style="display:none">
+            <label for="id_{{ form.ny_mpitory.name }}" class="section-label fw-bold">{{ form.ny_mpitory.label }}</label>
+            <input type="hidden" name="{{ form.ny_mpitory.name }}" id="id_{{ form.ny_mpitory.name }}" value="anonyme">
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.tranga_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.tranga_kolikoly.label }}</label>
+            {{ form.tranga_kolikoly }}
+            <div id="error-tranga_kolikoly" class="text-danger small">
+                {% for error in form.tranga_kolikoly.errors %}{{ error }}{% endfor %}
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="{{ form.ilay_olona_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.ilay_olona_kolikoly.label }}</label>
+                {{ form.ilay_olona_kolikoly }}
+                <div id="error-ilay_olona_kolikoly" class="text-danger small">
+                    {% for error in form.ilay_olona_kolikoly.errors %}{{ error }}{% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.toorna_birao.id_for_label }}" class="section-label fw-bold">{{ form.toorna_birao.label }}</label>
+                {{ form.toorna_birao }}
+                <div id="error-toorna_birao" class="text-danger small">
+                    {% for error in form.toorna_birao.errors %}{{ error }}{% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.piece_jointe.id_for_label }}" class="section-label fw-bold">{{ form.piece_jointe.label }}</label>
+            {{ form.piece_jointe }}
+            <div id="error-piece_jointe" class="text-danger small">
+                {% for error in form.piece_jointe.errors %}{{ error }}{% endfor %}
+            </div>
+            {% if form.instance.piece_jointe %}
+                <p class="mt-2">Fichier actuel: <a class="form-control" href="{{ form.instance.piece_jointe.url }}" target="_blank">{{ form.instance.piece_jointe.name|default:"Aucun" }}</a></p>
+            {% endif %}
+        </div>
+
+        <div class="text-end">
+            <button type="submit" id="submitBtn" class="btn btn-primary btn-lg btn-envoyer">
+                <i class="bi bi-send-fill"></i> Enregistrer
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Plainte Enregistrée</h5>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
+                </div>
+                <h4>Merci !</h4>
+                <p class="text-muted">Votre plainte a été soumise avec succes</p>
+                
+                <div class="my-4 p-2 bg-white border d-inline-block">
+                    <img id="res-qr" src="" alt="QR Code" style="width: 200px; height: 200px;">
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a id="download-qr" href="" download="" class="btn btn-success">
+                        <i class="bi bi-download"></i> Télécharger le QR Code
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" onclick="window.location.reload();">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('anonymePlainteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
+
+    const formData = new FormData(this);
+
+    // Utilisation de l'URL API
+    fetch("{% url 'pac:api_plainte_anonyme' %}", {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    })
+    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+    .then(result => {
+        if (result.status === 201) {
+            // 1. Préparer l'URL du QR Code
+            const qrDataUrl = "data:image/png;base64," + result.body.qr_code_base64;
+            
+            // 2. Mise à jour de l'image QR (Vérification si l'ID existe)
+            const qrImg = document.getElementById('res-qr');
+            if (qrImg) {
+                qrImg.src = qrDataUrl;
+            }
+            
+            // 3. Mise à jour du lien de téléchargement
+            const dlBtn = document.getElementById('download-qr');
+            if (dlBtn) {
+                dlBtn.href = qrDataUrl;
+                dlBtn.download = "QR_PAC_" + result.body.n_chrono_tkk + ".png";
+            }
+
+            // 4. AFFICHAGE DE LA MODALE
+            // On s'assure que Bootstrap est bien disponible
+            const modalEl = document.getElementById('successModal');
+            if (modalEl) {
+                const myModal = new bootstrap.Modal(modalEl);
+                myModal.show();
+            } else {
+                console.error("L'élément successModal est introuvable dans le DOM.");
+                alert("Plainte enregistrée, mais impossible d'afficher la confirmation.");
+            }
+
+        } else {
+            // ... (votre code existant pour les erreurs 400)
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Une erreur technique est survenue.");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send-fill"></i> Enregistrer';
+    });
+});
+</script>
+{% endblock content %}

@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from .models import Utilisateur, Plainte, Localite 
-
+from django.contrib.auth.hashers import make_password
 
 class UtilisateurSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(
@@ -34,6 +34,36 @@ class LocaliteSerializer(serializers.ModelSerializer):
         model = Localite
         fields = ['id', 'nom', 'user_count'] 
 
+class PublicInscriptionSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Utilisateur # Votre modèle utilisateur
+        fields = ['nom', 'prenom', 'email', 'telephone', 'password', 'password2']
+
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError({"password2": "Les mots de passe ne correspondent pas."})
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('password2')
+        # On hash le mot de passe avant de sauvegarder
+        validated_data['password'] = make_password(validated_data['password'])
+        
+        user = super().create(validated_data)
+        
+        # Ajout au groupe 'public'
+        public_group, created = Group.objects.get_or_create(name='public')
+        # Note: utilisez le nom du champ ManyToMany défini dans votre modèle (ici utilisateur_groups)
+        public_group.utilisateur_groups.add(user)
+        
+        return user
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Utilisateur
+        fields = ['nom', 'prenom', 'telephone', 'photo']
 
 class PlainteSerializer(serializers.ModelSerializer):
     pieces_jointes_url = serializers.SerializerMethodField()

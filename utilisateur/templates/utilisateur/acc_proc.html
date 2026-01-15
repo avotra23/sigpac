@@ -16,13 +16,11 @@
                 </div>
                 <small>Pôles Anti-Corruption</small>
             </div>
-            <div class="menu-item {% if menu_active == 'arrive' %}active{% endif %}"> 
-                <a href="{% url 'acc_dcn' %}">Plainte en ligne</a>
-            </div>
+            
         </div>
 
         <div class="sidebar-bottom">
-            <a href="{% url 'logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+            <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
             <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
         </div>
     </div>
@@ -58,10 +56,10 @@
                         
                     {# --- BLOC D'AFFICHAGE DES DÉTAILS (NON TABULAIRE) --- #}
                         {% if plainte_detail %}
-                        <div class="card mb-4 border-info shadow-sm">
+                        {<div class="card mb-4 border-info shadow-sm">
                             <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                 <h4 class="mb-0">Détails de la Plainte N° {{ plainte_detail.n_chrono_tkk }}</h4>
-                                <a href="{% url 'public' %}?mode=list" class="btn btn-sm btn-light">
+                                <a href="{% url 'pac:public' %}?mode=list" class="btn btn-sm btn-light">
                                     <i class="bi bi-x-lg"></i> Fermer les détails
                                 </a>
                             </div>
@@ -107,7 +105,7 @@
                                         
                                     </div>
                             </div>
-                        </div>
+                        </div>}
                         
                         {% endif %}
                     {# --- FIN DU BLOC D'AFFICHAGE DES DÉTAILS --- #}
@@ -147,13 +145,13 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <a href="{% url 'acc_procureur' %}?mode=list&detail_id={{ p.pk }}" class="btn btn-sm btn-info me-1" title="Voir les détails">
+                                            <a href="{% url 'procureur' %}?mode=list&detail_id={{ p.pk }}" class="btn btn-sm btn-info me-1" title="Voir les détails">
                                    <i class="bi bi-eye-fill"></i>
                                             </a>
                                             {% if p.statut == 'CSS'%}
                                             {% else%}
-                                                <a href="{% url 'acc_procureur' %}?mode=RA&detail_id={{ p.pk }}" class="btn btn-sm btn-outline-secondary" title="RA"> RA </a>
-                                                <a href="{% url 'acc_procureur' %}?mode=CSS&detail_id={{ p.pk }}" class="btn btn-sm btn-outline-secondary" title="CSS"> CSS </a>
+                                                <a href="{% url 'procureur' %}?mode=RA&detail_id={{ p.pk }}" class="btn btn-sm btn-outline-secondary" title="RA"> RA </a>
+                                                <a href="{% url 'procureur' %}?mode=CSS&detail_id={{ p.pk }}" class="btn btn-sm btn-outline-secondary" title="CSS"> CSS </a>
                                             {% endif %}
                                          </td>
                                     </tr>

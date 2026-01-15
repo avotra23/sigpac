@@ -6,8 +6,8 @@
     <div class="card-floating mx-auto" style="max-width: 600px;">
                             <div class="right-section">
                                 <h2>{{ title }}</h2>
-                                
-                                <form method="POST" action="{% url 'inscriptionpub' %}">
+                                <div id="error-messages" class="alert alert-danger d-none"></div>
+                                <form id="registrationForm">
                                     {% csrf_token %}
                                     
                                     {% if form.non_field_errors %}
@@ -67,9 +67,59 @@
                                     
 
                                     <button type="submit" class="btn btn-primary w-100">Enregistrer l'utilisateur</button>
-                                    <div class="text-center mt-2"><a href="{% url 'acc_admin' mode='utilisateur' %}">Retour à la liste</a></div>
+                                    
                                     
                                 </form>
                             </div>
                         </div>
+
+<script>
+document.getElementById('registrationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Nettoyer les erreurs précédentes
+    document.querySelectorAll('.error-field').forEach(el => el.innerText = '');
+    document.getElementById('error-messages').classList.add('d-none');
+
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    fetch("{% url 'utilisateur:api_inscription' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': data.csrfmiddlewaretoken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(async response => {
+        const result = await response.json();
+        if (response.ok) {
+            Swal.fire({
+        title: 'Succès !',
+        text: response.message,
+        icon: 'success',
+        timer: 3000, // Temps en millisecondes (3 secondes)
+        showConfirmButton: false, // Cache le bouton "OK"
+        toast: true // Optionnel : style plus discret (notification)
+    }).then(() => {
+        window.location.href = "{% url 'utilisateur:login' %}";
+    });
+        } else {
+            // Affichage des erreurs de validation DRF
+            for (const [key, value] of Object.entries(result)) {
+                const errorDiv = document.getElementById(`error-${key}`);
+                if (errorDiv) {
+                    errorDiv.innerText = value.join(' ');
+                } else {
+                    const mainError = document.getElementById('error-messages');
+                    mainError.innerText = value;
+                    mainError.classList.remove('d-none');
+                }
+            }
+        }
+    })
+    .catch(error => console.error('Erreur:', error));
+});
+</script>
 {% endblock content %}

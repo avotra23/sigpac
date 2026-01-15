@@ -1,0 +1,67 @@
+<div class="plainte-container my-5 p-4 border rounded shadow-lg">
+    <div class="plainte-header text-center mb-4">
+        <h2>{{ form_title|default:"DÉCLARATION PLAINTRE EN LIGNE" }}</h2>
+        <span class="fw-bold text-danger fs-5">POLE ANTI-CORRUPTION</span>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" id="plainteForm">
+        {% csrf_token %}
+
+        {# --- CRUCIAL : Champ masqué pour l'ID en mode modification --- #}
+        {% if form.instance.pk %}
+            <input type="hidden" name="plainte_id" value="{{ form.instance.pk }}">
+        {% endif %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="n_chrono_tkk" class="form-label">N° Chrono TKK</label>
+                <input type="text" class="form-control" id="n_chrono_tkk" value="{{ n_chrono_tkk }}" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="date_plainte" class="form-label">Dates</label>
+                <input type="text" class="form-control" id="date_plainte" value="{{ date_plainte }}" readonly>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.ny_mpitory.id_for_label }}" class="section-label fw-bold">{{ form.ny_mpitory.label }}</label>
+            {{ form.ny_mpitory }}
+            {% for error in form.ny_mpitory.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.tranga_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.tranga_kolikoly.label }}</label>
+            {{ form.tranga_kolikoly }}
+            {% for error in form.tranga_kolikoly.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="{{ form.ilay_olona_kolikoly.id_for_label }}" class="section-label fw-bold">{{ form.ilay_olona_kolikoly.label }}</label>
+                {{ form.ilay_olona_kolikoly }}
+                {% for error in form.ilay_olona_kolikoly.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.toorna_birao.id_for_label }}" class="section-label fw-bold">{{ form.toorna_birao.label }}</label>
+                {{ form.toorna_birao }}
+                {% for error in form.toorna_birao.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.piece_jointe.id_for_label }}" class="section-label fw-bold">{{ form.piece_jointe.label }}</label>
+            {{ form.piece_jointe }}
+            {% for error in form.piece_jointe.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            {% if form.instance.piece_jointe %}
+                <p class="mt-2">Fichier actuel: <a class="form-control" href="{{ form.instance.piece_jointe.url }}" target="_blank">{{ form.instance.piece_jointe.name }}</a></p>
+            {% endif %}
+        </div>
+
+        <div class="text-end">
+            <a href="{% url 'pac:public' %}?mode=list" class="btn btn-secondary btn-lg me-2">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg btn-envoyer">
+                <i class="bi bi-send-fill"></i> Enregistrer
+            </button>
+        </div>
+    </form>
+</div>

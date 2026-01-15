@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title%}PLAINTE{% endblock title%}
+{% block content %}
+<style>
+.centered-container {
+    /* Assure que le conteneur prend toute la hauteur de la fenêtre (verticalement) */
+    min-height: 100vh; 
+    
+    /* Si vous voulez centrer uniquement dans une partie de la page,
+       remplacez 100vh par la hauteur souhaitée (ex: 500px) */
+    width: 100%;
+}
+</style>
+<div class="centered-container d-flex justify-content-center align-items-center">
+    
+    <div class="text-center">
+        <img src="{% static 'image/logo-pac.png'%}" alt="Logo PAC">
+        <div>
+            <a class="btn btn-outline-success" href="{% url 'pac:anonyme'%}"> ENVOYER UNE PLAINTE ANONYME</a>
+            <a class="btn btn-outline-primary" href="{% url 'utilisateur:login' %}"> ENVOYER UNE PLAINTE SUIVIE</a>
+        </div>
+    </div>
+    
+</div>
+{% endblock content %}
