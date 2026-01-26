@@ -1,0 +1,18 @@
+# 1. Gestion globale : Détecter automatiquement le texte
+* text=auto
+
+# 2. Protéger les données sensibles (Base64, JSON, Logs)
+# On force l'encodage LF (Linux) même si quelqu'un travaille sous Windows
+*.json text eol=lf
+*.txt text eol=lf
+*.base64 binary
+
+# 3. Forcer les fichiers binaires (images, QR codes stockés)
+# Git ne doit JAMAIS tenter de modifier ces fichiers
+*.jpg binary
+*.png binary
+*.gif binary
+*.ico binary
+
+# 4. Prévenir les erreurs de syntaxe Python dues aux fins de ligne
+*.py text eol=lf
