@@ -481,3 +481,6 @@ body {
         padding: 6px 12px;
     }
 
+.table table-striped table-hover dataTable{
+    width: 80%;
+}

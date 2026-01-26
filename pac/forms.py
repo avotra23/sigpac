@@ -1,7 +1,7 @@
 from cProfile import label
 from django import forms
 from django.contrib.auth.models import Group
-from utilisateur.models import Plainte,RegistreArrive
+from utilisateur.models import Plainte,RegistreArrive,OPJ
 
 MAX_UPLOAD_SIZE = 10485760 
 MAX_UPLOAD_SIZE_DISPLAY = "10 Mo"
@@ -50,21 +50,50 @@ class RegistreArriveForm(forms.ModelForm):
         fields = [
             'date_correspondance', 
             'nature', 
-            'provenance', 
-            'texte_correspondance', 
+            'expediteur', 
+            'objet_demande', 
             'observation'
         ]
         widgets = {
             'date_correspondance': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'nature': forms.Select(attrs={'class': 'form-select'}),
-            'provenance': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'texte_correspondance': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'expediteur': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'objet_demande': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
             'date_correspondance': "Date Correspondance",
             'nature': "Nature",
-            'provenance': "Provenance",
-            'texte_correspondance': "Texte de la correspondance",
+            'expediteur': "expediteur",
+            'objet_demande': "Objet de la demande",
             'observation': "Observation",
         }
+
+class OPJForm(forms.ModelForm):
+    class Meta:
+        model = OPJ
+        # Liste des champs que l'utilisateur peut remplir
+        fields = [
+            'ny_mpitory', 
+            'tranga_kolikoly', 
+            'ilay_olona_kolikoly', 
+            'toerana_birao', 
+            'observation', 
+            'piece_jointe'
+        ]
+        
+        # Ajout de classes Bootstrap pour le rendu visuel
+        widgets = {
+            'ny_mpitory': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Nom du plaignant...'}),
+            'tranga_kolikoly': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'ilay_olona_kolikoly': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'toerana_birao': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'piece_jointe': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(OPJForm, self).__init__(*args, **kwargs)
+        # Vous pouvez rendre certains champs obligatoires ou optionnels ici si besoin
+        self.fields['observation'].required = False
+        self.fields['piece_jointe'].required = False

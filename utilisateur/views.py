@@ -24,7 +24,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import (
-    UtilisateurSerializer,PublicInscriptionSerializer,ProfileUpdateSerializer
+    UtilisateurSerializer,PublicInscriptionSerializer,ProfileUpdateSerializer,OPJInscriptionSerializer
 )
 
 #Connexion
@@ -44,8 +44,12 @@ def logout_view(request):
 #-Incription public
 def inscriptionpub(request):
     form = PublicInscription()
-    return render(request,'utilisateur/inscription.html',{'form':form,'name':'pub'})
+    return render(request,'utilisateur/inscription.html',{'form':form,'name':'PUBLIC','url':'api_inscription'})
 
+#-Inscription OPJ
+def inscriptionopj(request):
+    form = OPJCreationForm()
+    return render(request,'utilisateur/inscription.html',{'form':form,'name':'OPJ','url':'api_inscription_opj'})
 #-Inscription par admin
 def inscriptionadmin(request):
     if request.method == 'POST':
@@ -230,6 +234,20 @@ def api_logout_view(request):
 @permission_classes([AllowAny]) # Permet l'accès sans être connecté
 def api_pinscription_view(request):
     serializer = PublicInscriptionSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "message": "Utilisateur créé avec succès",
+            "redirect": "/utilisateur/login/" # Optionnel pour le frontend
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny]) # Permet l'accès sans être connecté
+def api_inscriptionopj_view(request):
+    serializer = OPJInscriptionSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response({

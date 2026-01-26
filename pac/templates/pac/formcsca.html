@@ -1,0 +1,63 @@
+<div class="container-fluid bg-white p-4 rounded shadow">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-uppercase">Registre CSCA</h4>
+        <div class="badge bg-secondary p-2">N° RA : {{ ra_source.n_enr_arrive }}</div>
+    </div>
+
+    <form id="cscaForm" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="mode" value="save_csca">
+        <input type="hidden" name="ra_id" value="{{ ra_source.id }}">
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">N° Chrono</label>
+                <input type="text" class="form-control bg-light" placeholder="GÉNÉRATION AUTOMATIQUE" readonly>
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Date</label>
+                <input type="date" name="date_csca" class="form-control border-primary" value="{{ date_arrivee_systeme }}">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Demandeur</label>
+                <input type="text" name="demandeur" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Entité</label>
+                <input type="text" name="entite" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Objet</label>
+                <textarea name="objet" class="form-control mb-2" rows="2">{{ ra_source.objet }}</textarea>
+                
+                <label class="form-label">Intitule</label>
+                <textarea name="intitule" class="form-control mb-2" rows="2"></textarea>
+                
+                <label class="form-label">Décision</label>
+                <textarea name="decision" class="form-control mb-2" rows="2"></textarea>
+
+                <label class="form-label">Appel</label>
+                <textarea name="appel" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Réquisitoire du MP</label>
+                <textarea name="requisitoire_mp" class="form-control mb-2" rows="4"></textarea>
+
+                <label class="form-label">Transmission Président</label>
+                <textarea name="transmission_president" class="form-control mb-2" rows="2"></textarea>
+
+                <label class="form-label">Résultat appel</label>
+                <textarea name="resultat_appel" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a href="?type=csca" class="btn btn-danger px-4">Annuler</a>
+            <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+        </div>
+    </form>
+</div>

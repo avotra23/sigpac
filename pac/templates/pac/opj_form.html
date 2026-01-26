@@ -1,0 +1,65 @@
+<div class="plainte-container my-5 p-4 border rounded shadow-lg bg-light">
+    <div class="plainte-header text-center mb-4">
+        <h2>{{ form_title|default:"SAISIE DOSSIER OPJ" }}</h2>
+        <span class="fw-bold text-primary fs-5">POLE ANTI-CORRUPTION (OPJ)</span>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" id="opjForm">
+        {% csrf_token %}
+        {% if form.instance.pk %}
+            <input type="hidden" name="opj_id" value="{{ form.instance.pk }}">
+        {% endif %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label">N° Chrono OPJ</label>
+                <input type="text" class="form-control" value="{{ n_chrono_opj }}" readonly>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Date</label>
+                <input type="text" class="form-control" value="{{ date_plainte }}" readonly>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="fw-bold">{{ form.ny_mpitory.label }}</label>
+            {{ form.ny_mpitory }}
+        </div>
+
+        <div class="mb-4">
+            <label class="fw-bold">{{ form.tranga_kolikoly.label }}</label>
+            {{ form.tranga_kolikoly }}
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="fw-bold">{{ form.ilay_olona_kolikoly.label }}</label>
+                {{ form.ilay_olona_kolikoly }}
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold">{{ form.toerana_birao.label }}</label>
+                {{ form.toerana_birao }}
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="fw-bold">Observations / Motifs</label>
+            {{ form.observation }}
+        </div>
+
+        <div class="mb-4">
+            <label class="fw-bold">{{ form.piece_jointe.label }}</label>
+            {{ form.piece_jointe }}
+            {% if form.instance.piece_jointe %}
+                <p class="mt-2 small">Fichier : <a href="{{ form.instance.piece_jointe.url }}" target="_blank">Voir le document</a></p>
+            {% endif %}
+        </div>
+
+        <div class="text-end">
+            <a href="{% url 'pac:opj' %}" class="btn btn-secondary btn-lg me-2">Annuler</a>
+            <button type="submit" class="btn btn-primary btn-lg btn-envoyer">
+                <i class="bi bi-send-fill"></i> Enregistrer
+            </button>
+        </div>
+    </form>
+</div>

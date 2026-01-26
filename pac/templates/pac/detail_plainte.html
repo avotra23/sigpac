@@ -50,7 +50,7 @@
                         {% if plainte_detail.statut == 'ATTENTE' %}<span class="badge rounded-pill bg-warning text-dark px-3">En attente de validation</span>
                         {% elif plainte_detail.statut == 'COURS' %}<span class="badge rounded-pill bg-info text-white px-3">Traitement en cours</span>
                         {% elif plainte_detail.statut == 'TRAITEE' %}<span class="badge rounded-pill bg-success px-3">Dossier Clôturé</span>
-                        {% elif plainte_detail.statut == 'CSS' %}<span class="badge rounded-pill bg-danger px-3">Dossier Classe sans suite</span> <a href="{% url 'pac:procureur' %}?mode=RA&detail_id={{ plainte_detail.pk }}" class="btn btn-sm btn-outline-warning" title="RA"> Retraiter </a>
+                        {% elif plainte_detail.statut == 'CSS' %}<span class="badge rounded-pill bg-danger px-3">Dossier Classe sans suite</span> 
                         {% endif %}
                     </div>
                 </div>

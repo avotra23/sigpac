@@ -9,26 +9,7 @@
 
 <div class="main-container d-flex"> 
 
-    <div class="sidebar">
-        <div class="sidebar-top">
-            <div class="sidebar-logo text-center mb-5">
-                <div class="logo-circle">
-                    <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
-                </div>
-                <small>Pôles Anti-Corruption</small>
-            </div>
-            <div class="menu-item {% if menu_active == 'arrive' %}active{% endif %}"> 
-                <a href="">Plainte en ligne</a>
-            </div>
-            <div class="menu-item "><a href="#">Tribunal traitant</a></div>
-            <div class="menu-item"><a href="#">Statistique</a></div>
-        </div>
-
-        <div class="sidebar-bottom">
-            <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
-            <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
-        </div>
-    </div>
+    {% include "sidebar.html"%}
 
     <div class="main-content flex-grow-1">
 
@@ -49,104 +30,127 @@
                     </div>
                 {% endfor %}
             {% endif %}
-                
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2>Plainte en ligne</h2>
-                    
-                </div>
+                        <h2>{{titre_menu}}</h2>
+                    </div>
+                {% if menu_active == "arrive"%}
+                    <div class="table-responsive mt-3">
+                        {% if po %}
+                            
+                        {# --- BLOC D'AFFICHAGE DES DÉTAILS (NON TABULAIRE) --- #}
+                            {% if plainte_detail %}
+                                {% include "pac/detail_plainte.html" %}
+                            {% endif %}
+                        {# --- FIN DU BLOC D'AFFICHAGE DES DÉTAILS --- #}
+                            <div class="table-responsive">
 
-                <div class="table-responsive mt-3">
-                    {% if po %}
-                        
-                    {# --- BLOC D'AFFICHAGE DES DÉTAILS (NON TABULAIRE) --- #}
-                        {% if plainte_detail %}
-                            {% include "pac/detail_plainte.html" %}
-                        {% endif %}
-                    {# --- FIN DU BLOC D'AFFICHAGE DES DÉTAILS --- #}
-                        <div class="table-responsive">
-
-                            <table class="table table-striped table-hover" id="registre-plainte">
-                                <thead class="table-dark">
-                                    <tr>
-                                        
-                                        <th>N° Chrono TKK</th>
-                                        <th>Date</th>
-                                       
-                                        <th>Auteur présumé</th>
-                                        <th>Nature</th>
-                                        <th>Statut</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for p in po %}
-                                    <tr>
-    
-                                        <td class="fw-bold">{{ p.n_chrono_tkk }}</td>
-                                        <td>{{ p.date_plainte|date:"d/m/Y" }}</td>
-                                        
-                                        <td>{{ p.ilay_olona_kolikoly|truncatechars:50 }}</td>
-                                        <td>{{ p.tranga_kolikoly|truncatechars:50}}</td>
-                                        <td>
-                                            {% if p.statut == 'ATTENTE' %}
-                                                <span class="badge bg-warning text-dark">{{ p.get_statut_display }}</span>
-                                            {% elif p.statut == 'COURS' %}
-                                                <span class="badge bg-info text-dark">{{ p.get_statut_display }}</span>
-                                            {% elif p.statut == 'DISPATCHE' %}
-                                                <span class="badge bg-primary text-dark">{{ p.get_statut_display }}</span>
-                                            {% elif p.statut == 'TRAITEE' %}
-                                                <span class="badge bg-success">{{ p.get_statut_display }}</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="{% url 'pac:dcn' %}?mode=list&detail_id={{ p.pk }}" class="btn btn-sm btn-info me-1" title="Voir les détails">
-                                   <i class="bi bi-eye-fill"></i>
-                                            </a>
-                                            {% if p.statut != 'ATTENTE' %}
-
-                                            {% else %}
-                                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#dispatch-{{ p.pk }}" title="dispatch"> DISPATCH </button>
+                                <table class="table table-striped table-hover" id="registre-plainte">
+                                    <thead class="table-dark">
+                                        <tr>
                                             
-                                            <div class="modal fade" id="dispatch-{{ p.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title" id="confirmDeleteModalLabel">Dispatcher le plaite {{ p.n_chrono_tkk }} </h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <form method="POST" action="{% url 'pac:dcn' %}?mode=dispatch" style="display:inline;">
-                                                                {% csrf_token %}
-                                                                <input type="hidden" name="idplainte" value="{{p.pk}}">
-                                                                <select name="pac" id="" class="form-control">
-                                                                    <option value="ANTANANARIVO">PAC ANTANANARIVO</option>
-                                                                    <option value="FIANARANTSOA">PAC FIANARANTSOA</option>
-                                                                    <option value="MAHAJANGA">PAC MAHAJANGA</option>
-                                                                </select>
-                                                                <br>
-                                                                <div style="margin-left: 40%;">
-                                                                    <button type="submit" class="btn btn-danger">Valider</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                            
-                                                        </div>
-                                                    </div>
-                                            </div>
-                                            {% endif %}
-                                        
+                                            <th>N° Chrono TKK</th>
+                                            <th>Date</th>
+                                            <th>Auteur présumé</th>
+                                            <th>Nature</th>
+                                            <th>Statut</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in po %}
+                                        <tr>
+        
+                                            <td class="fw-bold">{{ p.n_chrono_tkk }}</td>
+                                            <td>{{ p.date_plainte|date:"d/m/Y" }}</td>
+                                            
+                                            <td>{{ p.ilay_olona_kolikoly|truncatechars:50 }}</td>
+                                            <td>{{ p.tranga_kolikoly|truncatechars:50}}</td>
+                                            <td>
+                                                {% if p.statut == 'ATTENTE' %}
+                                                    <span class="badge bg-warning text-dark">{{ p.get_statut_display }}</span>
+                                                {% elif p.statut == 'COURS' %}
+                                                    <span class="badge bg-info text-dark">{{ p.get_statut_display }}</span>
+                                                {% elif p.statut == 'DISPATCHE' %}
+                                                    <span class="badge bg-primary text-dark">{{ p.get_statut_display }}</span>
+                                                {% elif p.statut == 'TRAITEE' %}
+                                                    <span class="badge bg-success">{{ p.get_statut_display }}</span>
+                                                {% endif %}
                                             </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                         <div class="alert alert-info">Aucun plainte n'a été trouvé.</div>
-                    {% endif %}
-                </div>
+                                            <td>
+                                                <a href="{% url 'pac:dcn' %}?mode=list&detail_id={{ p.pk }}" class="btn btn-sm btn-info me-1" title="Voir les détails">
+                                    <i class="bi bi-eye-fill"></i>
+                                                </a>
+                                                {% if p.statut != 'ATTENTE' %}
+
+                                                {% else %}
+                                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#dispatch-{{ p.pk }}" title="dispatch"> DISPATCH </button>
+                                                
+                                                <div class="modal fade" id="dispatch-{{ p.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="confirmDeleteModalLabel">Dispatcher le plaite {{ p.n_chrono_tkk }} </h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form method="POST" action="{% url 'pac:dcn' %}?mode=dispatch" style="display:inline;">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="idplainte" value="{{p.pk}}">
+                                                                    <select name="pac" id="" class="form-control">
+                                                                        <option value="ANTANANARIVO">PAC ANTANANARIVO</option>
+                                                                        <option value="FIANARANTSOA">PAC FIANARANTSOA</option>
+                                                                        <option value="MAHAJANGA">PAC MAHAJANGA</option>
+                                                                    </select>
+                                                                    <br>
+                                                                    <div style="margin-left: 40%;">
+                                                                        <button type="submit" class="btn btn-danger">Valider</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                                
+                                                            </div>
+                                                        </div>
+                                                </div>
+                                                {% endif %}
+                                            
+                                                </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">Aucun plainte n'a été trouvé.</div>
+                        {% endif %}
+                    </div>
+                {% elif menu_active == "trib" %}
+                    <div class="table-responsive mt-3">
+                                <table class="table table-striped table-hover" id="registre-plainte">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Tribunal</th>
+                                            <th>Nb entree</th>
+                                            <th>Nb Sortie</th>
+                                       
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr> 
+                                            <th>1</th>
+                                            <th>2</th>
+                                            <th>3</th>
+                                       
+                                            <th>Action</th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        
+                    </div>
+                {% endif %}
 
             
 

@@ -14,7 +14,6 @@ from django.utils import timezone
 import qrcode
 from io import BytesIO
 from utilisateur.models import *
-from django.http import JsonResponse
 # ----API MODULE  + Ajout de serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -34,7 +33,7 @@ def accueil(request):
     elif is_procureur(user):
         return redirect('pac:acc_procureur')
     elif is_greffier(user):
-        return redirect('pac:greffier')
+        return redirect('pac:acc_greffier')
     elif is_public(user):
         return redirect('pac:public')
     elif is_dcn(user):
@@ -344,52 +343,6 @@ def acc_dcn(request):
         context["titre_menu"] = "Les tribunals traitant"
     return render(request, "pac/acc_dcn.html",context)
 
-
-# API DCN 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def api_dcn_plaintes(request):
-    # Vérification du rôle (équivalent à user_passes_test)
-    if not is_dcn(request.user):
-        return Response({"detail": "Accès non autorisé pour ce rôle."}, status=403)
-
-    # --- LOGIQUE DE DISPATCHING (POST) ---
-    if request.method == 'POST':
-        mode = request.data.get('mode') # On peut passer le mode dans le body
-        
-        if mode == 'dispatch':
-            plainte_id = request.data.get('idplainte')
-            pac_destination = request.data.get('pac')
-            
-            plainte = get_object_or_404(Plainte, pk=plainte_id)
-            plainte.statut = "DISPATCHE"
-            plainte.pac_affecte = pac_destination
-            plainte.save(update_fields=['statut', 'pac_affecte'])
-            
-            return Response({"detail": "Plainte dispatchée avec succès"}, status=200)
-        
-        return Response({"detail": "Action non reconnue"}, status=400)
-
-    # --- LOGIQUE DE CONSULTATION (GET) ---
-    mode = request.GET.get('mode', 'list')
-    detail_id = request.GET.get('detail_id')
-    response_data = {
-        "groups": "dcn",
-        "menu_active": "arrive" if mode != 'trib' else "trib",
-        "titre_menu": "Plainte en ligne" if mode != 'trib' else "Les tribunaux traitants"
-    }
-
-    if mode == 'list':
-        plaintes = Plainte.objects.all().order_by('-id')
-        response_data['plaintes'] = PlainteSerializer(plaintes, many=True).data
-        
-        # Si un ID spécifique est demandé dans la liste
-        if detail_id:
-            plainte_detail = Plainte.objects.filter(pk=detail_id).first()
-            if plainte_detail:
-                response_data['plainte_detail'] = PlainteSerializer(plainte_detail).data
-
-    return Response(response_data)
 #------------------------------------FIN-DCN-------------------------------
 
 #------------------------------------PROCUREUR-------------------------------
@@ -397,110 +350,88 @@ def api_dcn_plaintes(request):
 @login_required
 @user_passes_test(is_procureur, login_url='pac:accueil')
 def acc_procureur(request):
-    mode = request.GET.get('mode', 'default')
-    detail_id = request.GET.get('detail_id')
+    mode = request.GET.get('mode')
+    plainte_id = request.GET.get('detail_id')
     procureur_region = request.user.localite.nom_loc
     
+    # Initialisation du contexte de base
     context = {
         "user": request.user,
         "back_url": reverse('pac:procureur'),
         "groups": "procureur",
     }
 
-    # --- 1. LOGIQUE DE TRAITEMENT (POST) ---
-    if request.method == "POST":
-        obj_id = request.POST.get("idplainte")
-        observations = request.POST.get("observation")
-        action = request.POST.get("mode") # 'ra' (pour RA ou Retraiter) ou 'css'
-        target_model = request.POST.get("target_model")
-
-        # Sélection du modèle source (Plainte ou OPJ)
-        ModelClass = OPJ if target_model == "OPJ" else Plainte
-        obj = get_object_or_404(ModelClass, pk=obj_id)
-
-        with transaction.atomic():
-            # On stocke l'ancien statut pour savoir si c'est un retraitement
-            ancien_statut = obj.statut 
-
-            if action == "css":
-                obj.statut = "CSS"
-                messages.warning(request, f"Dossier {obj_id} classé sans suite.")
-            else:
-                # Action 'ra' (Nouveau ou Retraiter)
-                obj.statut = "COURS"
-                ref = obj.n_chrono_opj if target_model == "OPJ" else obj.n_chrono_tkk
-                
-                # Définition de la source pour le greffe
-                if ancien_statut == "CSS":
-                    source_label = f"RETRAITEMENT (Ex-CSS) - N° {ref}"
-                else:
-                    source_label = f"Source {target_model} N° {ref}"
-
-                # Création du RegistreArrive
-                RegistreArrive.objects.create(
-                    plainte_origine=obj if target_model != "OPJ" else None,
-                    n_chrono_opj=obj.n_chrono_opj if target_model == "OPJ" else None,
-                    nbe_dossier=obj.n_chrono_tkk if target_model != "OPJ" else None,
-                    date_correspondance=timezone.now().date(),
-                    nature='opj' if target_model == "OPJ" else 'plainte',
-                    expediteur=source_label,  # Utilisation du label dynamique
-                    objet_demande=getattr(obj, 'tranga_kolikoly', 'Dossier transmis'),
-                    observation=observations,
-                    statut_traitement="COURS",
-                    utilisateur_creation=request.user 
-                )
-                messages.success(request, f"Dossier {ref} renvoyé au greffe pour retraitement.")
-
-            obj.observation = observations
-            obj.save()
-        return redirect(f"{request.path}?mode={mode}")
-
-    # --- 2. LOGIQUE DE NAVIGATION (GET) ---
-    
-    # Configuration des filtres selon le mode
+    # --- LOGIQUE DE NAVIGATION (GET) ---
     if mode == 'ListeOPJ':
         context.update({
-            "titre_menu": "Plaintes OPJ",
+            "titre_menu": "Plainte OPJ",
             "menu_active": "OPJ",
             "val": "DISPATCHE",
             "po": OPJ.objects.filter(pac_affecte=procureur_region, statut="DISPATCHE")
         })
     elif mode == 'ListeCSS':
         context.update({
-            "titre_menu": "Dossiers Classés Sans Suite (CSS)",
+            "titre_menu": "CSS",
             "menu_active": "CSS",
             "val": "CSS",
             "po": Plainte.objects.filter(pac_affecte=procureur_region, statut="CSS")
         })
     elif mode == 'ListeRA':
         context.update({
-            "titre_menu": "Dossiers au Registre d'Arrivée (Greffe)",
+            "titre_menu": "Dossier transmis au greffier",
             "menu_active": "RA",
-            "is_ra": True,
-            "po": RegistreArrive.objects.filter(
-                utilisateur_creation__localite=request.user.localite, 
-                statut_traitement="COURS"
-            ).order_by('-date_arrivee')
+            "val": "COURS",
+            "po": Plainte.objects.filter(pac_affecte=procureur_region, statut="COURS")
         })
-    else: # Mode par défaut : Plaintes TKK arrivantes
+    else:  # Mode par défaut (Arrivée / Dispatche)
         context.update({
-            "titre_menu": "Plaintes en ligne",
+            "titre_menu": "Plainte en ligne",
             "menu_active": "arrive",
             "val": "DISPATCHE",
             "po": Plainte.objects.filter(pac_affecte=procureur_region, statut="DISPATCHE")
         })
 
-    # --- 3. GESTION DES DÉTAILS ---
-    if detail_id:
-        if mode == 'ListeRA':
-            reg = get_object_or_404(RegistreArrive, pk=detail_id)
-            # Priorité à plainte_origine, sinon on cherche l'info OPJ
-            context['plainte_detail'] = reg.plainte_origine
-        elif mode == 'ListeOPJ':
-            context['opj_detail'] = get_object_or_404(OPJ, pk=detail_id)
+    # Gestion des détails selon le modèle actif
+    if plainte_id:
+        if context.get("menu_active") == "OPJ":
+            context['opj_detail'] = get_object_or_404(OPJ, pk=plainte_id)
         else:
-            context['plainte_detail'] = get_object_or_404(Plainte, pk=detail_id)
+            context['plainte_detail'] = get_object_or_404(Plainte, pk=plainte_id)
 
+    # --- LOGIQUE DE TRAITEMENT (POST) ---
+    if request.method == "POST":
+        obj_id = request.POST.get("idplainte")
+        observations = request.POST.get("observation")
+        action = request.POST.get("mode")  # 'css' ou 'ra'
+        target_model = request.POST.get("target_model")
+
+        # Sélection dynamique du modèle
+        ModelClass = OPJ if target_model == "OPJ" else Plainte
+        obj = get_object_or_404(ModelClass, pk=obj_id)
+
+        if action == "css":
+            obj.statut = "CSS"
+        else:
+            obj.statut = "COURS"
+            # Préparation des données pour le RegistreArrive
+            ref = obj.n_chrono_opj if target_model == "OPJ" else obj.n_chrono_tkk
+            nature_label = "Plainte OPJ" if target_model == "OPJ" else "Plainte en ligne"
+            
+            RegistreArrive.objects.create(
+                date_correspondance=obj.date_plainte,
+                nature='plainte', 
+                expediteur=f"{nature_label} N° {ref} - Plaignant : {obj.ny_mpitory}",
+                objet_demande=obj.tranga_kolikoly, 
+                observation=observations,
+                statut_traitement="COURS", 
+                nbe_dossier=ref,
+                utilisateur_creation=request.user 
+            )
+
+        obj.observation = observations
+        obj.save(update_fields=['statut', 'observation'])
+        messages.success(request, "Le dossier a été mis à jour avec succès.")
+        
     return render(request, "pac/acc_proc.html", context)
 #------------------------------------FIN PROCUREUR-----------------------------
 
@@ -508,121 +439,59 @@ def acc_procureur(request):
 @login_required
 @user_passes_test(is_greffier, login_url='accueil') 
 def acc_greffier(request):
-    mode = request.GET.get('mode')
     reg_type = request.GET.get('type')
-    detail_id = request.GET.get('detail_id')
+    mode = request.GET.get('mode')
     validation_id = request.GET.get('valider_id')
-    
-    # Paramètres pour le switch
-    ra_id = request.GET.get('ra_id')
-    target_type = request.GET.get('target_type')
-
     context = {
         'user': request.user,
-        'groups': "greffier",
-        'mode': mode,
-        'date_arrivee_systeme': timezone.now().strftime("%Y-%m-%d"),
+        'groups':"greffier",
+        'mode':mode
     }
+    if not reg_type or reg_type == "pre-arrive" :
+        context['registres'] = RegistreArrive.objects.filter(
+                utilisateur_creation__localite=request.user.localite,n_enr_arrive__isnull=True
+            ).order_by('-date_arrivee')
+    elif reg_type == "arrive" :
+        context['registres'] = RegistreArrive.objects.filter(
+                utilisateur_creation__localite=request.user.localite,n_enr_arrive__isnull=False    
+            ).order_by('-date_arrivee')
+        context['titre'] = "Registre arrivee"
+    if mode == 'form' or request.method == 'POST': # Affiche le formulaire (y compris en cas d'erreur POST)
 
-    # --- LOGIQUE DE SAUVEGARDE ST (POST) ---
-    if request.method == 'POST' and mode == 'save_st':
         try:
-            with transaction.atomic():
-                ra_id_post = request.POST.get('ra_id')
-                ra_source = get_object_or_404(RegistreArrive, pk=ra_id_post)
-
-                # Sécurité : vérifier si un ST n'existe pas déjà pour ce RA
-                if hasattr(ra_source, 'st_detail'):
-                    return JsonResponse({'status': 'error', 'message': 'Ce dossier est déjà au ST'}, status=400)
-
-                # Note: Le n_chrono est géré par la méthode save() de votre modèle,
-                # donc on laisse Django s'en occuper automatiquement à la création.
-                RegistreST.objects.create(
-                    registre_arrive=ra_source,
-                    date_st=request.POST.get('date_st'),
-                    objet=request.POST.get('objet'),
-                    destinataire=request.POST.get('destinataire'),
-                    observation=request.POST.get('observation'),
-                    rappel=request.POST.get('rappel'),
-                    resultat=request.POST.get('resultat'),
-                    utilisateur_creation=request.user
-                )
-                
-                return JsonResponse({'status': 'success', 'message': 'Dossier enregistré au ST avec succès'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
-    # --- LOGIQUE DE REDIRECTION VERS FORMULAIRE ST (SWITCH) ---
-    if mode == 'dispatch' and ra_id:
-        ra_source = get_object_or_404(RegistreArrive, pk=ra_id)
-        if target_type == 'ST':
-            context.update({
-                'mode': 'form_st',
-                'ra_source': ra_source,
-                'titre': "Transfert vers Service Technique",  
-            })
-            return render(request, 'pac/acc_greffier.html', context)
-
-    # --- LOGIQUE DÉTAIL (VERSION INTÉGRÉE RA + ST) ---
-    if detail_id:
-        if reg_type == 'st':
-            # Si on vient du tableau ST, on récupère l'objet ST et son parent RA
-            context['reg_detail'] = get_object_or_404(
-                RegistreST.objects.select_related('registre_arrive', 'utilisateur_creation'), 
-                pk=detail_id
-            )
-            context['is_st'] = True
-        else:
-            # Si on vient du tableau RA, on récupère l'objet RA et son potentiel enfant ST
-            context['reg_detail'] = get_object_or_404(
-                RegistreArrive.objects.select_related('st_detail', 'utilisateur_creation'), 
-                pk=detail_id
-            )
-            context['is_st'] = False
-        
-        context['mode'] = 'detail'
-
-    # --- LOGIQUE VALIDATION (NUMÉROTATION) ---
+            last_enr_id = RegistreArrive.objects.aggregate(Max('id'))['id__max']
+            next_enr = str((last_enr_id or 0) + 1).zfill(4)
+        except Exception:
+            next_enr = "0001" # Cas où la table est vide
+        form = RegistreArriveForm()
+        context['form'] = form # Soit l'instance vide (GET), soit l'instance avec les erreurs (POST)
+        context['date_arrivee_systeme'] = timezone.now().strftime("%Y-%m-%d") 
+        context['n_enr_provisoire'] = next_enr
+        form = RegistreArriveForm(request.POST)
+        if form.is_valid():
+            registre = form.save(commit=False)
+            registre.utilisateur_creation = request.user # On lie l'utilisateur actuel
+            # Optionnel : générer ici le numéro d'enregistrement provisoire si nécessaire
+            registre.save()
+            messages.success(request, "Le nouveau registre a été enregistré avec succès.")
+            return redirect('pac:greffier')
     if validation_id:
-        registre = get_object_or_404(RegistreArrive, pk=validation_id, utilisateur_creation__localite=request.user.localite)
-        n_ra = registre.attribuer_ra()
-        messages.success(request, f"Validé avec le N° : {n_ra}")
-        return redirect('pac:greffier')
-
-    # --- LOGIQUE CRÉATION NOUVEAU RA (POST & FORM) ---
-    if mode == 'form' or (request.method == 'POST' and not mode == 'save_st'):
-        if request.method == 'POST':
-            form = RegistreArriveForm(request.POST)
-            if form.is_valid():
-                registre = form.save(commit=False)
-                registre.utilisateur_creation = request.user
-                registre.save()
-                messages.success(request, "Nouveau registre enregistré.")
-                return redirect('pac:greffier')
-        else:
-            form = RegistreArriveForm()
-            last_id = RegistreArrive.objects.aggregate(Max('id'))['id__max'] or 0
-            context['n_enr_provisoire'] = str(last_id + 1).zfill(4)
+        try:
+            registre = RegistreArrive.objects.get(pk=validation_id, 
+                                                    utilisateur_creation__localite=request.user.localite,
+                                                    est_valide=False) # Assurez-vous qu'il n'est pas déjà validé
+                
+            n_ra = registre.attribuer_ra() # Appelle la méthode du modèle
+            messages.success(request, f"Registre Arrivé validé et numéroté : **{n_ra}**.")
+                
+        except RegistreArrive.DoesNotExist:
+            messages.error(request, "Le registre à valider n'existe pas ou est déjà validé.")
         
-        context['form'] = form
 
-    # --- FILTRAGE LISTE & PERFORMANCE ---
-    # On utilise select_related('st_detail') pour savoir si le bouton switch doit être affiché ou non
-    queryset = RegistreArrive.objects.filter(
-        utilisateur_creation__localite=request.user.localite
-    ).select_related('st_detail', 'utilisateur_creation')
-
-    if reg_type == "arrive":
-        context['registres'] = queryset.filter(n_enr_arrive__isnull=False).order_by('-date_arrivee')
-        context['titre'] = "Registre Arrivée"
-    elif reg_type == "st":
-        # Liste spécifique pour le tableau technique
-        context['registres'] = RegistreST.objects.filter(
-            utilisateur_creation__localite=request.user.localite
-        ).select_related('registre_arrive').order_by('-date_st')
-        context['titre'] = "Registre du Service Technique (ST)"
-    else:
-        context['registres'] = queryset.filter(n_enr_arrive__isnull=True).order_by('-date_arrivee')
-        context['titre'] = "Pre-RA"
+            # Redirige toujours vers la liste
+        return redirect('pac:greffier')  
+        
+        
+    
 
     return render(request, 'pac/acc_greffier.html', context)

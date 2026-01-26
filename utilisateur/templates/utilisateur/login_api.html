@@ -4,28 +4,23 @@
 {% block content %}
 
 
-
 <div class="wrapper">
     <div class="card-floating">
-
-        <!-- Left side -->
         <div class="left-section">
             <div class="logo-circle">
-                <img src="{%static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                <img src="{% static 'image/logo-pac.png' %}" alt="logo-pac" class="logo-img">
             </div>
             <div class="subtitle">Pôles Anti-Corruption</div>
         </div>
 
-        <!-- Right side (form) -->
         <div class="right-section">
-
             <h2>Se connecter</h2>
 
-            <form id="loginForm">
+            <form id="loginForm" method="POST">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label">Email</label>
-                    <input  type="email" class="form-control" placeholder="exemple@mail.com" name="email">
+                    <input type="email" class="form-control" placeholder="exemple@mail.com" name="email">
                 </div>
 
                 <div class="mb-2">
@@ -47,14 +42,36 @@
                 </button>
             </form>
 
-            <div class="signup-btn">
-                Vous n'avez pas encore de compte ? <a href="{%url 'utilisateur:inscriptionpub'%}">Inscrivez-vous ici</a>
+            <div class="signup-btn mt-3">
+                Vous n'avez pas encore de compte ? 
+                <a href="#" data-bs-toggle="modal" data-bs-target="#choix" style="text-decoration: none; font-weight: bold;">
+                    Inscrivez-vous ici
+                </a>
             </div>
+        </div>
+    </div>
+</div>
 
+<div class="modal fade" id="choix" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Type d'inscription</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex flex-column gap-3">
+                <a href="{% url 'utilisateur:inscriptionpub' %}" class="btn btn-outline-success w-100 py-2">
+                    <i class="bi bi-person"></i> PUBLIC
+                </a>
+                <a href="{% url 'utilisateur:inscription_opj' %}" class="btn btn-outline-primary w-100 py-2">
+                    <i class="bi bi-shield-lock"></i> OPJ
+                </a>
+            </div>
         </div>
     </div>
 </div>
 <div id="error-message" class="text-danger mt-2" style="display:none;"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const toggleBtn = document.querySelector('.btn-toggle-password');
     const password = document.querySelector('#password');
@@ -70,49 +87,49 @@
 </script>
 <script>
     document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        const email = this.querySelector('[name="email"]').value;
-        const password = this.querySelector('[name="password"]').value;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? 
-                          document.querySelector('[name=csrfmiddlewaretoken]').value : "";
+    const email = this.querySelector('[name="email"]').value;
+    const password = this.querySelector('[name="password"]').value;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? 
+                      document.querySelector('[name=csrfmiddlewaretoken]').value : "";
 
-        console.log("Données prêtes :", { email, password });
-
-        fetch("{% url 'utilisateur:api_login' %}", {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
+    fetch("{% url 'utilisateur:api_login' %}", {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password
         })
-        .then(response => {
-            console.log("Réponse reçue, statut :", response.status);
-            return response.json();
-        })
-        .then(result => {
-            console.log("Résultat JSON :", result);
-            if (result.role === 'public') {
-                window.location.href = "{% url 'pac:public' %}";
-            }else if(result.role ==='dcn'){
-                window.location.href = "{% url 'pac:dcn' %}";
-            }else if(result.role ==='procureur'){
-                window.location.href = "{% url 'pac:procureur' %}";
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.role === 'public') {
+            window.location.href = "{% url 'pac:public' %}";
+        } else if (result.role === 'opj') {
+            window.location.href = "{% url 'pac:opj' %}"; // Vérifiez le nom de l'URL (opj_list ?)
+        } else if (result.role === 'dcn') {
+            window.location.href = "{% url 'pac:dcn' %}";
+        } else if (result.role === 'procureur') {
+            window.location.href = "{% url 'pac:procureur' %}";
+        } else if (result.role === 'greffier') {
+            window.location.href = "{% url 'pac:greffier' %}";
+        } else {
+            // Optionnel : gérer l'erreur de login (ex: mauvais mdp)
+            if (result.detail) {
+                alert(result.detail);
+            } else {
+                alert("Erreur de connexion");
             }
-             else {
-                alert("Connecté !");
-            }
-        })
-        .catch(error => {
-            console.error("ERREUR CRITIQUE FETCH :");
-            console.log(error.message);
-            console.dir(error);
-        });
+        }
+    })
+    .catch(error => {
+        console.error("Erreur de connexion:", error);
     });
+});
 </script>
 {% endblock content %}

@@ -33,6 +33,9 @@ urlpatterns = [
     path('anonyme/',anonyme,name="anonyme"),
     #--Plainte suivie
     path('acc_pub/',public,name="public"),
+    #--Plainte opj
+    path('acc_opj/',opj_list_view,name="opj"),
+
     #--Suppression plainte
     path('supprimer_plainte/<int:plainte_id>/', supprimer_plainte, name="supprimer_plainte"),
     #--Detail plainte
@@ -41,13 +44,18 @@ urlpatterns = [
     path('api/public/plaintes/', api_public_plaintes, name='api_public_plaintes'), 
     path('api/public/plaintes/<int:plainte_id>/', api_public_plaintes, name='api_public_delete'),
     path('api/plaintes/anonyme/', plainte_anonyme_api, name='api_plainte_anonyme'),
-
+    # Route pour l'API (utilisée par AJAX)
+    path('api/opj/',api_opj_views, name='api_opj_views'),
+    path('api/opj/<int:pk>/',api_opj_views, name='api_opj_delete'),
 
     #DCN
     path('acc_dcn/',acc_dcn,name="dcn"),
-    
+    path('api/dcn/plaintes/', api_dcn_plaintes, name='api_dcn_plaintes'),
     #procureur
     path('acc_proc/',acc_procureur,name="procureur"),
+
+    #greffier
+    path('acc_gre/',acc_greffier, name="greffier"),
 
 ]
 if settings.DEBUG:

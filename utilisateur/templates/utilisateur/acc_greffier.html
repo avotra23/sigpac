@@ -17,7 +17,7 @@
                     <small>Pôles Anti-Corruption</small>
                 </div>
                 <div class="menu-item {% if menu_active == 'arrive' %}active{% endif %}"> 
-                    <a href="{% url 'simple' %}">Registre Arriver</a>
+                    <a href="{% url 'greffier' %}">Registre Arriver</a>
                 </div>
                 <div class="menu-item "><a href="#">Registre ST</a></div>
                 <div class="menu-item"><a href="#">Registre CSCA</a></div>
@@ -26,10 +26,7 @@
                 <div class="menu-item"><a href="#">Registre d’Appel</a></div>
             </div>
 
-            <div class="sidebar-bottom">
-                <a href="{% url 'logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
-                <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
-            </div>
+            
         </div>
 
         <div class="main-content flex-grow-1">

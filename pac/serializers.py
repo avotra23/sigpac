@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import Group
-from utilisateur.models import Plainte, Localite 
+from utilisateur.models import Plainte, Localite, OPJ
 
 
 
@@ -41,4 +41,25 @@ class PlainteCreationSerializer(serializers.ModelSerializer):
             )
         return value
     def validate_date_plainte(self, value):
+        return value
+
+class OPJSerializer(serializers.ModelSerializer):
+    """Serializer pour l'affichage des données (Lecture)"""
+    utilisateur_creation_nom = serializers.ReadOnlyField(source='utilisateur_creation.nom')
+
+    class Meta:
+        model = OPJ
+        fields = '__all__'
+
+class OPJCreationSerializer(serializers.ModelSerializer):
+    """Serializer pour la création et la modification (Écriture)"""
+    class Meta:
+        model = OPJ
+        # On exclut les champs gérés automatiquement ou par la vue
+        exclude = ['utilisateur_creation', 'utilisateur_modification', 'n_chrono_opj']
+
+    def validate_piece_jointe(self, value):
+        # Optionnel : Ajouter une validation sur la taille du fichier (ex: 5Mo)
+        if value and value.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError("Le fichier ne doit pas dépasser 5 Mo.")
         return value

@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %} Inscription{% endblock title %}
 {% block content %}
-    <h2 style="text-align:center">INSCRIPTION</h2>
+    <h2 style="text-align:center">INSCRIPTION {{name}}</h2>
     <div class="card-floating mx-auto" style="max-width: 600px;">
                             <div class="right-section">
                                 <h2>{{ title }}</h2>
@@ -72,7 +72,10 @@
                                 </form>
                             </div>
                         </div>
-
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    {# --- 1. Inclusion de SweetAlert2 (à placer dans votre base.html ou ici) --- #}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById('registrationForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -83,8 +86,8 @@ document.getElementById('registrationForm').addEventListener('submit', function(
 
     const formData = new FormData(this);
     const data = Object.fromEntries(formData.entries());
-
-    fetch("{% url 'utilisateur:api_inscription' %}", {
+    const targetUrl = "{% url 'utilisateur:'|add:url %}";
+    fetch(targetUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -95,13 +98,13 @@ document.getElementById('registrationForm').addEventListener('submit', function(
     .then(async response => {
         const result = await response.json();
         if (response.ok) {
-            Swal.fire({
-        title: 'Succès !',
-        text: response.message,
-        icon: 'success',
-        timer: 3000, // Temps en millisecondes (3 secondes)
-        showConfirmButton: false, // Cache le bouton "OK"
-        toast: true // Optionnel : style plus discret (notification)
+           Swal.fire({
+            title: 'Succès !',
+            text: result.message || "Inscription réussie !", 
+            icon: 'success',
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
     }).then(() => {
         window.location.href = "{% url 'utilisateur:login' %}";
     });

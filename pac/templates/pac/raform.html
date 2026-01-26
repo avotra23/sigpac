@@ -1,0 +1,61 @@
+<form method="post" action="{% url 'pac:greffier' %}">
+                        {% csrf_token %}
+                        <div class="form-content">
+                            
+                            <h2>Nouveau Registre Arrivé</h2>
+                            <p class="text-muted"><a href="{% url 'pac:greffier' %}" class="btn btn-outline-light">← Retour à la liste</a></p>
+
+                            <div class="row mb-4 align-items-end">
+                                <div class="col-lg-5">
+                                    <label for="date_arrivee" class="form-label">Date d’arrivée</label>
+                                    <input type="date" class="form-control" id="date_arrivee" 
+                                        value="{{ date_arrivee_systeme }}" readonly>
+                                </div>
+                                <div class="col-lg-5">
+                                    <label for="n_enr_arrive" class="form-label">N° ENR Arrivé</label>
+                                    <input type="text" class="form-control" id="n_enr_arrive" 
+                                        value="{{ n_enr_provisoire }}" readonly>
+                                </div>
+                            </div>
+
+                            <fieldset class="fieldset-correspondance mb-4">
+                                <legend class="float-none w-auto px-1">CORRESPONDANCE</legend>
+                                <div class="row">
+                                    <div class="col-lg-5">
+                                        <label for="{{ form.date_correspondance.id_for_label }}" class="form-label">{{ form.date_correspondance.label }}</label>
+                                        {{ form.date_correspondance }}
+                                        {% if form.date_correspondance.errors %}<div class="text-danger small">{{ form.date_correspondance.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label for="{{ form.nature.id_for_label }}" class="form-label">{{ form.nature.label }}</label>
+                                        {{ form.nature }}
+                                        {% if form.nature.errors %}<div class="text-danger small">{{ form.nature.errors }}</div>{% endif %}
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <div class="mb-4">
+                                <label for="{{ form.expediteur.id_for_label }}" class="section-label">{{ form.expediteur.label }}</label>
+                                {{ form.expediteur }}
+                                {% if form.expediteur.errors %}<div class="text-danger small">{{ form.expediteur.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="{{ form.objet_demande.id_for_label }}" class="section-label">{{ form.objet_demande.label }}</label>
+                                {{ form.objet_demande }}
+                                {% if form.objet_demande.errors %}<div class="text-danger small">{{ form.objet_demande.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.observation.id_for_label }}" class="section-label">{{ form.observation.label }}</label>
+                                {{ form.observation }}
+                                {% if form.observation.errors %}<div class="text-danger small">{{ form.observation.errors }}</div>{% endif %}
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="{% url 'pac:greffier' %}" class="btn btn-secondary btn-annuler">Annuler</a>
+                            <button type="submit" class="btn btn-primary btn-enregistrer">Enregistrer</button>
+                        </div>
+                    </form>

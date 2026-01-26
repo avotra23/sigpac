@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Espace OPJ {% endblock title %}
+
+{% block content %}
+{% include "nav.html" %}
+
+<div class="container mt-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mt-3" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if mode == 'form' %}
+        {% include "pac/opj_form.html" %}
+    {% else %}
+        <h2 class="mt-3">👋 Espace OPJ, {{ user.nom|default:"Utilisateur" }}!</h2>
+        <hr>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>📋 Liste des dossiers OPJ</h3>
+            <a href="{% url 'pac:opj' %}?mode=form" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle-fill"></i> Hametraka dossier vaovao
+            </a>
+        </div>
+
+        {% if opj_detail %}
+           {% include "pac/detail_opj.html" %}
+        {% endif %}
+
+        {% if dossiers %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>NBE OPJ</th>
+                            <th>Date</th>
+                            <th>Auteur présumé</th>
+                            <th>Statut</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in dossiers %}
+                        <tr>
+                            <td class="fw-bold">{{ item.n_chrono_opj }}</td>
+                            <td>{{ item.date_plainte }}</td>
+                            <td>{{ item.ilay_olona_kolikoly|truncatechars:50 }}</td>
+                            <td>
+                                <span class="badge {% if item.statut == 'ATTENTE' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ item.statut }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'pac:opj' %}?mode=list&detail_id={{ item.id }}" class="btn btn-sm btn-info me-1">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                                {% if item.statut == 'ATTENTE' %}
+                                <a href="{% url 'pac:opj' %}?mode=form&opj_id={{ item.id }}" class="btn btn-sm btn-success me-1">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                               
+                               <button type="button" 
+                                        class="btn btn-sm btn-danger delete-btn" 
+                                        data-id="{{ item.id }}" 
+                                        title="Supprimer"> 
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                              
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">Aucun dossier enregistré.</div>
+        {% endif %}
+    {% endif %}
+</div>
+
+
+{% block extra_js %}
+    {# 1. Chargement des bibliothèques #}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+            document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const deleteUrl = this.getAttribute('data-url');
+                const itemId = this.getAttribute('data-id');
+                const url = `/api/opj/${itemId}/`;
+                Swal.fire({
+                    title: 'Êtes-vous sûr ?',
+                    text: "Ce dossier OPJ sera définitivement supprimé.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Oui, supprimer !',
+                    cancelButtonText: 'Annuler'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Envoi de la requête DELETE à l'API
+                        fetch(url, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken'), // Important pour Django
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                Swal.fire(
+                                    'Supprimé !',
+                                    'Le dossier a été supprimé avec succès.',
+                                    'success'
+                                ).then(() => {
+                                    location.reload(); // Recharge la page pour actualiser la liste
+                                });
+                            } else {
+                                Swal.fire('Erreur', 'Impossible de supprimer ce dossier.', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire('Erreur', 'Une erreur réseau est survenue.', 'error');
+                        });
+                    }
+                });
+            });
+        });
+
+        // Fonction utilitaire pour récupérer le token CSRF de Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    <script>
+        document.getElementById('opjForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Empêche le rechargement classique de la page
+
+    const form = this;
+    const formData = new FormData(form); // Capture texte et fichiers (enctype="multipart/form-data")
+    const url = "{% url 'pac:api_opj_views' %}";
+
+    // 1. Afficher l'alerte "Traitement en cours"
+    Swal.fire({
+        title: 'Traitement...',
+        text: 'Veuillez patienter pendant l\'enregistrement du dossier.',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // 2. Envoi des données via Fetch
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            
+        }
+    })
+    .then(response => {
+        return response.json().then(data => {
+            if (response.ok) {
+                // 3. Succès
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Succès !',
+                    text: data.detail || 'Plainte envoyée avec succès',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    // Redirection après succès (vers la liste des dossiers par exemple)
+                    window.location.href = "{% url 'pac:opj' %}";
+                });
+            } else {
+                // 4. Gestion des erreurs (ex: validation serializer)
+                let errorMsg = "Veuillez vérifier les champs du formulaire.";
+                if (typeof data === 'object') {
+                    errorMsg = Object.values(data).flat().join('\n');
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: errorMsg
+                });
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur réseau',
+            text: 'Impossible de joindre le serveur.'
+        });
+    });
+});
+    </script>
+{% endblock %}
+{% endblock content %}
+

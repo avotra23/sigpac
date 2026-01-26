@@ -1,5 +1,5 @@
 from asyncio.windows_events import NULL
-from django.db import models
+from django.db import models, transaction
 from django.db.models import  Max
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone 
@@ -117,10 +117,8 @@ class Plainte(models.Model):
         verbose_name="N° Chrono TKK"
     )
     date_plainte = models.DateField(
-        default=timezone.now().date(),
-        editable=False, 
-        verbose_name="Dates"
-    )
+    auto_now_add=True, # Définit la date automatiquement à la création
+    verbose_name="Dates")
 
     # Champs du formulaire
     ny_mpitory = models.TextField(verbose_name="Ny Mpitory (Le Plaignant)")
@@ -227,7 +225,122 @@ class Plainte(models.Model):
         if self.piece_jointe:
             return self.piece_jointe.url
         return None
+
+class OPJ(models.Model):
+    # Champs auto-générés et non modifiables
+    n_chrono_opj = models.CharField(
+        max_length=50,  
+        editable=False, 
+        verbose_name="N° Chrono TKK"
+    )
+    date_plainte = models.DateField(
+    auto_now_add=True, # Définit la date automatiquement à la création
+    verbose_name="Dates")
+
+    # Champs du formulaire
+    ny_mpitory = models.TextField(verbose_name="Ny Mpitory (Le Plaignant)")
+    tranga_kolikoly = models.TextField(verbose_name="Tranga Kolikoly (Le Fait/Acte de Corruption)")
+    ilay_olona_kolikoly = models.TextField(verbose_name="Ilay Olona Manao kolikoly (L'auteur de la corruption)")
+    toerana_birao = models.TextField(verbose_name="Toerana - Birao - Sampan-draharaha manao ilay kolikoly (Lieu - Bureau - Service de la corruption)", blank=True, null=True)
+
+    observation = models.TextField(verbose_name="Antony", blank=True, null=True)
     
+    statut = models.CharField(
+        max_length=10,
+        choices=STATUT_CHOICES,
+        default='ATTENTE',
+        verbose_name="Statut de la plainte"
+    )
+
+    def __str__(self):
+        return f"Plainte N° {self.n_chrono_opj}"
+        
+    
+    utilisateur_creation = models.ForeignKey(
+        Utilisateur, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        editable=False, 
+        related_name='opj_crees',  # Changé ici
+        verbose_name="Créé par"
+    )
+
+    utilisateur_modification = models.ForeignKey(
+        Utilisateur, 
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True, 
+        related_name='opj_modifies', # Changé ici
+        verbose_name="Dernière modification par"
+    )
+    LOCALITE_CHOICES = [
+        ('ANTANANARIVO', 'ANTANANARIVO'),
+        ('FIANARANTSOA', 'FIANARANTSOA'),
+        ('MAHAJANGA', 'MAHAJANGA'),
+    ]
+    pac_affecte = models.CharField(
+        max_length=50, 
+        choices=LOCALITE_CHOICES,
+        null=True,  # Peut être NULL tant que le DCN n'a pas dispatché
+        blank=True,
+        verbose_name="PAC Affecté"
+    )
+    # --- Fin des Champs de Traçabilité ---
+
+    piece_jointe = models.FileField(
+        upload_to=plainte_directory_path,
+        blank=True,
+        null=True,
+        verbose_name="Pièce jointe (PDF, Image...)",
+        max_length=255
+    )
+
+    class Meta:
+        verbose_name = "Plaintes OPJ"
+        verbose_name_plural = "Plaintes OPJ"
+        ordering = ['-date_plainte']
+
+    # ... (Votre méthode __str__)
+    def delete(self, *args, **kwargs):
+        """
+        Surcharge de la méthode delete() pour supprimer le fichier physique
+        lié à la pièce jointe avant de supprimer l'instance de la BD.
+        """
+        # 1. Suppression du fichier physique, si il existe
+        if self.piece_jointe:
+            # Vérifie si le fichier existe sur le disque avant de tenter de le supprimer
+            if os.path.isfile(self.piece_jointe.path):
+                self.piece_jointe.delete(save=False) # Supprime le fichier du système de fichiers
+        
+        # 2. Appel de la méthode delete() du parent pour supprimer l'entrée de la base de données
+        super().delete(*args, **kwargs)
+    # La logique de save() DOIT ÊTRE MODIFIÉE pour gérer l'utilisateur_creation
+    def save(self, *args, **kwargs):
+        is_new = not self.pk 
+
+        # Si c'est une nouvelle plainte, nous devons la sauvegarder pour obtenir l'ID
+        if is_new:
+            # 1. Sauvegarde initiale pour obtenir l'ID (pk)
+            super().save(*args, **kwargs) 
+            
+            # 2. Génération du numéro de chrono basé sur l'ID
+            year = timezone.now().year
+            sequential_part = str(self.id).zfill(8) 
+            self.n_chrono_opj = f"DPSA: {sequential_part}/{year}"
+            
+            super().save(update_fields=['n_chrono_opj', 'utilisateur_creation']) 
+            return
+            
+        # Sauvegarde normale (Mise à jour d'une instance existante)
+        super().save(*args, **kwargs)
+    
+    @property
+    def pieces_jointes_url(self):
+        if self.piece_jointe:
+            return self.piece_jointe.url
+        return None
+    
+
 # Nécessite les STATUT_CHOICES définis ci-dessus
 
 class RegistreArrive(models.Model):
@@ -250,12 +363,22 @@ class RegistreArrive(models.Model):
     )
 
     # Ce champ contiendra la valeur textuelle du n_chrono_tkk pour affichage/recherche facile
+    # nbe : numero plainte en ligne associer
     nbe_dossier = models.CharField(
         max_length=50, 
         blank=True, 
         null=True,
         verbose_name="N° Dossier (TKK)"
     )
+
+    # nnumero plainte OPJ associer si venant de OPJ
+    n_chrono_opj = models.CharField(
+        max_length=50, 
+        blank=True, 
+        null=True,
+        verbose_name="N° Chrono OPJ"
+    )
+   
     # Champs auto-générés et non modifiables
     n_enr_arrive = models.CharField(
         max_length=20, 
@@ -277,8 +400,8 @@ class RegistreArrive(models.Model):
     # Champs du formulaire
     date_correspondance = models.DateField(verbose_name="Date Correspondance")
     nature = models.CharField(max_length=50, choices=NATURE_CHOICES, verbose_name="Nature")
-    provenance = models.TextField(verbose_name="Provenance")
-    texte_correspondance = models.TextField(verbose_name="Texte de la correspondance")
+    expediteur = models.TextField(verbose_name="Expediteur",default="Non spécifié")
+    objet_demande = models.TextField(verbose_name="Objet de la demande",default="Non spécifié")
     observation = models.TextField(verbose_name="Observation", blank=True, null=True)
     
     # Champ Statut standardisé
@@ -305,12 +428,7 @@ class RegistreArrive(models.Model):
         related_name='registres_modifies', 
         verbose_name="Dernière modification par"
     )
-    n_plainte_associe = models.CharField(
-        max_length=50, 
-        blank=True, 
-        null=True,
-        verbose_name="N° Plainte Associée"
-    )
+    
     # --- Fin des Champs de Traçabilité ---
 
     class Meta:
@@ -337,3 +455,86 @@ class RegistreArrive(models.Model):
             self.save(update_fields=['n_enr_arrive', 'est_valide'])
             return self.n_enr_arrive
         return self.n_enr_arrive
+
+
+class RegistreST(models.Model):
+    # Lien unique avec le Registre Arrivé
+    registre_arrive = models.OneToOneField(
+        RegistreArrive, 
+        on_delete=models.CASCADE, 
+        related_name='st_detail',
+        verbose_name="N° RA lié"
+    )
+    
+    # Champs du formulaire
+    n_chrono = models.CharField(max_length=100, unique=True, editable=False, null=True, blank=True)
+    date_st = models.DateField(default=timezone.now, verbose_name="Date")
+    objet = models.TextField(verbose_name="Objet")
+    destinataire = models.TextField(verbose_name="Destinataire")
+    observation = models.TextField(blank=True, null=True, verbose_name="Observation")
+    rappel = models.TextField(blank=True, null=True, verbose_name="Rappel")
+    resultat = models.TextField(blank=True, null=True, verbose_name="Résultat")
+
+    # Traçabilité
+    utilisateur_creation = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, editable=False, related_name='st_crees')
+    utilisateur_modification = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, blank=True, related_name='st_modifies')
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.n_chrono:
+            with transaction.atomic():
+                current_year = timezone.now().year
+                # Récupère le dernier ID global pour garantir l'unicité
+                last_id = RegistreST.objects.aggregate(models.Max('id'))['id__max'] or 0
+                next_number = last_id + 1
+                self.n_chrono = f"ST/{current_year}/{str(next_number).zfill(4)}"
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Registre ST"
+        ordering = ['-date_creation']
+
+class RegistreCSCA(models.Model):
+    # Relation avec le Registre Arrivé
+    registre_arrive = models.OneToOneField(
+        'RegistreArrive', 
+        on_delete=models.CASCADE, 
+        related_name='csca_detail',
+        verbose_name="N° RA lié"
+    )
+    
+    # n_chrono est en editable=False pour ne pas apparaître dans les formulaires auto-générés
+    n_chrono = models.CharField(max_length=100, unique=True, editable=False, null=True, blank=True)
+    date_csca = models.DateField(default=timezone.now, verbose_name="Date")
+    demandeur = models.CharField(max_length=255, verbose_name="Demandeur")
+    entite = models.CharField(max_length=255, verbose_name="Entité")
+    objet = models.TextField(verbose_name="Objet")
+    requisitoire_mp = models.TextField(verbose_name="Réquisitoire du MP")
+    intitule = models.TextField(verbose_name="Intitulé")
+    transmission_president = models.TextField(verbose_name="Transmission Président", blank=True, null=True)
+    decision = models.TextField(verbose_name="Décision")
+    appel = models.TextField(verbose_name="Appel", blank=True, null=True)
+    resultat_appel = models.TextField(verbose_name="Résultat appel", blank=True, null=True)
+
+    # Traçabilité
+    utilisateur_creation = models.ForeignKey('Utilisateur', on_delete=models.SET_NULL, null=True, editable=False)
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.n_chrono:
+            with transaction.atomic():
+                current_year = timezone.now().year
+                # On cherche le dernier ID pour générer le numéro suivant
+                last_entry = RegistreCSCA.objects.select_for_update().order_by('-id').first()
+                last_id = last_entry.id if last_entry else 0
+                next_number = last_id + 1
+                
+                # Formatage du chrono : CSCA / ANNEE / NUMERO sur 4 chiffres
+                self.n_chrono = f"CSCA/{current_year}/{str(next_number).zfill(4)}"
+        
+        super(RegistreCSCA, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Registre CSCA"
+        ordering = ['-date_creation']

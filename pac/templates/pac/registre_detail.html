@@ -1,0 +1,178 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<div class="container-fluid px-4 py-3">
+    
+    {# --- SECTION ENTÊTE & BOUTON FERMER --- #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-folder2-open me-2 text-primary"></i>Dossier 
+                <span class="text-primary">
+                    {% if is_st %}{{ reg_detail.registre_arrive.n_enr_arrive|default:"-" }}{% else %}{{ reg_detail.n_enr_arrive|default:"-" }}{% endif %}
+                </span>
+            </h4>
+            <small class="text-muted">Visualisation détaillée des enregistrements</small>
+        </div>
+        <a href="?type={{ request.GET.type }}" class="btn btn-sm btn-light border shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+            <i class="bi bi-x-lg"></i>
+        </a>
+    </div>
+
+    {# --- CARTE 1 : DÉTAIL CORRESPONDANCE (REGISTRE ARRIVÉ) --- #}
+    <div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 15px;">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="p-2 bg-primary bg-opacity-10 rounded-3 me-3">
+                        <i class="bi bi-file-earmark-text-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark" style="letter-spacing: -0.5px;">Détails du registre de correspondance</h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary small fw-normal">Source : Registre Arrivé</span>
+                    </div>
+                </div>
+                <div class="text-end d-none d-md-block">
+                    <span class="text-muted small d-block text-uppercase">Référence Arrivée</span>
+                    <span class="badge bg-dark rounded-pill fw-bold">
+                        {% if is_st %}{{ reg_detail.registre_arrive.n_enr_arrive }}{% else %}{{ reg_detail.n_enr_arrive }}{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4 pt-0">
+            <hr class="mt-0 mb-4 opacity-25">
+            <div class="row g-4">
+                {# Colonne Infos Techniques #}
+                <div class="col-md-4 border-end border-light">
+                    <div class="mb-4">
+                        <label class="text-muted small text-uppercase fw-bold mb-2 d-block">Traçabilité</label>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light p-2 rounded-2 me-3"><i class="bi bi-calendar3 text-primary"></i></div>
+                            <div>
+                                <small class="text-muted d-block">Date Arrivée</small>
+                                <span class="fw-bold">{% if is_st %}{{ reg_detail.registre_arrive.date_arrivee|date:"d/m/Y" }}{% else %}{{ reg_detail.date_arrivee|date:"d/m/Y" }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light p-2 rounded-2 me-3"><i class="bi bi-tag-fill text-primary"></i></div>
+                            <div>
+                                <small class="text-muted d-block">Nature Document</small>
+                                <span class="badge bg-info text-dark">{% if is_st %}{{ reg_detail.registre_arrive.get_nature_display }}{% else %}{{ reg_detail.get_nature_display }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-light p-2 rounded-2 me-3"><i class="bi bi-person-badge-fill text-primary"></i></div>
+                            <div>
+                                <small class="text-muted d-block">Agent Saisisseur</small>
+                                <span class="fw-bold">
+                                    {% if is_st %}
+                                        {{ reg_detail.registre_arrive.utilisateur_creation.get_full_name|default:reg_detail.registre_arrive.utilisateur_creation.email }}
+                                    {% else %}
+                                        {{ reg_detail.utilisateur_creation.get_full_name|default:reg_detail.utilisateur_creation.email }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Colonne Contenu #}
+                <div class="col-md-8 ps-md-4">
+                    <label class="text-muted small text-uppercase fw-bold mb-2 d-block">Informations Dossier</label>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted fw-medium"><i class="bi bi-building me-2"></i>Expéditeur</div>
+                        <div class="col-sm-9 fw-bold text-dark">{% if is_st %}{{ reg_detail.registre_arrive.expediteur }}{% else %}{{ reg_detail.expediteur }}{% endif %}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-3 text-muted fw-medium"><i class="bi bi-info-circle-fill me-2"></i>Objet</div>
+                        <div class="col-sm-9">
+                            <div class="p-3 bg-light rounded-3 border-start border-3 border-primary text-dark">
+                                {% if is_st %}{{ reg_detail.registre_arrive.objet_demande }}{% else %}{{ reg_detail.objet_demande }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3 text-muted fw-medium"><i class="bi bi-chat-square-text me-2"></i>Observations</div>
+                        <div class="col-sm-9 text-muted fst-italic">
+                            {% if is_st %}
+                                {{ reg_detail.registre_arrive.observation|default:"Aucune observation enregistrée" }}
+                            {% else %}
+                                {{ reg_detail.observation|default:"Aucune observation enregistrée" }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- CARTE 2 : TRAITEMENT TECHNIQUE (SI EXISTE) --- #}
+    {% if is_st or reg_detail.st_detail %}
+    <div class="card border-0 shadow-lg animate__animated animate__fadeInUp" style="border-radius: 15px; background: linear-gradient(to bottom, #ffffff, #fffdf5);">
+        <div class="card-header border-0 py-3" style="background: linear-gradient(to right, rgba(255, 193, 7, 0.1), transparent);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="p-2 bg-warning bg-opacity-25 rounded-3 me-3 shadow-sm border border-warning border-opacity-50">
+                        <i class="bi bi-gear-wide-connected text-dark fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark" style="letter-spacing: -0.5px;">Traitement Technique</h5>
+                        <span class="badge bg-warning text-dark small fw-normal">Dossier Transféré au ST</span>
+                    </div>
+                </div>
+                <div class="bg-dark text-white px-3 py-2 rounded-3 shadow-sm d-flex flex-column text-center">
+                    <small class="opacity-75 fw-bold" style="font-size: 10px;">CHRONO</small>
+                    <span class="fw-bold">{% if is_st %}{{ reg_detail.n_chrono }}{% else %}{{ reg_detail.st_detail.n_chrono }}{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-4">
+                {# Infos ST #}
+                <div class="col-md-6 border-end border-warning border-opacity-10">
+                    <div class="p-3 bg-white border rounded-3 h-100 shadow-sm">
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1 text-uppercase fw-bold" style="font-size: 11px;">Destinataire Technique</small>
+                            <span class="fw-bold text-dark"><i class="bi bi-arrow-right-circle-fill text-warning me-2"></i>{% if is_st %}{{ reg_detail.destinataire }}{% else %}{{ reg_detail.st_detail.destinataire }}{% endif %}</span>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted d-block mb-1 text-uppercase fw-bold" style="font-size: 11px;">Objet du transfert</small>
+                            <p class="small text-dark mb-0">{% if is_st %}{{ reg_detail.objet }}{% else %}{{ reg_detail.st_detail.objet }}{% endif %}</p>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-muted">Transféré le :</span>
+                            <span class="fw-bold">{% if is_st %}{{ reg_detail.date_st|date:"d/m/Y" }}{% else %}{{ reg_detail.st_detail.date_st|date:"d/m/Y" }}{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Résultat Final #}
+                <div class="col-md-6">
+                    <div class="p-4 bg-white border border-success border-opacity-25 rounded-3 h-100 d-flex flex-column align-items-center justify-content-center text-center shadow-sm">
+                        <label class="text-muted small text-uppercase fw-bold mb-3">Statut & Résultat</label>
+                        <div class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                        </div>
+                        <h4 class="text-success fw-bold mb-2">
+                            {% if is_st %}{{ reg_detail.resultat|default:"EN COURS" }}{% else %}{{ reg_detail.st_detail.resultat|default:"EN COURS" }}{% endif %}
+                        </h4>
+                        {% if is_st and reg_detail.rappel or reg_detail.st_detail.rappel %}
+                        <div class="alert alert-danger py-1 px-3 rounded-pill d-inline-block mb-0 small" style="font-size: 12px;">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Rappel : {% if is_st %}{{ reg_detail.rappel }}{% else %}{{ reg_detail.st_detail.rappel }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .italic { font-style: italic; }
+    .fw-mono { font-family: 'Courier New', Courier, monospace; }
+</style>

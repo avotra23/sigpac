@@ -46,4 +46,6 @@ class affiche(admin.ModelAdmin):
 # Enregistrement du modèle avec la classe d'administration personnalisée
 admin.site.register(Utilisateur, affiche)
 admin.site.register(Plainte)
+admin.site.register(OPJ)
+admin.site.register(RegistreST)
 admin.site.register(RegistreArrive)

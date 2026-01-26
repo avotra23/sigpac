@@ -147,21 +147,21 @@ class RegistreArriveForm(forms.ModelForm):
         fields = [
             'date_correspondance', 
             'nature', 
-            'provenance', 
-            'texte_correspondance', 
+            'expediteur', 
+            'objet_demande', 
             'observation'
         ]
         widgets = {
             'date_correspondance': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'nature': forms.Select(attrs={'class': 'form-select'}),
-            'provenance': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'texte_correspondance': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'expediteur': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'objet_demande': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
             'date_correspondance': "Date Correspondance",
             'nature': "Nature",
-            'provenance': "Provenance",
-            'texte_correspondance': "Texte de la correspondance",
+            'expediteur': "expediteur",
+            'objet_demande': "Objet de la demande",
             'observation': "Observation",
         }
