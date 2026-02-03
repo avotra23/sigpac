@@ -68,7 +68,7 @@
             <button onclick="window.print()" class="btn btn-white border shadow-sm btn-sm px-3">
                 <i class="bi bi-printer me-2"></i>Imprimer
             </button>
-            <a href="?type={{ request.GET.type }}" class="btn btn-light border shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+            <a href="javascript:history.back()" class="btn btn-sm btn-light border shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                 <i class="bi bi-x-lg"></i>
             </a>
         </div>
@@ -106,7 +106,7 @@
                         <div class="col-md-4 mb-3">
                             <div class="info-label">Type de document</div>
                             <div>
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary border px-3">
+                                <span class="badge bg-secondary bg-opacity-10 ] border px-3" style="color:white;">
                                     {% if is_st %}{{ reg_detail.registre_arrive.get_nature_display }}{% else %}{{ reg_detail.get_nature_display }}{% endif %}
                                 </span>
                             </div>
@@ -171,19 +171,7 @@
                 
                 <div class="card-body p-4">
                     <div class="mb-4 text-center pb-3 border-bottom border-light">
-                        <div class="info-label mb-2">Statut du Traitement</div>
-                        {% with result=is_st|yesno:reg_detail.resultat,st_result=reg_detail.st_detail.resultat %}
-                            {% if result == "TERMINÉ" or st_result == "TERMINÉ" %}
-                                <div class="status-badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
-                                    <i class="bi bi-check2-circle me-1"></i> Traitement Terminé
-                                </div>
-                            {% else %}
-                                <div class="status-badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25">
-                                    <i class="bi bi-clock-history me-1"></i> En cours de traitement
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-                    </div>
+    
 
                     <div class="mb-3">
                         <div class="info-label text-warning">Destinataire</div>
