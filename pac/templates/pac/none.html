@@ -1,26 +1,84 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title%}PLAINTE{% endblock title%}
+{% block title %}Dépôt de Plainte | PAC{% endblock title %}
+
 {% block content %}
 <style>
-.centered-container {
-    /* Assure que le conteneur prend toute la hauteur de la fenêtre (verticalement) */
-    min-height: 100vh; 
-    
-    /* Si vous voulez centrer uniquement dans une partie de la page,
-       remplacez 100vh par la hauteur souhaitée (ex: 500px) */
-    width: 100%;
-}
+    .hero-section {
+        min-height: 90vh;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    .card-choice {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-top: 5px solid;
+    }
+    .card-choice:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .card-anonyme { border-color: #198754; }
+    .card-suivie { border-color: #0d6efd; }
+    .logo-main {
+        max-width: 200px;
+        margin-bottom: 2rem;
+    }
 </style>
-<div class="centered-container d-flex justify-content-center align-items-center">
-    
-    <div class="text-center">
-        <img src="{% static 'image/logo-pac.png'%}" alt="Logo PAC">
-        <div>
-            <a class="btn btn-outline-success" href="{% url 'pac:anonyme'%}"> ENVOYER UNE PLAINTE ANONYME</a>
-            <a class="btn btn-outline-primary" href="{% url 'utilisateur:login' %}"> ENVOYER UNE PLAINTE SUIVIE</a>
+
+<div class="hero-section d-flex align-items-center">
+    <div class="container">
+        <div class="text-center mb-5">
+            <img src="{% static 'image/logo-pac.png' %}" alt="Logo PAC" class="logo-main img-fluid">
+            <h1 class="display-5 fw-bold">Portail de Déposition</h1>
+            <p class="lead text-muted mx-auto" style="max-width: 700px;">
+                Votre voix compte. Choisissez la méthode de déposition qui vous convient le mieux pour nous aider à maintenir l'intégrité de nos services.
+            </p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-5">
+                <div class="card h-100 card-choice card-anonyme p-4">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-incognito fs-1 text-success"></i>
+                        </div>
+                        <h3 class="card-title fw-bold">Plainte Anonyme</h3>
+                        <p class="card-text text-muted">
+                            Votre identité restera totalement inconnue. Idéal pour signaler un incident sans laisser de trace personnelle.
+                        </p>
+                        <p class="small text-danger">
+                            <i class="bi bi-exclamation-triangle"></i> Note : Vous ne pourrez pas suivre l'avancement de votre dossier.
+                        </p>
+                        <br>
+                        <a href="{% url 'pac:anonyme' %}" class="btn btn-success w-100 mt-3">Déposer anonymement</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card h-100 card-choice card-suivie p-4">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-person-check fs-1 text-primary"></i>
+                        </div>
+                        <h3 class="card-title fw-bold">Plainte Suivie</h3>
+                        <p class="card-text text-muted">
+                            Connectez-vous pour soumettre votre plainte. Cela vous permet d'interagir avec nos services et de suivre l'état de votre dossier.
+                        </p>
+                        <p class="small text-primary">
+                            <i class="bi bi-info-circle"></i> Recommandé pour un traitement personnalisé et interactif.
+                        </p>
+                        <a href="{% url 'utilisateur:login' %}" class="btn btn-primary w-100 mt-3">Se connecter et Déposer</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <p class="text-muted small">
+                Toutes les informations soumises sont traitées de manière confidentielle conformément aux lois en vigueur.
+            </p>
         </div>
     </div>
-    
 </div>
 {% endblock content %}

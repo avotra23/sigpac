@@ -16,6 +16,31 @@
 
 <body>
     
-{%block content%}{%endblock content%}
+{%block content%}
+
+
+{%endblock content%}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. On cherche tous les inputs, textareas et selects qui ont l'attribut 'required'
+    const requiredInputs = document.querySelectorAll('input[required], textarea[required], select[required]');
+
+    requiredInputs.forEach(input => {
+        // 2. On cherche le label associé via l'attribut 'for'
+        const label = document.querySelector(`label[for="${input.id}"]`);
+        
+        if (label) {
+            // 3. On crée l'élément étoile
+            const star = document.createElement('span');
+            star.innerHTML = ' *';
+            star.style.color = 'red';
+            star.style.fontWeight = 'bold';
+            
+            // 4. On l'ajoute à la fin du texte du label
+            label.appendChild(star);
+        }
+    });
+});
+</script>
 </body>
 </html>

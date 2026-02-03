@@ -9,12 +9,28 @@ class LoginForm(forms.ModelForm):
     password=forms.CharField(label='Not de passe', widget=forms.PasswordInput)
 
 class UtilisateurCreationForm(forms.ModelForm):
-    password = forms.CharField(label='Mot de passe', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Confirmer le mot de passe', widget=forms.PasswordInput)
+    # Ajout de required=True et de l'attribut HTML dans le widget
+    password = forms.CharField(
+        label='Mot de passe', 
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'required': 'required'}),
+        required=True
+    )
+    password2 = forms.CharField(
+        label='Confirmer le mot de passe', 
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'required': 'required'}),
+        required=True
+    )
 
     class Meta:
         model = Utilisateur
-        fields = ('email','nom','prenom','telephone')
+        fields = ('email', 'nom', 'prenom', 'telephone')
+        # On force l'attribut HTML pour les champs issus du modèle
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'required': 'required'}),
+            'nom': forms.TextInput(attrs={'class': 'form-control', 'required': 'required'}),
+            'prenom': forms.TextInput(attrs={'class': 'form-control', 'required': 'required'}),
+            'telephone': forms.TextInput(attrs={'class': 'form-control', 'required': 'required'}),
+        }
     
     def clean(self):
         cleaned_data = super().clean()
@@ -36,6 +52,10 @@ class PublicInscription(UtilisateurCreationForm):
     pass
 
 class OPJCreationForm(UtilisateurCreationForm):
+    matricule = forms.CharField(max_length=20,label="Matriculation",widget=forms.TextInput(attrs={'placeholder':'000000','required':'required'}))
+    class Meta(UtilisateurCreationForm.Meta):
+        model = Utilisateur
+        fields = UtilisateurCreationForm.Meta.fields + ('matricule',)
     pass
 
 class AdminCreationForm(UtilisateurCreationForm):

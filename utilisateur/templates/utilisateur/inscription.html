@@ -1,128 +1,258 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %} Inscription{% endblock title %}
+
+{% block title %} Inscription | PAC {% endblock title %}
+
 {% block content %}
-    <h2 style="text-align:center">INSCRIPTION {{name}}</h2>
-    <div class="card-floating mx-auto" style="max-width: 600px;">
-                            <div class="right-section">
-                                <h2>{{ title }}</h2>
-                                <div id="error-messages" class="alert alert-danger d-none"></div>
-                                <form id="registrationForm">
-                                    {% csrf_token %}
-                                    
-                                    {% if form.non_field_errors %}
-                                        <div class="alert alert-danger">
-                                            {{ form.non_field_errors }}
-                                        </div>
-                                    {% endif %}
+<style>
+    :root {
+        --pac-blue: #0056b3;
+        --pac-light: #f4f7f6;
+    }
 
-                                    <div class="form-row mb-3 d-flex justify-content-between">
-                                        
-                                        <div class="form-group w-50 pe-2">
-                                            <label class="form-label" for="{{ form.nom.id_for_label }}">{{ form.nom.label }}</label>
-                                            {{ form.nom }} 
-                                            <script>document.getElementById('{{ form.nom.id_for_label }}').classList.add('form-control');</script>
-                                            {% if form.nom.errors %}<div class="text-danger small">{{ form.nom.errors }}</div>{% endif %}
-                                        </div>
-                                        
-                                        <div class="form-group w-50 ps-2">
-                                            <label class="form-label" for="{{ form.prenom.id_for_label }}">{{ form.prenom.label }}</label>
-                                            {{ form.prenom }}
-                                            <script>document.getElementById('{{ form.prenom.id_for_label }}').classList.add('form-control');</script>
-                                            {% if form.prenom.errors %}<div class="text-danger small">{{ form.prenom.errors }}</div>{% endif %}
-                                        </div>
-                                    </div>
+    body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-                                    <div class="mb-3">
-                                        <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-                                        {{ form.email }}
-                                        <script>document.getElementById('{{ form.email.id_for_label }}').classList.add('form-control');</script>
-                                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label" for="{{ form.telephone.id_for_label }}">{{ form.telephone.label }}</label>
-                                        {{ form.telephone }}
-                                        <script>document.getElementById('{{ form.telephone.id_for_label }}').classList.add('form-control');</script>
-                                        {% if form.telephone.errors %}<div class="text-danger small">{{ form.telephone.errors }}</div>{% endif %}
-                                    </div>
-                                    
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
-                                        <div class="input-group">
-                                            {{ form.password }}
-                                            <button class="btn btn-toggle-password border-0" type="button"><i class="bi bi-eye"></i></button>
-                                            <script>document.getElementById('{{ form.password.id_for_label }}').classList.add('form-control');</script>
-                                        </div>
-                                        {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors }}</div>{% endif %}
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label" for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
-                                        {{ form.password2 }}
-                                        <script>document.getElementById('{{ form.password2.id_for_label }}').classList.add('form-control');</script>
-                                        {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors }}</div>{% endif %}
-                                    </div>
-                                    
+    .registration-container {
+        min-height: calc(100vh - 100px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
 
-                                    <button type="submit" class="btn btn-primary w-100">Enregistrer l'utilisateur</button>
-                                    
-                                    
-                                </form>
+    .registration-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        border: none;
+        width: 100%;
+        max-width: 850px; /* Plus large pour le layout en deux colonnes */
+        overflow: hidden;
+    }
+
+    /* En-tête stylisé */
+    .card-header-pac {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-bottom: 1px solid #eee;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .pac-logo { height: 60px; object-fit: contain; }
+
+    /* Séparation en sections */
+    .form-section-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--pac-blue);
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 5px;
+    }
+    .form-section-title i { margin-right: 10px; }
+
+    /* Inputs modernes */
+    .form-group { position: relative; margin-bottom: 1.2rem; }
+    .form-label { font-weight: 600; color: #555; font-size: 0.85rem; margin-bottom: 0.4rem; }
+    
+    .form-control {
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        border: 1.5px solid #e1e5eb;
+        background-color: #fdfdfd;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus {
+        background-color: #fff;
+        border-color: var(--pac-blue);
+        box-shadow: 0 0 0 4px rgba(0,86,179,0.08);
+    }
+
+    /* Bouton d'action */
+    .btn-submit {
+        background: var(--pac-blue);
+        border: none;
+        padding: 1rem;
+        font-weight: 700;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+    .btn-submit:hover {
+        background: #004494;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,86,179,0.3);
+    }
+
+    /* Alertes d'erreurs plus discrètes */
+    .error-msg { font-size: 0.75rem; font-weight: 500; color: #ff4d4d; margin-top: 4px; height: 15px; }
+</style>
+
+<div class="registration-container">
+    <div class="registration-card">
+        <div class="card-header-pac">
+            <img src="{% static 'image/logo-pac.png' %}" alt="Logo PAC" class="pac-logo">
+            <div class="mt-2">
+                <h5 class="mb-0 fw-bold">CRÉATION DE COMPTE</h5>
+                <small class="text-muted">{{ name|upper }}</small>
+            </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <div id="error-messages" class="alert alert-danger d-none mb-4"></div>
+            
+            <form id="registrationForm" novalidate>
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-lg-6 pe-lg-4 border-end">
+                        <div class="form-section-title">
+                            <i class="bi bi-person-badge"></i> Profil Personnel
+                        </div>
+                        
+                        <div class="row g-2">
+                            <div class="col-md-6 form-group">
+                                <label class="form-label" for="{{ form.nom.id_for_label }}">{{ form.nom.label }}</label>
+                                {{ form.nom }}
+                                <div id="error-nom" class="error-msg"></div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label class="form-label" for="{{ form.prenom.id_for_label }}">{{ form.prenom.label }}</label>
+                                {{ form.prenom }}
+                                <div id="error-prenom" class="error-msg"></div>
                             </div>
                         </div>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    
-    {# --- 1. Inclusion de SweetAlert2 (à placer dans votre base.html ou ici) --- #}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-document.getElementById('registrationForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Nettoyer les erreurs précédentes
-    document.querySelectorAll('.error-field').forEach(el => el.innerText = '');
-    document.getElementById('error-messages').classList.add('d-none');
 
-    const formData = new FormData(this);
-    const data = Object.fromEntries(formData.entries());
-    const targetUrl = "{% url 'utilisateur:'|add:url %}";
-    fetch(targetUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': data.csrfmiddlewaretoken
-        },
-        body: JSON.stringify(data)
-    })
-    .then(async response => {
-        const result = await response.json();
-        if (response.ok) {
-           Swal.fire({
-            title: 'Succès !',
-            text: result.message || "Inscription réussie !", 
-            icon: 'success',
-            timer: 3000,
-            showConfirmButton: false,
-            toast: true,
-    }).then(() => {
-        window.location.href = "{% url 'utilisateur:login' %}";
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            <div id="error-email" class="error-msg"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.telephone.id_for_label }}">{{ form.telephone.label }}</label>
+                            {{ form.telephone }}
+                            <div id="error-telephone" class="error-msg"></div>
+                        </div>
+
+                        {% if form.matricule %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.matricule.id_for_label }}">{{ form.matricule.label }}</label>
+                            {{ form.matricule }}
+                            <div id="error-matricule" class="error-msg"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-lg-6 ps-lg-4">
+                        <div class="form-section-title">
+                            <i class="bi bi-shield-lock"></i> Sécurité du compte
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                            <div class="input-group">
+                                {{ form.password }}
+                                <button class="btn btn-outline-light border text-secondary btn-toggle-password" type="button">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div id="error-password" class="error-msg"></div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label class="form-label" for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                            {{ form.password2 }}
+                            <div id="error-password2" class="error-msg"></div>
+                        </div>
+
+                        <div class="bg-light p-3 rounded-3 mb-4">
+                            <ul class="small text-muted mb-0 ps-3">
+                                <li>Utilisez au moins 8 caractères</li>
+                                <li>Mélangez lettres et chiffres</li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-submit w-100 shadow-sm text-uppercase">
+                            Finaliser l'inscription
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <span class="text-muted small">Vous possédez déjà un compte ?</span> 
+                    <a href="{% url 'utilisateur:login' %}" class="fw-bold text-decoration-none ms-1">Se connecter</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById('registrationForm');
+
+    // Optimisation automatique des champs
+    form.querySelectorAll('input, select').forEach(input => {
+        input.classList.add('form-control');
+        if (input.hasAttribute('required')) {
+            const label = document.querySelector(`label[for="${input.id}"]`);
+            if (label) label.classList.add('required-star');
+        }
     });
-        } else {
-            // Affichage des erreurs de validation DRF
-            for (const [key, value] of Object.entries(result)) {
-                const errorDiv = document.getElementById(`error-${key}`);
-                if (errorDiv) {
-                    errorDiv.innerText = value.join(' ');
-                } else {
-                    const mainError = document.getElementById('error-messages');
-                    mainError.innerText = value;
-                    mainError.classList.remove('d-none');
+
+    // Toggle Password
+    document.querySelectorAll('.btn-toggle-password').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            const icon = this.querySelector('i');
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            icon.className = isPass ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    });
+
+    // Envoi AJAX
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.error-msg').forEach(el => el.innerText = '');
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+
+        fetch("{% url 'utilisateur:'|add:url %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': data.csrfmiddlewaretoken
+            },
+            body: JSON.stringify(data)
+        })
+        .then(async response => {
+            const result = await response.json();
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Inscription réussie',
+                    text: 'Bienvenue au PAC !',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => window.location.href = "{% url 'utilisateur:login' %}");
+            } else {
+                for (const [key, value] of Object.entries(result)) {
+                    const errorDiv = document.getElementById(`error-${key}`);
+                    if (errorDiv) errorDiv.innerText = Array.isArray(value) ? value[0] : value;
                 }
             }
-        }
-    })
-    .catch(error => console.error('Erreur:', error));
+        });
+    });
 });
 </script>
 {% endblock content %}

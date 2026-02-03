@@ -12,8 +12,9 @@
 
         <div class="main-content flex-grow-1">
 
-            <div class="top-bar-pac" style="background-color:marron;">
-                PAC {{ user.localite|default:"[Localité]" }}
+            <div class="top-bar-pac d-flex justify-content-between" style="background-color:rgb(49, 49, 154);color:white;">
+                <div style="margin-left:50px;">{{ user.nom }} - {{ user.poste }}</div>
+                <div>PAC {{ user.localite|default:"[Localité]" }}</div>
             </div>
 
             <div class="content-wrapper p-4" style="margin-left:5%;">
@@ -46,11 +47,28 @@
                         {% if request.GET.type == 'st' %}
                             {% include "pac/tableST.html" %}
                         {% else %}
+                        <form method="GET" action="{% url 'pac:greffier' %}" class="row g-2 mb-4">
+                        <input type="hidden" name="mode" value="{{ mode_actuel }}">
+                        <div class="col-md-4">
+                            <div class="input-group shadow-sm">
+                                <input type="text" name="search" class="form-control" placeholder="Recherche rapide..." value="{{ search_query }}">
+                                <button type="submit" class="btn btn-primary px-3">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% if search_query %}
+                        <div class="col-md-2">
+                            <a href="{% url 'pac:procureur' %}?mode={{ mode_actuel }}" class="btn btn-outline-secondary w-100">Réinitialiser</a>
+                        </div>
+                        {% endif %}
+                    </form>
                         <div class="table-responsive mt-3">
                             {% if registres %}
                             
-                                <table class="table table-striped table-hover" id="suivie">
-                                    <thead class="table-light">
+                               
+                                <table class="table table-hover align-middle" id="registre-plainte">
+                                    <thead class="table-dark">
                                         <tr>
                                             <th>N° ENR</th>
                                             <th>Date d’arrivée</th>
@@ -103,28 +121,52 @@
                                                     </div>
                                                 </div>
                                                 <div class="modal fade" id="switch" tabindex="-1" aria-labelledby="switchmodal" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="switchmodal">Switcher le registre</h5>
+                                                    <div class="modal-dialog modal-dialog-centered"> <div class="modal-content border-0 shadow-lg"> <div class="modal-header bg-light border-0 py-3">
+                                                                <div class="d-flex align-items-center">
+                                                                    <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                                        <i class="bi bi-send-fill fs-5"></i>
+                                                                    </div>
+                                                                    <h5 class="modal-title fw-bold text-dark" id="switchmodal">Transférer le dossier</h5>
+                                                                </div>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
-                                                            <div class="modal-body">
+
+                                                            <div class="modal-body p-4">
+                                                                <p class="text-muted small mb-4">
+                                                                    Sélectionnez le registre de destination. Cette action permettra de dispatcher les informations vers le service approprié.
+                                                                </p>
+
                                                                 <form method="GET" action="{% url 'pac:greffier' %}">
                                                                     <input type="hidden" name="mode" value="dispatch">
-                                                                    <input type="hidden" name="ra_id" value=""> <div class="mb-3">
-                                                                        <label class="form-label">Transférer vers :</label>
-                                                                        <select name="target_type" class="form-select">
-                                                                            <option value="ST">Service Technique (ST)</option>
-                                                                            <option value="CCO">CCO</option>
-                                                                            <option value="CSCA">CSCA</option>
-                                                                            <option value="RP">RP</option>
-                                                                            <option value="RA">REGISTRE APPEL</option>
-                                                                        </select>
+                                                                    <input type="hidden" name="ra_id" value="">
+
+                                                                    <div class="mb-4">
+                                                                        <label class="form-label fw-semibold text-secondary small">REGISTRE DE DESTINATION</label>
+                                                                        <div class="input-group">
+                                                                            <span class="input-group-text bg-white border-end-0 text-primary">
+                                                                                <i class="bi bi-layers-half"></i>
+                                                                            </span>
+                                                                            <select name="target_type" class="form-select border-start-0 ps-0 shadow-none" style="cursor: pointer;">
+                                                                                <option value="ST" selected>Soit Transmis (ST)</option>
+                                                                                <option value="CCO">Registre CCO (Ordre)</option>
+                                                                                <option value="CSCA">Registre CSCA</option>
+                                                                                <option value="RP"> Registre Plainte (RP)</option>
+                                                                                <option value="RA">Registre d'Appel (RA)</option>
+                                                                            </select>
+                                                                        </div>
                                                                     </div>
 
-                                                                    <div class="text-center">
-                                                                        <button type="submit" class="btn btn-primary">Valider le transfert</button>
+                                                                    <div class="row g-2 mt-2">
+                                                                        <div class="col-6">
+                                                                            <button type="button" class="btn btn-light w-100 fw-bold text-secondary py-2" data-bs-dismiss="modal">
+                                                                                Annuler
+                                                                            </button>
+                                                                        </div>
+                                                                        <div class="col-6">
+                                                                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                                                                                Confirmer <i class="bi bi-arrow-right ms-2"></i>
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                 </form>
                                                             </div>
@@ -134,7 +176,7 @@
                                                 
                                             
                                                 <!--MODAL -->
-                                                {% if not registre.st_detail %}
+                                                
                                                         <button class="btn btn-sm btn-danger btn-delete"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#confirmDeleteModal"
@@ -148,7 +190,7 @@
                                                                 data-record-id="{{ registre.id }}">
                                                             <i class="bi bi-send-fill"></i>
                                                         </button>
-                                                    {% endif %}
+                                                   
                                                 {% endif %}
 
                                             </td>
@@ -160,6 +202,7 @@
                                 <div class="alert alert-info">Aucun registre d'arrivée n'a été trouvé.</div>
                             {% endif %}
                         </div>
+                        {% include "pac/pagination.html" with page_obj=registres mode_actuel=mode search_query=search_query %}
                         {% endif %}
                 {% endif %}
 
@@ -312,6 +355,17 @@
 });
 </script>
 {% block extra_js %}
+<script>
+        $(document).ready(function() {
+            $('#registre-plainte').DataTable({
+                "paging": false, 
+                "searching": false, 
+                "info": false, 
+                "ordering": true,
+                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json" }
+            });
+        });
+    </script>
     {{ block.super }}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>

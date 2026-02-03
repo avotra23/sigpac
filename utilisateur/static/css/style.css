@@ -484,3 +484,10 @@ body {
 .table table-striped table-hover dataTable{
     width: 80%;
 }
+
+/* Champs obligatoire */
+.required::after {
+    content: " *";
+    color: red;
+    font-weight: bold;
+}

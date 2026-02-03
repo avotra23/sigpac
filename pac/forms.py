@@ -28,9 +28,9 @@ class PlainteForm(forms.ModelForm):
         fields = ['ny_mpitory', 'tranga_kolikoly', 'ilay_olona_kolikoly', 'toorna_birao','piece_jointe']
         widgets = {
             'ny_mpitory': forms.Textarea(attrs={'class': 'form-control form-control-lg', 'rows': 6}),
-            'tranga_kolikoly': forms.Textarea(attrs={'class': 'form-control form-control-md', 'rows': 4}),
-            'ilay_olona_kolikoly': forms.Textarea(attrs={'class': 'form-control form-control-md', 'rows': 4, 'placeholder': 'Saisie obligatoire'}),
-            'toorna_birao': forms.Textarea(attrs={'class': 'form-control form-control-md', 'rows': 4}),
+            'tranga_kolikoly': forms.Textarea(attrs={'class': 'form-control form-control-md', 'rows': 4 , 'required': 'required'}),
+            'ilay_olona_kolikoly': forms.Textarea(attrs={'class': 'form-control form-control-md', 'rows': 4, 'placeholder': 'Saisie obligatoire' , 'required': 'required'}),
+            'toorna_birao': forms.Textarea(attrs={'class': 'form-control form-control-md', 'rows': 4 , 'required': 'required'}),
         }
         labels = {
             'ny_mpitory': "Ny Mpitory (Le Plaignant)",
@@ -56,10 +56,10 @@ class RegistreArriveForm(forms.ModelForm):
         ]
         widgets = {
             'date_correspondance': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'nature': forms.Select(attrs={'class': 'form-select'}),
+            'nature': forms.Select(attrs={'class': 'form-select' , 'required': 'required'}),
             'expediteur': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'objet_demande': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'objet_demande': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'required': 'required'}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': 'required'}),
         }
         labels = {
             'date_correspondance': "Date Correspondance",
@@ -85,10 +85,10 @@ class OPJForm(forms.ModelForm):
         # Ajout de classes Bootstrap pour le rendu visuel
         widgets = {
             'ny_mpitory': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Nom du plaignant...'}),
-            'tranga_kolikoly': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'ilay_olona_kolikoly': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'toerana_birao': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tranga_kolikoly': forms.Textarea(attrs={'class': 'form-control', 'rows': 3 , 'required': 'required'}),
+            'ilay_olona_kolikoly': forms.Textarea(attrs={'class': 'form-control', 'rows': 2 , 'required': 'required'}),
+            'toerana_birao': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'required': 'required'}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'required': 'required'}),
             'piece_jointe': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 

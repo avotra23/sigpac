@@ -4,9 +4,8 @@
             <span class="text-uppercase small fw-bold opacity-75">Référence Dossier</span>
             <h5 class="mb-0 mt-1"><i class="bi bi-folder2-open me-2"></i>{{ plainte_detail.n_chrono_tkk }}</h5>
         </div>
-        <a href="{{ back_url|default:'#' }}" class="btn btn-sm btn-outline-light border-0 shadow-none">
-            <i class="bi bi-x-circle fs-5"></i>
-        </a>
+        <a href="?mode={{ request.GET.mode|default:'default' }}" class="btn btn-sm btn-outline-light border-0 shadow-none"><i class="bi bi-x-circle fs-5"></i></a>
+
     </div>
 
     <div class="card-body p-4">

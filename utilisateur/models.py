@@ -72,7 +72,13 @@ class Utilisateur(AbstractBaseUser):
     poste  = models.ForeignKey(Poste,on_delete=models.SET_NULL,null=True)
     localite = models.ForeignKey(Localite,on_delete=models.SET_NULL,null = True)
     photo = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
-    
+    matricule = models.CharField(
+    max_length=20, 
+    null=True,             # Garde null=True temporairement pour la migration
+    blank=False,           # Rend le champ obligatoire dans les formulaires Django
+    verbose_name="Matricule",
+    help_text="Format : MAT-000 (Max 10 Mo pour les pièces jointes associées)" # Optionnel
+)
     
     #Configuration du connexion
     USERNAME_FIELD = 'email'
@@ -340,8 +346,23 @@ class OPJ(models.Model):
             return self.piece_jointe.url
         return None
     
+#Pour discussion entre user
+class MessageChat(models.Model):
+    # Contextes (Source 1, 4)
+    plainte = models.ForeignKey(Plainte, on_delete=models.CASCADE, null=True, blank=True, related_name='messages')
+    opj = models.ForeignKey(OPJ, on_delete=models.CASCADE, null=True, blank=True, related_name='messages')
+    
+    # Acteurs (Source 3)
+    expediteur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='envoyes')
+    destinataire = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='recus')
+    
+    contenu = models.TextField()
+    date_envoi = models.DateTimeField(auto_now_add=True)
+    lu = models.BooleanField(default=False)
 
-# Nécessite les STATUT_CHOICES définis ci-dessus
+    class Meta:
+        ordering = ['date_envoi']
+
 
 class RegistreArrive(models.Model):
     NATURE_CHOICES = [
@@ -459,10 +480,10 @@ class RegistreArrive(models.Model):
 
 class RegistreST(models.Model):
     # Lien unique avec le Registre Arrivé
-    registre_arrive = models.OneToOneField(
+    registre_arrive = models.ForeignKey(
         RegistreArrive, 
         on_delete=models.CASCADE, 
-        related_name='st_detail',
+        related_name='st_details', # Pluriel car il peut y en avoir plusieurs
         verbose_name="N° RA lié"
     )
     

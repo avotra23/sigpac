@@ -4,9 +4,8 @@
             <span class="text-uppercase small fw-bold opacity-75">Référence Dossier OPJ</span>
             <h5 class="mb-0 mt-1"><i class="bi bi-folder2-open me-2"></i>{{ opj_detail.n_chrono_opj }}</h5>
         </div>
-        <a href="?mode=list" class="btn btn-sm btn-outline-light border-0 shadow-none">
-            <i class="bi bi-x-circle fs-5"></i>
-        </a>
+        
+        <a href="?mode={{ request.GET.mode|default:'default' }}" class="btn btn-sm btn-outline-light border-0 shadow-none"><i class="bi bi-x-circle fs-5"></i></a>
     </div>
 
     <div class="card-body p-4">
@@ -20,7 +19,7 @@
                     <div class="flex-grow-1 border-bottom border-2 {% if opj_detail.statut != 'ATTENTE' %}border-primary{% else %}border-light{% endif %}" style="margin-bottom: 30px;"></div>
                     <div>
                         <div class="rounded-circle {% if opj_detail.statut != 'ATTENTE' %}bg-primary text-white{% else %}bg-light text-muted border{% endif %} d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px;">2</div>
-                        <p class="small mt-2 mb-0">Dispatché</p>
+                        <p class="small mt-2 mb-0">En cours</p>
                     </div>
                     <div class="flex-grow-1 border-bottom border-2 {% if opj_detail.statut == 'TRAITEE' %}border-success{% else %}border-light{% endif %}" style="margin-bottom: 30px;"></div>
                     <div>

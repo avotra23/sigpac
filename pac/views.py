@@ -10,6 +10,8 @@ from utilisateur.models import *
 from .forms import *
 from django.contrib import messages
 from .decorators import *
+from django.core.paginator import Paginator
+from django.db.models import Q, Count
 from django.utils import timezone
 import qrcode
 from io import BytesIO
@@ -310,15 +312,34 @@ def plainte_anonyme_api(request):
 @login_required
 @user_passes_test(is_dcn, login_url='pac:accueil')
 def acc_dcn(request):
-    mode = request.GET.get('mode')
+    mode = request.GET.get('mode', 'list')
     detail_id = request.GET.get('detail_id')
+    search_query = request.GET.get('search', '')  # Valeur a rechercher
+    
+    
+    plaintes_qs = Plainte.objects.all().order_by('-date_plainte')
+
+    #Donner retourner par filtrage
+    if search_query:
+        plaintes_qs = plaintes_qs.filter(
+            Q(n_chrono_tkk__icontains=search_query) |
+            Q(ilay_olona_kolikoly__icontains=search_query) |
+            Q(tranga_kolikoly__icontains=search_query)
+        )
+
+    # Logique de Pagination Django
+    paginator = Paginator(plaintes_qs, 10) # 10 plaintes par page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "user":request.user,
-        "po": Plainte.objects.all(),
+        "user": request.user,
+        "po": page_obj,  # On passe l'objet page au lieu du queryset complet
+        "search_query": search_query,
         "back_url": reverse('pac:dcn'),
-        "groups":"dcn",
-        "menu_active":"arrive",
-        "titre_menu":"Plainte en ligne"
+        "groups": "dcn",
+        "menu_active": "arrive" if mode != 'trib' else "trib",
+        "titre_menu": "Plainte en ligne" if mode != 'trib' else "Les tribunaux traitant"
     }
     if request.method == 'POST' and mode == 'dispatch':
         plainte_id = request.POST.get('idplainte')
@@ -341,7 +362,41 @@ def acc_dcn(request):
                 messages.error(request, "La plainte demandée n'existe pas.")
     if mode == 'trib':
         context["menu_active"] = "trib"
-        context["titre_menu"] = "Les tribunals traitant"
+        context["titre_menu"] = "Statistiques par Pôle Anti-Corruption (PAC)"
+        
+        # Liste pour stocker les stats
+        stats_tribunaux = []
+        
+        # On utilise les choix définis dans le modèle Plainte
+        for code, label in Plainte.LOCALITE_CHOICES:
+            # On compte les plaintes pour ce PAC spécifique
+            qs = Plainte.objects.filter(pac_affecte=code)
+            
+            stats = {
+                'code': code,
+                'nom': label,
+                # Entrée : Statut est DISPATCHE ou COURS ou TRAITEE (tout ce qui est arrivé au PAC)
+                'nb_entree': qs.filter(statut__in=['DISPATCHE', 'COURS', 'TRAITEE']).count(),
+                # Sortie : Uniquement celles qui sont TRAITEE
+                'nb_sortie': qs.filter(statut='TRAITEE').count(),
+                # En cours : Arrivé mais pas encore fini
+                'nb_en_cours': qs.filter(statut__in=['DISPATCHE', 'COURS']).count(),
+                # Classé sans suite : 
+                'nb_css': qs.filter(statut='CSS').count(),
+            }
+            stats_tribunaux.append(stats)
+            
+        context["stats_tribunaux"] = stats_tribunaux
+
+    # Logique pour voir le détail des plaintes d'un tribunal spécifique
+    tribunal_filtre = request.GET.get('tribunal')
+    statute = request.GET.get('statut')
+    if tribunal_filtre:
+        context['po'] = Plainte.objects.filter(pac_affecte=tribunal_filtre)
+        if statute:
+            context['po'] = Plainte.objects.filter(pac_affecte=tribunal_filtre, statut = statute)
+        context['menu_active'] = 'arrive' # On réutilise le tableau de liste pour l'affichage
+        context['titre_menu'] = f"Plaintes affectées à : {tribunal_filtre}"
     return render(request, "pac/acc_dcn.html",context)
 
 
@@ -397,146 +452,173 @@ def api_dcn_plaintes(request):
 @login_required
 @user_passes_test(is_procureur, login_url='pac:accueil')
 def acc_procureur(request):
-    mode = request.GET.get('mode', 'default')
+    # On récupère le mode actuel. 'arrive' est le mode par défaut pour "Plainte en ligne"
+    mode = request.GET.get('mode', 'arrive') 
     detail_id = request.GET.get('detail_id')
     procureur_region = request.user.localite.nom_loc
-    
+    search_query = request.GET.get('search', '')
+
     context = {
         "user": request.user,
         "back_url": reverse('pac:procureur'),
         "groups": "procureur",
+        "mode_actuel": mode, # Utile pour les formulaires dans le template
     }
 
     # --- 1. LOGIQUE DE TRAITEMENT (POST) ---
     if request.method == "POST":
         obj_id = request.POST.get("idplainte")
         observations = request.POST.get("observation")
-        action = request.POST.get("mode") # 'ra' (pour RA ou Retraiter) ou 'css'
+        action = request.POST.get("mode")  # 'ra' ou 'css'
         target_model = request.POST.get("target_model")
+        
+        # On récupère le mode de navigation pour rediriger au bon endroit après le POST
+        nav_mode = request.POST.get("nav_mode", mode)
 
-        # Sélection du modèle source (Plainte ou OPJ)
         ModelClass = OPJ if target_model == "OPJ" else Plainte
         obj = get_object_or_404(ModelClass, pk=obj_id)
 
         with transaction.atomic():
-            # On stocke l'ancien statut pour savoir si c'est un retraitement
             ancien_statut = obj.statut 
 
             if action == "css":
                 obj.statut = "CSS"
                 messages.warning(request, f"Dossier {obj_id} classé sans suite.")
             else:
-                # Action 'ra' (Nouveau ou Retraiter)
                 obj.statut = "COURS"
                 ref = obj.n_chrono_opj if target_model == "OPJ" else obj.n_chrono_tkk
                 
-                # Définition de la source pour le greffe
                 if ancien_statut == "CSS":
                     source_label = f"RETRAITEMENT (Ex-CSS) - N° {ref}"
                 else:
                     source_label = f"Source {target_model} N° {ref}"
 
-                # Création du RegistreArrive
                 RegistreArrive.objects.create(
                     plainte_origine=obj if target_model != "OPJ" else None,
                     n_chrono_opj=obj.n_chrono_opj if target_model == "OPJ" else None,
                     nbe_dossier=obj.n_chrono_tkk if target_model != "OPJ" else None,
                     date_correspondance=timezone.now().date(),
                     nature='opj' if target_model == "OPJ" else 'plainte',
-                    expediteur=source_label,  # Utilisation du label dynamique
+                    expediteur=source_label,
                     objet_demande=getattr(obj, 'tranga_kolikoly', 'Dossier transmis'),
                     observation=observations,
                     statut_traitement="COURS",
                     utilisateur_creation=request.user 
                 )
-                messages.success(request, f"Dossier {ref} renvoyé au greffe pour retraitement.")
+                messages.success(request, f"Dossier {ref} renvoyé au greffe.")
 
             obj.observation = observations
             obj.save()
-        return redirect(f"{request.path}?mode={mode}")
+            
+        # Redirection en gardant le mode de navigation
+        return redirect(f"{request.path}?mode={nav_mode}")
 
     # --- 2. LOGIQUE DE NAVIGATION (GET) ---
     
-    # Configuration des filtres selon le mode
     if mode == 'ListeOPJ':
-        context.update({
-            "titre_menu": "Plaintes OPJ",
-            "menu_active": "OPJ",
-            "val": "DISPATCHE",
-            "po": OPJ.objects.filter(pac_affecte=procureur_region, statut="DISPATCHE")
-        })
+        po_queryset = OPJ.objects.filter(pac_affecte=procureur_region, statut="DISPATCHE")
+        titre = "Plaintes OPJ"
+        menu = "OPJ"
+        is_ra = False
     elif mode == 'ListeCSS':
-        context.update({
-            "titre_menu": "Dossiers Classés Sans Suite (CSS)",
-            "menu_active": "CSS",
-            "val": "CSS",
-            "po": Plainte.objects.filter(pac_affecte=procureur_region, statut="CSS")
-        })
+        po_queryset = Plainte.objects.filter(pac_affecte=procureur_region, statut="CSS")
+        titre = "Dossiers Classés Sans Suite (CSS)"
+        menu = "CSS"
+        is_ra = False
     elif mode == 'ListeRA':
-        context.update({
-            "titre_menu": "Dossiers au Registre d'Arrivée (Greffe)",
-            "menu_active": "RA",
-            "is_ra": True,
-            "po": RegistreArrive.objects.filter(
-                utilisateur_creation__localite=request.user.localite, 
-                statut_traitement="COURS"
-            ).order_by('-date_arrivee')
-        })
-    else: # Mode par défaut : Plaintes TKK arrivantes
-        context.update({
-            "titre_menu": "Plaintes en ligne",
-            "menu_active": "arrive",
-            "val": "DISPATCHE",
-            "po": Plainte.objects.filter(pac_affecte=procureur_region, statut="DISPATCHE")
-        })
+        po_queryset = RegistreArrive.objects.filter(
+            utilisateur_creation__localite=request.user.localite, 
+            statut_traitement="COURS"
+        ).order_by('-date_arrivee')
+        titre = "Dossiers au Registre d'Arrivée (Greffe)"
+        menu = "RA"
+        is_ra = True
+    else: # Mode 'arrive' (Plainte en ligne)
+        po_queryset = Plainte.objects.filter(pac_affecte=procureur_region, statut="DISPATCHE")
+        titre = "Plaintes en ligne"
+        menu = "arrive"
+        is_ra = False
+
+    # Application de la recherche commune
+    if search_query:
+        if mode == 'ListeRA':
+            po_queryset = po_queryset.filter(
+                Q(expediteur__icontains=search_query) | 
+                Q(observation__icontains=search_query)
+            )
+        elif mode == 'ListeOPJ':
+            po_queryset = po_queryset.filter(
+                Q(n_chrono_opj__icontains=search_query) |
+                Q(ny_mpitory__icontains=search_query) |
+                Q(ilay_olona_kolikoly__icontains=search_query)
+            )
+        else: # Plainte ou CSS
+            po_queryset = po_queryset.filter(
+                Q(n_chrono_tkk__icontains=search_query) |
+                Q(ny_mpitory__icontains=search_query) |
+                Q(ilay_olona_kolikoly__icontains=search_query)
+            )
+
+    # Pagination
+    paginator = Paginator(po_queryset, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context.update({
+        "titre_menu": titre,
+        "menu_active": menu,
+        "po": page_obj,
+        "search_query": search_query,
+        "is_ra": is_ra,
+    })
 
     # --- 3. GESTION DES DÉTAILS ---
     if detail_id:
         if mode == 'ListeRA':
             reg = get_object_or_404(RegistreArrive, pk=detail_id)
-            # Priorité à plainte_origine, sinon on cherche l'info OPJ
-            context['plainte_detail'] = reg.plainte_origine
+            if reg.plainte_origine:
+                context['plainte_detail'] = reg.plainte_origine
+            elif reg.n_chrono_opj:
+                context['opj_detail'] = OPJ.objects.filter(n_chrono_opj=reg.n_chrono_opj).first()
         elif mode == 'ListeOPJ':
             context['opj_detail'] = get_object_or_404(OPJ, pk=detail_id)
         else:
             context['plainte_detail'] = get_object_or_404(Plainte, pk=detail_id)
 
-    return render(request, "pac/acc_proc.html", context)
-#------------------------------------FIN PROCUREUR-----------------------------
+    return render(request, "pac/acc_proc.html", context)#------------------------------------FIN PROCUREUR-----------------------------
 
 #------------------------------------GREFFIER-----------------------------
 @login_required
 @user_passes_test(is_greffier, login_url='accueil') 
 def acc_greffier(request):
-    mode = request.GET.get('mode')
-    reg_type = request.GET.get('type')
+    # --- RÉCUPÉRATION DES PARAMÈTRES ---
+    mode = request.GET.get('mode', 'list')
+    reg_type = request.GET.get('type', 'pre_ra')  # Par défaut : Pre-RA
     detail_id = request.GET.get('detail_id')
     validation_id = request.GET.get('valider_id')
-    
-    # Paramètres pour le switch
     ra_id = request.GET.get('ra_id')
     target_type = request.GET.get('target_type')
+    
+    # Paramètres de recherche et pagination
+    search_query = request.GET.get('search', '')
+    page_number = request.GET.get('page', 1)
 
     context = {
         'user': request.user,
         'groups': "greffier",
         'mode': mode,
+        'reg_type': reg_type,
+        'search_query': search_query,
         'date_arrivee_systeme': timezone.now().strftime("%Y-%m-%d"),
     }
 
-    # --- LOGIQUE DE SAUVEGARDE ST (POST) ---
+    # --- 1. LOGIQUE DE SAUVEGARDE ST (POST AJAX) ---
     if request.method == 'POST' and mode == 'save_st':
         try:
             with transaction.atomic():
                 ra_id_post = request.POST.get('ra_id')
                 ra_source = get_object_or_404(RegistreArrive, pk=ra_id_post)
 
-                # Sécurité : vérifier si un ST n'existe pas déjà pour ce RA
-                if hasattr(ra_source, 'st_detail'):
-                    return JsonResponse({'status': 'error', 'message': 'Ce dossier est déjà au ST'}, status=400)
-
-                # Note: Le n_chrono est géré par la méthode save() de votre modèle,
-                # donc on laisse Django s'en occuper automatiquement à la création.
                 RegistreST.objects.create(
                     registre_arrive=ra_source,
                     date_st=request.POST.get('date_st'),
@@ -547,50 +629,35 @@ def acc_greffier(request):
                     resultat=request.POST.get('resultat'),
                     utilisateur_creation=request.user
                 )
-                
                 return JsonResponse({'status': 'success', 'message': 'Dossier enregistré au ST avec succès'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-    # --- LOGIQUE DE REDIRECTION VERS FORMULAIRE ST (SWITCH) ---
-    if mode == 'dispatch' and ra_id:
-        ra_source = get_object_or_404(RegistreArrive, pk=ra_id)
-        if target_type == 'ST':
-            context.update({
-                'mode': 'form_st',
-                'ra_source': ra_source,
-                'titre': "Transfert vers Service Technique",  
-            })
-            return render(request, 'pac/acc_greffier.html', context)
-
-    # --- LOGIQUE DÉTAIL (VERSION INTÉGRÉE RA + ST) ---
-    if detail_id:
-        if reg_type == 'st':
-            # Si on vient du tableau ST, on récupère l'objet ST et son parent RA
-            context['reg_detail'] = get_object_or_404(
-                RegistreST.objects.select_related('registre_arrive', 'utilisateur_creation'), 
-                pk=detail_id
-            )
-            context['is_st'] = True
-        else:
-            # Si on vient du tableau RA, on récupère l'objet RA et son potentiel enfant ST
-            context['reg_detail'] = get_object_or_404(
-                RegistreArrive.objects.select_related('st_detail', 'utilisateur_creation'), 
-                pk=detail_id
-            )
-            context['is_st'] = False
-        
-        context['mode'] = 'detail'
-
-    # --- LOGIQUE VALIDATION (NUMÉROTATION) ---
+    # --- 2. LOGIQUE VALIDATION (ATTRIBUTION N° RA) ---
     if validation_id:
         registre = get_object_or_404(RegistreArrive, pk=validation_id, utilisateur_creation__localite=request.user.localite)
         n_ra = registre.attribuer_ra()
         messages.success(request, f"Validé avec le N° : {n_ra}")
         return redirect('pac:greffier')
 
-    # --- LOGIQUE CRÉATION NOUVEAU RA (POST & FORM) ---
-    if mode == 'form' or (request.method == 'POST' and not mode == 'save_st'):
+    # --- 3. LOGIQUE DÉTAILS ---
+    if detail_id:
+        if reg_type == 'st':
+            context['reg_detail'] = get_object_or_404(
+                RegistreST.objects.select_related('registre_arrive', 'utilisateur_creation'), 
+                pk=detail_id
+            )
+            context['is_st'] = True
+        else:
+            context['reg_detail'] = get_object_or_404(
+                RegistreArrive.objects.prefetch_related('st_details').select_related('utilisateur_creation'), 
+                pk=detail_id
+            )
+            context['is_st'] = False
+        context['mode'] = 'detail'
+
+    # --- 4. LOGIQUE FORMULAIRE RA (CRÉATION) ---
+    if mode == 'form' or (request.method == 'POST' and mode != 'save_st' and mode != 'dispatch'):
         if request.method == 'POST':
             form = RegistreArriveForm(request.POST)
             if form.is_valid():
@@ -603,26 +670,59 @@ def acc_greffier(request):
             form = RegistreArriveForm()
             last_id = RegistreArrive.objects.aggregate(Max('id'))['id__max'] or 0
             context['n_enr_provisoire'] = str(last_id + 1).zfill(4)
-        
         context['form'] = form
 
-    # --- FILTRAGE LISTE & PERFORMANCE ---
-    # On utilise select_related('st_detail') pour savoir si le bouton switch doit être affiché ou non
-    queryset = RegistreArrive.objects.filter(
-        utilisateur_creation__localite=request.user.localite
-    ).select_related('st_detail', 'utilisateur_creation')
+    # --- 5. LOGIQUE DE REDIRECTION VERS FORMULAIRE ST (SWITCH) ---
+    if mode == 'dispatch' and ra_id:
+        ra_source = get_object_or_404(RegistreArrive, pk=ra_id)
+        if target_type == 'ST':
+            context.update({
+                'mode': 'form_st',
+                'ra_source': ra_source,
+                'titre': "Transfert vers Service Technique",  
+            })
+            return render(request, 'pac/acc_greffier.html', context)
 
-    if reg_type == "arrive":
-        context['registres'] = queryset.filter(n_enr_arrive__isnull=False).order_by('-date_arrivee')
-        context['titre'] = "Registre Arrivée"
-    elif reg_type == "st":
-        # Liste spécifique pour le tableau technique
-        context['registres'] = RegistreST.objects.filter(
+    # --- 6. FILTRAGE, RECHERCHE ET PAGINATION ---
+    # Sélection du Queryset de base selon le type
+    if reg_type == "st":
+        queryset = RegistreST.objects.filter(
             utilisateur_creation__localite=request.user.localite
-        ).select_related('registre_arrive').order_by('-date_st')
+        ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_st')
         context['titre'] = "Registre du Service Technique (ST)"
     else:
-        context['registres'] = queryset.filter(n_enr_arrive__isnull=True).order_by('-date_arrivee')
-        context['titre'] = "Pre-RA"
+        # Base pour Arrivée et Pre-RA
+        queryset = RegistreArrive.objects.filter(
+            utilisateur_creation__localite=request.user.localite
+        ).select_related('utilisateur_creation').prefetch_related('st_details')
+
+        if reg_type == "arrive":
+            queryset = queryset.filter(n_enr_arrive__isnull=False).order_by('-date_arrivee')
+            context['titre'] = "Registre Arrivée"
+        else:
+            queryset = queryset.filter(n_enr_arrive__isnull=True).order_by('-date_arrivee')
+            context['titre'] = "Pre-RA"
+
+    # Application de la recherche (Search)
+    if search_query:
+        if reg_type == "st":
+            queryset = queryset.filter(
+                Q(objet__icontains=search_query) | 
+                Q(destinataire__icontains=search_query) |
+                Q(registre_arrive__n_enr_arrive__icontains=search_query)
+            )
+        else:
+            queryset = queryset.filter(
+                Q(n_enr_arrive__icontains=search_query) | 
+                Q(expediteur__icontains=search_query) | 
+                Q(observation__icontains=search_query)
+            )
+
+    # Pagination (10 éléments par page)
+    paginator = Paginator(queryset, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    context['registres'] = page_obj
+    context['page_obj'] = page_obj
 
     return render(request, 'pac/acc_greffier.html', context)

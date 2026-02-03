@@ -1,0 +1,93 @@
+{# --- MODAL ENVOI AU GREFFE (RA) --- #}
+<div class="modal fade" id="ra-{{ p.pk }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-send-check me-2"></i>Envoyer au Greffe (RA)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body text-start text-dark">
+                    <input type="hidden" name="idplainte" value="{{ p.pk }}">
+                    <input type="hidden" name="mode" value="ra">
+                    <input type="hidden" name="nav_mode" value="{{ mode_actuel }}">
+                    <input type="hidden" name="target_model" value="{% if menu_active == 'OPJ' %}OPJ{% else %}Plainte{% endif %}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Instructions pour le greffier <span class="text-danger">*</span></label>
+                        <textarea name="observation" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger">Valider l'envoi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# --- MODAL CLASSEMENT SANS SUITE (CSS) --- #}
+<div class="modal fade" id="css-{{ p.pk }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="bi bi-archive me-2"></i>Classer Sans Suite</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body text-start text-dark">
+                    <input type="hidden" name="idplainte" value="{{ p.pk }}">
+                    <input type="hidden" name="mode" value="css">
+                    <input type="hidden" name="nav_mode" value="{{ mode_actuel }}">
+                    <input type="hidden" name="target_model" value="{% if menu_active == 'OPJ' %}OPJ{% else %}Plainte{% endif %}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Motif du classement <span class="text-danger">*</span></label>
+                        <textarea name="observation" class="form-control border-warning" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning fw-bold">Confirmer le classement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# --- MODAL RETRAITEMENT (Pour les dossiers déjà en CSS) --- #}
+{% if p.statut == 'CSS' %}
+<div class="modal fade" id="retre-{{ p.pk }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-arrow-clockwise me-2"></i>Retraiter le dossier</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body text-start text-dark">
+                    <div class="text-center mb-3">
+                        <span class="badge bg-light text-primary border">Dossier N° {{ p.n_chrono_tkk }}</span>
+                    </div>
+                    <input type="hidden" name="idplainte" value="{{ p.pk }}">
+                    <input type="hidden" name="mode" value="ra">
+                    <input type="hidden" name="nav_mode" value="{{ mode_actuel }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cause de révision <span class="text-danger">*</span></label>
+                        <textarea name="observation" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Valider le retraitement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}

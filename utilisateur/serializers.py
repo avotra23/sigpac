@@ -65,7 +65,7 @@ class OPJInscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Utilisateur # Votre modèle utilisateur
-        fields = ['nom', 'prenom', 'email', 'telephone', 'password', 'password2']
+        fields = ['nom', 'prenom', 'email', 'telephone', 'matricule','password', 'password2']
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -79,9 +79,8 @@ class OPJInscriptionSerializer(serializers.ModelSerializer):
         
         user = super().create(validated_data)
         
-        # Ajout au groupe 'public'
+        # Ajout au groupe 'opj'
         public_group, created = Group.objects.get_or_create(name='opj')
-        # Note: utilisez le nom du champ ManyToMany défini dans votre modèle (ici utilisateur_groups)
         public_group.utilisateur_groups.add(user)
         
         return user

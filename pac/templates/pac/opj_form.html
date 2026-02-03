@@ -1,64 +1,84 @@
-<div class="plainte-container my-5 p-4 border rounded shadow-lg bg-light">
-    <div class="plainte-header text-center mb-4">
-        <h2>{{ form_title|default:"SAISIE DOSSIER OPJ" }}</h2>
-        <span class="fw-bold text-primary fs-5">POLE ANTI-CORRUPTION (OPJ)</span>
+<div class="plainte-container my-5 p-4 border-0 rounded-4 shadow-lg bg-white">
+    <div class="plainte-header text-center mb-5">
+        <h2 class="fw-bold text-dark">{{ form_title|default:"SAISIE DOSSIER OPJ" }}</h2>
+        <div class="badge bg-primary px-3 py-2 fs-6">PÔLE ANTI-CORRUPTION (OPJ)</div>
+        <hr class="mx-auto w-25 mt-3 shadow-sm">
     </div>
     
-    <form method="POST" enctype="multipart/form-data" id="opjForm">
+    <form method="POST" enctype="multipart/form-data" id="opjForm" novalidate>
         {% csrf_token %}
         {% if form.instance.pk %}
             <input type="hidden" name="opj_id" value="{{ form.instance.pk }}">
         {% endif %}
 
-        <div class="row mb-4">
+        <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
             <div class="col-md-6">
-                <label class="form-label">N° Chrono OPJ</label>
-                <input type="text" class="form-control" value="{{ n_chrono_opj }}" readonly>
+                <label class="form-label fw-bold text-muted small">N° Chrono OPJ</label>
+                <input type="text" class="form-control bg-white border-0 fw-bold" value="{{ n_chrono_opj }}" readonly>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Date</label>
-                <input type="text" class="form-control" value="{{ date_plainte }}" readonly>
+                <label class="form-label fw-bold text-muted small">Date d'enregistrement</label>
+                <input type="text" class="form-control bg-white border-0 fw-bold" value="{{ date_plainte }}" readonly>
             </div>
         </div>
 
         <div class="mb-4">
-            <label class="fw-bold">{{ form.ny_mpitory.label }}</label>
+            <label class="fw-bold mb-2" for="{{ form.ny_mpitory.id_for_label }}">
+                <i class="bi bi-person-fill me-1"></i> {{ form.ny_mpitory.label }}
+            </label>
             {{ form.ny_mpitory }}
         </div>
 
         <div class="mb-4">
-            <label class="fw-bold">{{ form.tranga_kolikoly.label }}</label>
+            <label class="fw-bold mb-2" for="{{ form.tranga_kolikoly.id_for_label }}">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ form.tranga_kolikoly.label }}
+            </label>
             {{ form.tranga_kolikoly }}
         </div>
         
-        <div class="row mb-4">
+        <div class="row mb-4 g-3">
             <div class="col-md-6">
-                <label class="fw-bold">{{ form.ilay_olona_kolikoly.label }}</label>
+                <label class="fw-bold mb-2" for="{{ form.ilay_olona_kolikoly.id_for_label }}">
+                    <i class="bi bi-person-x-fill me-1"></i> {{ form.ilay_olona_kolikoly.label }}
+                </label>
                 {{ form.ilay_olona_kolikoly }}
             </div>
             <div class="col-md-6">
-                <label class="fw-bold">{{ form.toerana_birao.label }}</label>
+                <label class="fw-bold mb-2" for="{{ form.toerana_birao.id_for_label }}">
+                    <i class="bi bi-geo-alt-fill me-1"></i> {{ form.toerana_birao.label }}
+                </label>
                 {{ form.toerana_birao }}
             </div>
         </div>
 
         <div class="mb-4">
-            <label class="fw-bold">Observations / Motifs</label>
+            <label class="fw-bold mb-2" for="{{ form.observation.id_for_label }}">
+                <i class="bi bi-chat-left-text-fill me-1"></i> Observations / Motifs
+            </label>
             {{ form.observation }}
         </div>
 
-        <div class="mb-4">
-            <label class="fw-bold">{{ form.piece_jointe.label }}</label>
+        <div class="mb-5 p-3 border-start border-primary border-4 bg-light rounded-end">
+            <label class="fw-bold mb-2" for="{{ form.piece_jointe.id_for_label }}">
+                <i class="bi bi-paperclip me-1"></i> {{ form.piece_jointe.label }} 10Mo Max
+            </label>
             {{ form.piece_jointe }}
             {% if form.instance.piece_jointe %}
-                <p class="mt-2 small">Fichier : <a href="{{ form.instance.piece_jointe.url }}" target="_blank">Voir le document</a></p>
+                <div class="mt-2 p-2 bg-white rounded border d-inline-block">
+                    <span class="small">Fichier actuel :</span> 
+                    <a href="{{ form.instance.piece_jointe.url }}" class="text-decoration-none fw-bold" target="_blank">
+                        <i class="bi bi-file-earmark-pdf"></i> Voir le document
+                    </a>
+                </div>
             {% endif %}
         </div>
 
-        <div class="text-end">
-            <a href="{% url 'pac:opj' %}" class="btn btn-secondary btn-lg me-2">Annuler</a>
-            <button type="submit" class="btn btn-primary btn-lg btn-envoyer">
-                <i class="bi bi-send-fill"></i> Enregistrer
+        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+            <a href="{% url 'pac:opj' %}" class="btn btn-outline-secondary px-4 py-2">
+                <i class="bi bi-x-circle"></i> Annuler
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg px-5 py-2 shadow">
+                <i class="bi bi-check-circle-fill me-2"></i> ENREGISTRER LE DOSSIER
             </button>
         </div>
     </form>
