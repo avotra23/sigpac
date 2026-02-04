@@ -149,8 +149,8 @@
         {% delete_session_key 'plainte_success' %}
 {% endif %}
 {% block extra_js %}
-    {# --- 1. Inclusion de SweetAlert2 (à placer dans votre base.html ou ici) --- #}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="{% static 'js/sweetalert2@11'%}"></script>
     {# --- 2. Script JavaScript pour la confirmation de suppression (Swal) --- #}
     <script>
         $(document).ready(function() {

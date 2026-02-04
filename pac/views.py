@@ -48,7 +48,7 @@ def accueil(request):
 
 #------------------------------------PLAINTE-------------------------------
 #Interface choix plaintes
-def none(request):
+def index_choix(request):
     return render(request, 'pac/none.html')
 
 
@@ -364,28 +364,48 @@ def acc_dcn(request):
         context["menu_active"] = "trib"
         context["titre_menu"] = "Statistiques par Pôle Anti-Corruption (PAC)"
         
-        # Liste pour stocker les stats
         stats_tribunaux = []
-        
-        # On utilise les choix définis dans le modèle Plainte
+
+        # On utilise les choix définis dans n'importe quel modèle (ils sont identiques)
         for code, label in Plainte.LOCALITE_CHOICES:
-            # On compte les plaintes pour ce PAC spécifique
-            qs = Plainte.objects.filter(pac_affecte=code)
+            # On récupère les QuerySets pour les deux modèles
+            qs_en_ligne = Plainte.objects.filter(pac_affecte=code)
+            qs_opj = OPJ.objects.filter(pac_affecte=code)
             
+            # Calcul des entrées (En ligne + OPJ)
+            # Note : J'inclus 'ATTENTE' car c'est votre statut par défaut dans le modèle
+            statuts_entree = ['ATTENTE', 'DISPATCHE', 'COURS', 'TRAITEE']
+            
+            nb_entree = (
+                qs_en_ligne.filter(statut__in=statuts_entree).count() + 
+                qs_opj.filter(statut__in=statuts_entree).count()
+            )
+            
+            nb_sortie = (
+                qs_en_ligne.filter(statut='TRAITEE').count() + 
+                qs_opj.filter(statut='TRAITEE').count()
+            )
+            
+            nb_en_cours = (
+                qs_en_ligne.filter(statut__in=['DISPATCHE', 'COURS']).count() + 
+                qs_opj.filter(statut__in=['DISPATCHE', 'COURS']).count()
+            )
+            
+            nb_css = (
+                qs_en_ligne.filter(statut='CSS').count() + 
+                qs_opj.filter(statut='CSS').count()
+            )
+
             stats = {
                 'code': code,
                 'nom': label,
-                # Entrée : Statut est DISPATCHE ou COURS ou TRAITEE (tout ce qui est arrivé au PAC)
-                'nb_entree': qs.filter(statut__in=['DISPATCHE', 'COURS', 'TRAITEE']).count(),
-                # Sortie : Uniquement celles qui sont TRAITEE
-                'nb_sortie': qs.filter(statut='TRAITEE').count(),
-                # En cours : Arrivé mais pas encore fini
-                'nb_en_cours': qs.filter(statut__in=['DISPATCHE', 'COURS']).count(),
-                # Classé sans suite : 
-                'nb_css': qs.filter(statut='CSS').count(),
+                'nb_entree': nb_entree,
+                'nb_sortie': nb_sortie,
+                'nb_en_cours': nb_en_cours,
+                'nb_css': nb_css,
             }
             stats_tribunaux.append(stats)
-            
+
         context["stats_tribunaux"] = stats_tribunaux
 
     # Logique pour voir le détail des plaintes d'un tribunal spécifique

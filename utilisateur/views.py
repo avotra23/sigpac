@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.middleware.csrf import get_token
 from django.db.models import Count, Max
 import base64
+from django.contrib.auth.hashers import make_password
+from datetime import timedelta
 from django.db import transaction
 from django.urls import reverse
 from .models import *
@@ -26,6 +28,13 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import (
     UtilisateurSerializer,PublicInscriptionSerializer,ProfileUpdateSerializer,OPJInscriptionSerializer
 )
+
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.contrib.auth.hashers import make_password
+
 
 #Connexion
 def login_view(request):
@@ -177,7 +186,36 @@ def supprimer_utilisateur(request, pk):
 
 
 #----API--------
-
+#--API RESET PASSWORD md
+@api_view(['POST'])
+def reset_password_api(request):
+    email = request.data.get('email')
+    telephone = request.data.get('telephone') # Récupération du tel
+    new_password = request.data.get('password')
+    
+    try:
+        # On identifie l'utilisateur par Email + Téléphone
+        user = Utilisateur.objects.get(email=email, telephone=telephone)
+        
+        # Règle des 3 mois
+        if not user.peut_changer_mdp():
+            prochaine_date = user.last_password_change + timedelta(days=90)
+            jours_restants = (prochaine_date - timezone.now()).days
+            return Response({
+                "detail": f"Sécurité : Modification possible dans {max(1, jours_restants)} jours."
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Mise à jour
+        user.set_password(new_password)
+        user.last_password_change = timezone.now()
+        user.save()
+        
+        return Response({"detail": "Mot de passe modifié avec succès ! Redirection..."})
+        
+    except Utilisateur.DoesNotExist:
+        return Response({
+            "detail": "Les informations fournies ne correspondent pas à nos registres."
+        }, status=status.HTTP_404_NOT_FOUND)
 #APILogin
 @csrf_exempt
 @api_view(['POST'])

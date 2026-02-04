@@ -23,7 +23,7 @@ from .views import *
 app_name = 'pac'
 urlpatterns = [
      #URL de base
-    path('',none,name="none"),
+    path('',index_choix,name="index_choix"),
 
      #Passage apres login
     path('accueil/',accueil,name="accueil"),

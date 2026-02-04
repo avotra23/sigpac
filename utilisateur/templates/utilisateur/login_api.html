@@ -2,6 +2,33 @@
 {% load static %}
 {% block title%}LOGIN PAC{% endblock title%}
 {% block content %}
+<style>
+    body {
+        /* Un dégradé élégant qui rappelle l'autorité et la confiance */
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+    }
+
+    .wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    /* Optionnel : Ajout d'un effet de verre (Glassmorphism) sur la carte */
+    .card-floating {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+</style>
 
 
 <div class="wrapper">
@@ -34,7 +61,7 @@
                 </div>
 
                 <div class="text-end mb-3">
-                    <a href="#" class="forgot">Mot de passe oublié ?</a>
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" class="forgot">Mot de passe oublié ?</a>
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn btn-login w-100">
@@ -70,8 +97,104 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <div class="text-center mb-4">
+                    <div class="bg-light-primary rounded-circle d-inline-flex p-3 mb-2">
+                        <i class="bi bi-person-badge fs-2 text-primary"></i>
+                    </div>
+                    <h5 class="fw-bold">Récupération Compte</h5>
+                    <p class="text-muted small">Vérifiez vos informations pour changer votre mot de passe.</p>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <input type="email" id="resetEmail" class="form-control" placeholder="nom@mail.com">
+                    <label><i class="bi bi-envelope me-2"></i>Email</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="tel" id="resetTel" class="form-control" placeholder="0340000000">
+                    <label><i class="bi bi-telephone me-2"></i>Numéro de téléphone</label>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-secondary">Nouveau mot de passe</label>
+                    <div class="input-group">
+                        <input type="password" id="resetNewPass" class="form-control border-end-0" placeholder="••••••••">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" onclick="togglePass()">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" id="btnReset" onclick="handleReset()" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                    Confirmer le changement
+                </button>
+                
+                <div id="resetStatus" class="mt-3 p-3 rounded-3 small d-none text-center animate__animated animate__fadeIn"></div>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="error-message" class="text-danger mt-2" style="display:none;"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function togglePass() {
+    const p = document.getElementById('resetNewPass');
+    const i = document.getElementById('eyeIcon');
+    p.type = p.type === 'password' ? 'text' : 'password';
+    i.classList.toggle('bi-eye');
+    i.classList.toggle('bi-eye-slash');
+}
+
+function handleReset() {
+    const email = document.getElementById('resetEmail').value;
+    const telephone = document.getElementById('resetTel').value;
+    const password = document.getElementById('resetNewPass').value;
+    const statusDiv = document.getElementById('resetStatus');
+    const btn = document.getElementById('btnReset');
+
+    if(!email || !telephone || !password) {
+        updateUI("Veuillez remplir tous les champs.", "alert-warning");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch("{% url 'utilisateur:api_reset_password' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ email: email, telephone: telephone, password: password })
+    })
+    .then(r => r.json().then(data => ({s: r.status, d: data})))
+    .then(res => {
+        if(res.s === 200) {
+            updateUI(res.d.detail, "alert-success");
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            updateUI(res.d.detail, "alert-danger");
+            btn.disabled = false;
+            btn.innerText = "Confirmer le changement";
+        }
+    });
+}
+
+function updateUI(msg, colorClass) {
+    const div = document.getElementById('resetStatus');
+    div.innerText = msg;
+    div.className = `mt-3 p-3 rounded-3 small text-center alert ${colorClass}`;
+    div.classList.remove('d-none');
+}
+</script>
+<script src="{% static 'js/bootstrap.bundle.min.js'%}"></script>
 <script>
     const toggleBtn = document.querySelector('.btn-toggle-password');
     const password = document.querySelector('#password');

@@ -101,6 +101,16 @@ class Utilisateur(AbstractBaseUser):
     def has_module_perms(self, app_label):
         return self.is_staff
 
+    last_password_change = models.DateTimeField(null=True, blank=True)
+    
+    # Ajoutez une méthode pour vérifier si le changement est autorisé
+    def peut_changer_mdp(self):
+        if not self.last_password_change:
+            return True
+        # Vérifie si 90 jours (3 mois) se sont écoulés
+        delai = timezone.now() - self.last_password_change
+        return delai.days >= 90
+    
 STATUT_CHOICES = [
         ('ATTENTE', 'En attente'),
         ('COURS', 'En cours de traitement'),

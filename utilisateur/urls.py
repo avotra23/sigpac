@@ -26,7 +26,12 @@ urlpatterns = [
     #-Authentification
     path('api/login/', api_login_view, name='api_login'),
     path('api/logout/', api_logout_view, name='api_logout'),
+
+    #-Inscription
     path('api/inscription/', api_pinscription_view, name='api_inscription'),
     path('api/inscription_opj/', api_inscriptionopj_view, name='api_inscription_opj'),
     path('api/update_profile/',update_profile_api,name="update_profil"),
+
+    #-Gstion MDP
+     path('api/resetpass/',reset_password_api,name="api_reset_password"),
 ]

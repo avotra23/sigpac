@@ -84,8 +84,8 @@
 
 {% block extra_js %}
     {# 1. Chargement des bibliothèques #}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/jquery-3.7.1.min.js'%}"></script>
+    <script src="{% static 'js/sweetalert2@11.js' %}"></script>
     <script>
             document.querySelectorAll('.delete-btn').forEach(button => {
             button.addEventListener('click', function(e) {
