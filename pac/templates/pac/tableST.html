@@ -37,43 +37,10 @@
                                 class="btn btn-sm btn-info me-1" 
                                 title="Voir l'historique complet">
                                     <i class="bi bi-eye-fill"></i>
-                                </a>
-                                <div class="modal fade" id="switch" tabindex="-1" aria-labelledby="switchmodal" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="switchmodal">Switcher le registre</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <form method="GET" action="{% url 'pac:greffier' %}">
-                                                                    <input type="hidden" name="mode" value="dispatch">
-                                                                    <input type="hidden" name="ra_id" value=""> <div class="mb-3">
-                                                                        <label class="form-label">Transférer vers :</label>
-                                                                        <select name="target_type" class="form-select">
-                                                                            <option value="ST">Service Technique (ST)</option>
-                                                                            <option value="CCO">CCO</option>
-                                                                            <option value="CSCA">CSCA</option>
-                                                                            <option value="RP">RP</option>
-                                                                            <option value="RA">REGISTRE APPEL</option>
-                                                                        </select>
-                                                                    </div>
-
-                                                                    <div class="text-center">
-                                                                        <button type="submit" class="btn btn-primary">Valider le transfert</button>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                            <button class="btn btn-sm btn-warning btn-switch"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#switch"
-                                                                data-record-id="{{ st.id }}">
-                                                            <i class="bi bi-send-fill"></i>
-                                                        </button>
+                            </a>
+                            <a href="?mode=edit_st&detail_id={{ st.pk }}&type=st" class="btn btn-sm btn-success me-1" title="Modifier">
+                                   <i class="bi bi-pencil-fill"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>

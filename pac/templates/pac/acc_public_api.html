@@ -125,7 +125,7 @@
     <script src="{% static 'js/jquery-3.7.1.min.js'%}"></script>
     
     {# --- 1. Inclusion de SweetAlert2 (à placer dans votre base.html ou ici) --- #}
-    <script src="{% static 'js/sweetalert2@11' %}"></script>
+    <script src="{% static 'js/sweetalert211.js' %}"></script>
     <script>
         $(document).ready(function() {
             
@@ -178,7 +178,7 @@ $(document).ready(function() {
         Swal.fire({ title: 'Chargement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         $.ajax({
-            url: "{% url 'pac:api_public_plaintes' %}",
+            url: pId ? "{% url 'pac:api_public_plaintes' %}" + pId + "/" : "{% url 'pac:api_public_plaintes' %}",
             type: "POST",
             data: formData,
             processData: false,

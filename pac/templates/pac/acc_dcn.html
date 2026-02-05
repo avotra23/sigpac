@@ -34,7 +34,12 @@
                         <h2>{{titre_menu}}</h2>
                     </div>
                 {% if menu_active == "arrive"%}
-                    <div class="table-responsive mt-3">
+                    <div class="table-responsive mt-3"
+                        hx-get="{% url 'pac:dcn' %}?mode=list" 
+                        hx-trigger="every 20s" 
+                        hx-select="#registre-plainte" 
+                        hx-target="#registre-plainte" 
+                        hx-swap="outerHTML">
                         {% if po %}
                             
                         {# --- BLOC D'AFFICHAGE DES DÉTAILS (NON TABULAIRE) --- #}

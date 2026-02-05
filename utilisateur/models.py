@@ -74,11 +74,16 @@ class Utilisateur(AbstractBaseUser):
     photo = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     matricule = models.CharField(
     max_length=20, 
-    null=True,             # Garde null=True temporairement pour la migration
-    blank=False,           # Rend le champ obligatoire dans les formulaires Django
+    null=True,            
+    blank=False,           
     verbose_name="Matricule",
-    help_text="Format : MAT-000 (Max 10 Mo pour les pièces jointes associées)" # Optionnel
-)
+    )
+    corps_d_appartenance = models.CharField(
+    max_length=100, 
+    null=True,             
+    blank=False,           
+    verbose_name="corps",
+    )
     
     #Configuration du connexion
     USERNAME_FIELD = 'email'

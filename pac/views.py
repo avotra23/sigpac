@@ -217,17 +217,23 @@ def api_public_plaintes(request, plainte_id=None):
 
     # --- LOGIQUE D'ENREGISTREMENT / MODIFICATION ---
     if request.method == 'POST':
-        p_id = request.data.get('plainte_id')
+      
+        p_id = plainte_id or request.data.get('plainte_id') or request.data.get('id')
+        
         instance = Plainte.objects.filter(pk=p_id, utilisateur_creation=request.user).first() if p_id else None
-        serializer = PlainteCreationSerializer(instance=instance, data=request.data)
+        
+        
+        serializer = PlainteCreationSerializer(instance=instance, data=request.data, partial=True)
         
         if serializer.is_valid():
+            
             plainte = serializer.save(
                 utilisateur_creation=(instance.utilisateur_creation if instance else request.user),
                 utilisateur_modification=request.user
             )
             msg = "Modifiée avec succès" if instance else "Enregistrée avec succès"
-            return Response({"detail": msg}, status=200)
+            return Response({"detail": msg, "id": plainte.id}, status=200)
+        
         return Response(serializer.errors, status=400)
 
     # --- LOGIQUE DE CONSULTATION (GET) ---
@@ -371,14 +377,14 @@ def acc_dcn(request):
             # On récupère les QuerySets pour les deux modèles
             qs_en_ligne = Plainte.objects.filter(pac_affecte=code)
             qs_opj = OPJ.objects.filter(pac_affecte=code)
-            
+            qs_non_affectes = Plainte.objects.filter(pac_affecte__isnull=True) | Plainte.objects.filter(pac_affecte='')
             # Calcul des entrées (En ligne + OPJ)
             # Note : J'inclus 'ATTENTE' car c'est votre statut par défaut dans le modèle
             statuts_entree = ['ATTENTE', 'DISPATCHE', 'COURS', 'TRAITEE']
             
             nb_entree = (
                 qs_en_ligne.filter(statut__in=statuts_entree).count() + 
-                qs_opj.filter(statut__in=statuts_entree).count()
+                qs_opj.filter(statut__in=statuts_entree).count() 
             )
             
             nb_sortie = (
@@ -632,27 +638,32 @@ def acc_greffier(request):
         'date_arrivee_systeme': timezone.now().strftime("%Y-%m-%d"),
     }
 
-    # --- 1. LOGIQUE DE SAUVEGARDE ST (POST AJAX) ---
     if request.method == 'POST' and mode == 'save_st':
         try:
             with transaction.atomic():
+                st_id = request.POST.get('st_id')
                 ra_id_post = request.POST.get('ra_id')
                 ra_source = get_object_or_404(RegistreArrive, pk=ra_id_post)
 
-                RegistreST.objects.create(
-                    registre_arrive=ra_source,
-                    date_st=request.POST.get('date_st'),
-                    objet=request.POST.get('objet'),
-                    destinataire=request.POST.get('destinataire'),
-                    observation=request.POST.get('observation'),
-                    rappel=request.POST.get('rappel'),
-                    resultat=request.POST.get('resultat'),
-                    utilisateur_creation=request.user
-                )
-                return JsonResponse({'status': 'success', 'message': 'Dossier enregistré au ST avec succès'})
+                # Si st_id existe, on modifie, sinon on crée
+                if st_id:
+                    st_obj = get_object_or_404(RegistreST, pk=st_id)
+                    message = "Dossier ST mis à jour"
+                else:
+                    st_obj = RegistreST(registre_arrive=ra_source, utilisateur_creation=request.user)
+                    message = "Dossier enregistré au ST avec succès"
+
+                st_obj.date_st = request.POST.get('date_st')
+                st_obj.objet = request.POST.get('objet')
+                st_obj.destinataire = request.POST.get('destinataire')
+                st_obj.observation = request.POST.get('observation')
+                st_obj.rappel = request.POST.get('rappel')
+                st_obj.resultat = request.POST.get('resultat')
+                st_obj.save()
+
+                return JsonResponse({'status': 'success', 'message': message})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
     # --- 2. LOGIQUE VALIDATION (ATTRIBUTION N° RA) ---
     if validation_id:
         registre = get_object_or_404(RegistreArrive, pk=validation_id, utilisateur_creation__localite=request.user.localite)
@@ -675,6 +686,7 @@ def acc_greffier(request):
             )
             context['is_st'] = False
         context['mode'] = 'detail'
+        context['reg_type'] = reg_type
 
     # --- 4. LOGIQUE FORMULAIRE RA (CRÉATION) ---
     if mode == 'form' or (request.method == 'POST' and mode != 'save_st' and mode != 'dispatch'):
@@ -699,7 +711,7 @@ def acc_greffier(request):
             context.update({
                 'mode': 'form_st',
                 'ra_source': ra_source,
-                'titre': "Transfert vers Service Technique",  
+                'titre': "Transfert en Soit Transmis",  
             })
             return render(request, 'pac/acc_greffier.html', context)
 
@@ -709,7 +721,7 @@ def acc_greffier(request):
         queryset = RegistreST.objects.filter(
             utilisateur_creation__localite=request.user.localite
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_st')
-        context['titre'] = "Registre du Service Technique (ST)"
+        context['titre'] = "Registre du Soit Transmis (ST)"
     else:
         # Base pour Arrivée et Pre-RA
         queryset = RegistreArrive.objects.filter(
@@ -745,4 +757,18 @@ def acc_greffier(request):
     context['registres'] = page_obj
     context['page_obj'] = page_obj
 
+    #---7 Gestion des modification ST
+    if mode == 'edit_st' and detail_id:
+        st_instance = get_object_or_404(RegistreST, pk=detail_id)
+        context.update({
+            'mode': 'form_st',
+            'st_instance': st_instance,
+            'ra_source': st_instance.registre_arrive, # On récupère le RA lié
+            'titre': "Modification du Soit-Transmis",
+        })
+        return render(request, 'pac/acc_greffier.html', context)
     return render(request, 'pac/acc_greffier.html', context)
+
+
+
+

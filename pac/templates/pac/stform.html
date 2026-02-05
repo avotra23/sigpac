@@ -1,10 +1,12 @@
 <div class="card shadow border-0 mb-4">
     <div class="card-header bg-dark text-white font-weight-bold">
-        <i class="bi bi-gear-fill me-2"></i>Registre ST (Service Technique)
+        <i class="bi bi-gear-fill me-2"></i>
+        {% if st_instance %}Modification Registre ST{% else %}Registre ST (Soit Transmis){% endif %}
     </div>
     <div class="card-body">
         <form id="formST">
             {% csrf_token %}
+            <input type="hidden" name="st_id" value="{{ st_instance.id|default:'' }}">
             <input type="hidden" name="ra_id" value="{{ ra_source.id }}">
 
             <div class="row mb-3">
@@ -14,44 +16,47 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">N° Chrono ST</label>
-                    <input type="text" class="form-control bg-light" placeholder="Généré à l'enregistrement" readonly>
+                    <input type="text" class="form-control bg-light" 
+                           value="{{ st_instance.n_chrono|default:'Generer automatique' }}" readonly>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Date</label>
-                    <input type="date" name="date_st" class="form-control" value="{{ date_arrivee_systeme }}">
+                    <input type="date" name="date_st" class="form-control" 
+                           value="{{ st_instance.date_st|date:'Y-m-d'|default:date_arrivee_systeme }}">
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Objet</label>
-                <textarea name="objet" class="form-control" rows="2">{{ ra_source.objet_demande }}</textarea>
+                <textarea name="objet" class="form-control" rows="2">{{ st_instance.objet|default:ra_source.objet_demande }}</textarea>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Destinataire</label>
-                <textarea name="destinataire" class="form-control" rows="2" required placeholder="Saisir le destinataire..."></textarea>
+                <textarea name="destinataire" class="form-control" rows="2" required placeholder="Saisir le destinataire...">{{ st_instance.destinataire|default:'' }}</textarea>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Observation</label>
-                <textarea name="observation" class="form-control" rows="2">{{ ra_source.observation }}</textarea>
+                <textarea name="observation" class="form-control" rows="2">{{ st_instance.observation|default:ra_source.observation }}</textarea>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Rappel</label>
-                    <textarea name="rappel" class="form-control" rows="2"></textarea>
+                    <textarea name="rappel" class="form-control" rows="2">{{ st_instance.rappel|default:'' }}</textarea>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Résultat</label>
-                    <textarea name="resultat" class="form-control" rows="2"></textarea>
+                    <textarea name="resultat" class="form-control" rows="2">{{ st_instance.resultat|default:'' }}</textarea>
                 </div>
             </div>
 
             <div class="text-end border-top pt-3">
-                <a href="{% url 'pac:greffier' %}" class="btn btn-secondary me-2">Annuler</a>
+                <a href="{% url 'pac:greffier' %}?type=st" class="btn btn-secondary me-2">Annuler</a>
                 <button type="button" id="submitST" class="btn btn-success px-4">
-                    <i class="bi bi-check-circle me-1"></i> Enregistrer au ST
+                    <i class="bi bi-check-circle me-1"></i> 
+                    {% if st_instance %}Mettre à jour{% else %}Enregistrer au ST{% endif %}
                 </button>
             </div>
         </form>

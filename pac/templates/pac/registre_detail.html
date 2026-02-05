@@ -1,213 +1,235 @@
+{% load static %}
 <link href="{% static 'css/css2.css'%}" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css'%}">
 
 <style>
-    :root {
-        --glass-bg: rgba(255, 255, 255, 0.95);
-        --primary-soft: #eef2ff;
-        --accent-color: #4f46e5;
+    /* ISOLATION DES STYLES : On préfixe tout par .detail-view-container */
+    .detail-view-container {
+        --primary-blue: #4f46e5;
+        --primary-yellow: #f59e0b;
+        --bg-gray: #f8fafc;
+        --text-dark: #1e293b;
+        font-family: 'Inter', sans-serif;
+        color: var(--text-dark);
+        font-size: 16px; /* Taille de base pour le bloc détail uniquement */
     }
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-    
-    .custom-card {
-        border: 1px solid rgba(0,0,0,0.05) !important;
-        transition: transform 0.2s ease, shadow 0.2s ease;
+
+    /* --- DESIGN DES CARTES (UI ÉCRAN) --- */
+    .detail-view-container .custom-card {
+        border: none !important;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        background: #fff;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
     }
-    .info-label {
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: #64748b;
-        font-weight: 700;
-        margin-bottom: 4px;
+
+    .detail-view-container .card-header-styled {
+        padding: 20px 25px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
-    .info-value {
-        font-size: 0.95rem;
-        color: #1e293b;
-        font-weight: 600;
-    }
-    .status-badge {
-        padding: 6px 16px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.85rem;
-    }
-    .icon-box {
-        width: 42px;
-        height: 42px;
+
+    .detail-view-container .icon-box {
+        width: 45px;
+        height: 45px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
+        border-radius: 12px;
+        margin-right: 15px;
     }
-    .objet-box {
-        background: #f1f5f9;
-        border-left: 4px solid var(--accent-color);
-        padding: 15px;
-        border-radius: 0 8px 8px 0;
+
+    .detail-view-container .header-blue { background-color: rgba(79, 70, 229, 0.1); color: var(--primary-blue); }
+    .detail-view-container .header-yellow { background-color: rgba(245, 158, 11, 0.1); color: #92400e; }
+
+    .detail-view-container .info-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .detail-view-container .info-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #000;
+    }
+
+    .detail-view-container .objet-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-left: 6px solid var(--primary-blue);
+        padding: 20px;
+        border-radius: 0 12px 12px 0;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* --- LOGIQUE D'IMPRESSION --- */
+    #print-report { display: none; }
+
+    @media print {
+        /* On cache tout ce qui est UI écran (Sidebar, Nav, etc.) */
+        body * { visibility: hidden !important; }
+        
+        /* On affiche uniquement le rapport d'impression */
+        #print-report, #print-report * {
+            visibility: visible !important;
+            display: block !important;
+        }
+
+        #print-report {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 20px !important;
+            font-family: "Times New Roman", serif !important;
+            background: white !important;
+            color: black !important;
+        }
+        
+        .print-title { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 30px; }
+        @page { margin: 1.5cm; }
     }
 </style>
 
-<div class="container-fluid px-4 py-4">
-    
-    {# --- HEADER --- #}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item small"><a href="#" class="text-decoration-none text-muted">Registres</a></li>
-                    <li class="breadcrumb-item small active">Détails Dossier</li>
-                </ol>
-            </nav>
-            <h3 class="fw-bold text-dark mb-0">
-                <i class="bi bi-hash text-primary"></i> 
-                {% if is_st %}{{ reg_detail.registre_arrive.n_enr_arrive|default:"-" }}{% else %}{{ reg_detail.n_enr_arrive|default:"-" }}{% endif %}
-            </h3>
+<div class="detail-view-container no-print">
+    <div class="container-fluid px-0 py-2">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0" style="font-size: 1.5rem;">Dossier N° {% if is_st %}{{ reg_detail.registre_arrive.n_enr_arrive }}{% else %}{{ reg_detail.n_enr_arrive }}{% endif %}</h2>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-dark shadow-sm">
+                    <i class="bi bi-printer me-2"></i>Imprimer la fiche
+                </button>
+                <a href="?type={{ request.GET.type }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
         </div>
-        <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-white border shadow-sm btn-sm px-3">
-                <i class="bi bi-printer me-2"></i>Imprimer
-            </button>
-            <a href="javascript:history.back()" class="btn btn-sm btn-light border shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                <i class="bi bi-x-lg"></i>
-            </a>
-        </div>
-    </div>
 
-    <div class="row g-4">
-        {# --- COLONNE GAUCHE : INFOS CORRESPONDANCE --- #}
-        <div class="col-lg-8">
-            <div class="card custom-card shadow-sm border-0 h-100" style="border-radius: 16px;">
-                <div class="card-header bg-white border-0 pt-4 px-4">
-                    <div class="d-flex align-items-center">
-                        <div class="icon-box bg-primary bg-opacity-10 me-3">
-                            <i class="bi bi-envelope-paper text-primary fs-5"></i>
+        <div class="card custom-card">
+            <div class="card-header-styled header-blue">
+                <div class="d-flex align-items-center">
+                    <div class="icon-box bg-primary text-white">
+                        <i class="bi bi-envelope-paper"></i>
+                    </div>
+                    <h5 class="mb-0 fw-bold">Informations Générales</h5>
+                </div>
+                <span class="badge bg-primary px-3 py-2">ORIGINAL</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="info-label">Expéditeur</div>
+                        <div class="info-value text-primary">
+                            <i class="bi bi-building me-2"></i>
+                            {% if is_st %}{{ reg_detail.registre_arrive.expediteur }}{% else %}{{ reg_detail.expediteur }}{% endif %}
                         </div>
-                        <h5 class="mb-0 fw-bold">Correspondance Arrivée</h5>
+                    </div>
+                    <div class="col-md-4 border-start ps-4">
+                        <div class="info-label">Date de Réception</div>
+                        <div class="info-value">
+                            <i class="bi bi-calendar3 me-2 text-muted"></i>
+                            {% if is_st %}{{ reg_detail.registre_arrive.date_arrivee|date:"d F Y" }}{% else %}{{ reg_detail.date_arrivee|date:"d F Y" }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 border-start ps-4">
+                        <div class="info-label">Nature du document</div>
+                        <div class="info-value">
+                            <span class="text-uppercase" style="font-size: 0.9rem; color: #475569;">
+                                {% if is_st %}{{ reg_detail.registre_arrive.get_nature_display }}{% else %}{{ reg_detail.get_nature_display }}{% endif %}
+                            </span>
+                        </div>
                     </div>
                 </div>
-
-                <div class="card-body p-4">
-                    <div class="row mb-4">
-                        <div class="col-md-4 mb-3">
-                            <div class="info-label">Expéditeur</div>
-                            <div class="info-value text-primary fs-5">
-                                <i class="bi bi-building me-1"></i>
-                                {% if is_st %}{{ reg_detail.registre_arrive.expediteur }}{% else %}{{ reg_detail.expediteur }}{% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="info-label">Date de Réception</div>
-                            <div class="info-value">
-                                <i class="bi bi-calendar-event me-1 text-muted"></i>
-                                {% if is_st %}{{ reg_detail.registre_arrive.date_arrivee|date:"d M Y" }}{% else %}{{ reg_detail.date_arrivee|date:"d M Y" }}{% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="info-label">Type de document</div>
-                            <div>
-                                <span class="badge bg-secondary bg-opacity-10 ] border px-3" style="color:white;">
-                                    {% if is_st %}{{ reg_detail.registre_arrive.get_nature_display }}{% else %}{{ reg_detail.get_nature_display }}{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <div class="info-label">Objet du dossier</div>
-                        <div class="objet-box">
-                            <p class="mb-0 text-dark fw-medium">
-                                {% if is_st %}{{ reg_detail.registre_arrive.objet_demande }}{% else %}{{ reg_detail.objet_demande }}{% endif %}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="row align-items-center bg-light rounded-3 p-3 mx-0">
-                        <div class="col-md-6">
-                            <div class="info-label">Enregistré par</div>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm bg-white rounded-circle border d-flex align-items-center justify-content-center me-2" style="width:30px; height:30px;">
-                                    <i class="bi bi-person text-muted"></i>
-                                </div>
-                                <span class="small fw-bold">
-                                    {% if is_st %}
-                                        {{ reg_detail.registre_arrive.utilisateur_creation.get_full_name|default:reg_detail.registre_arrive.utilisateur_creation.email }}
-                                    {% else %}
-                                        {{ reg_detail.utilisateur_creation.get_full_name|default:reg_detail.utilisateur_creation.email }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                            <div class="info-label">Observations</div>
-                            <small class="text-muted italic">
-                                {% if is_st %}
-                                    {{ reg_detail.registre_arrive.observation|default:"Pas de notes" }}
-                                {% else %}
-                                    {{ reg_detail.observation|default:"Pas de notes" }}
-                                {% endif %}
-                            </small>
-                        </div>
+                <div class="mt-2">
+                    <div class="info-label">Objet du dossier</div>
+                    <div class="objet-box">
+                        {% if is_st %}{{ reg_detail.registre_arrive.objet_demande }}{% else %}{{ reg_detail.objet_demande }}{% endif %}
                     </div>
                 </div>
             </div>
         </div>
 
-        {# --- COLONNE DROITE : TRAITEMENT TECHNIQUE --- #}
-        <div class="col-lg-4">
-            {% if is_st or reg_detail.st_detail %}
-            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; background: #fff;">
-                <div class="card-header bg-warning bg-opacity-10 border-0 pt-4 px-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="icon-box bg-warning bg-opacity-25 me-3">
-                                <i class="bi bi-gear-fill text-dark"></i>
-                            </div>
-                            <h5 class="mb-0 fw-bold">Service Technique</h5>
-                        </div>
-                        <span class="badge bg-dark"># {% if is_st %}{{ reg_detail.n_chrono }}{% else %}{{ reg_detail.st_detail.n_chrono }}{% endif %}</span>
+        <div class="card custom-card border-top border-warning border-4">
+            <div class="card-header-styled header-yellow">
+                <div class="d-flex align-items-center">
+                    <div class="icon-box bg-warning text-dark">
+                        <i class="bi bi-gear-fill"></i>
                     </div>
+                    <h5 class="mb-0 fw-bold">Sois Transmis(ST)</h5>
                 </div>
-                
-                <div class="card-body p-4">
-                    <div class="mb-4 text-center pb-3 border-bottom border-light">
-    
-
-                    <div class="mb-3">
+                <div class="badge bg-dark px-3 py-2">
+                    CHRONO # {% if is_st %}{{ reg_detail.n_chrono }}{% else %}{{ reg_detail.st_detail.n_chrono }}{% endif %}
+                </div>
+            </div>
+            <div class="card-body p-4">
+                {% if is_st or reg_detail.st_detail %}
+                <div class="row align-items-center">
+                    <div class="col-md-6 mb-3">
                         <div class="info-label text-warning">Destinataire</div>
                         <div class="info-value">
                              <i class="bi bi-person-badge me-2"></i>
                              {% if is_st %}{{ reg_detail.destinataire }}{% else %}{{ reg_detail.st_detail.destinataire }}{% endif %}
                         </div>
                     </div>
-
-                    <div class="mb-3">
+                    <div class="col-md-6 mb-3 border-start ps-4">
                         <div class="info-label text-warning">Date de transfert</div>
                         <div class="info-value">
-                            <i class="bi bi-calendar-check me-2"></i>
-                            {% if is_st %}{{ reg_detail.date_st|date:"d/m/Y" }}{% else %}{{ reg_detail.st_detail.date_st|date:"d/m/Y" }}{% endif %}
+                            <i class="bi bi-clock-history me-2 text-muted"></i>
+                            {% if is_st %}{{ reg_detail.date_st|date:"d/m/Y" }}{% else %}{{ reg_detail.st_detail.date_st|date:"d/m/Y à H:i" }}{% endif %}
                         </div>
                     </div>
-
-                    {% if is_st and reg_detail.rappel or reg_detail.st_detail.rappel %}
-                    <div class="alert alert-danger border-0 shadow-sm mt-4 mb-0" style="border-radius: 12px;">
-                        <div class="d-flex">
-                            <i class="bi bi-exclamation-octagon-fill me-2"></i>
-                            <div>
-                                <div class="fw-bold small">Rappel / Note urgente</div>
-                                <div class="small">{% if is_st %}{{ reg_detail.rappel }}{% else %}{{ reg_detail.st_detail.rappel }}{% endif %}</div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
+                {% else %}
+                <div class="text-center py-3 bg-light rounded-3">
+                    <p class="text-muted mb-0 small">Aucun soit-transmis enregistré pour ce dossier.</p>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="card border-0 shadow-sm h-100 d-flex align-items-center justify-content-center p-5 text-center bg-light">
-                <i class="bi bi-info-circle fs-1 text-muted opacity-25 mb-3"></i>
-                <p class="text-muted mb-0">Aucun soit transmis enregistré pour ce dossier.</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
+
+<div id="print-report">
+    <div class="print-title">
+        <h1 style="font-size: 22pt; margin: 0;">FICHE DE SUIVI DE DOSSIER</h1>
+        <p style="font-size: 14pt;">Référence : <strong>{% if is_st %}{{ reg_detail.registre_arrive.n_enr_arrive }}{% else %}{{ reg_detail.n_enr_arrive }}{% endif %}</strong></p>
+    </div>
+
+    <div style="font-size: 12pt; line-height: 1.6;">
+        <p>Le dossier cité en référence a été réceptionné le 
+        <strong>{% if is_st %}{{ reg_detail.registre_arrive.date_arrivee|date:"d F Y" }}{% else %}{{ reg_detail.date_arrivee|date:"d F Y" }}{% endif %}</strong> 
+        en provenance de <strong>{% if is_st %}{{ reg_detail.registre_arrive.expediteur }}{% else %}{{ reg_detail.expediteur }}{% endif %}</strong>.</p>
+        
+        <p><strong>Objet du dossier :</strong></p>
+        <div style="padding: 10px; border: 1px solid #000; min-height: 60px;">
+            {% if is_st %}{{ reg_detail.registre_arrive.objet_demande }}{% else %}{{ reg_detail.objet_demande }}{% endif %}
+        </div>
+
+        <h3 style="text-decoration: underline; margin-top: 30px;">Traitement / Destination</h3>
+        {% if is_st or reg_detail.st_detail %}
+        <p>Transmis sous le numéro de chrono : <strong># {% if is_st %}{{ reg_detail.n_chrono }}{% else %}{{ reg_detail.st_detail.n_chrono }}{% endif %}</strong>.</p>
+        <p>Destinataire : <strong>{% if is_st %}{{ reg_detail.destinataire }}{% else %}{{ reg_detail.st_detail.destinataire }}{% endif %}</strong></p>
+        <p>Date du mouvement : {% if is_st %}{{ reg_detail.date_st|date:"d/m/Y" }}{% else %}{{ reg_detail.st_detail.date_st|date:"d/m/Y" }}{% endif %}</p>
+        {% else %}
+        <p>Aucun mouvement technique n'est répertorié.</p>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 50px;">
+        <div style="float: left; width: 50%;">Date : {{ "now"|date:"d/m/Y" }}</div>
+        <div style="float: right; width: 50%; text-align: right;">
+            <p>Signature et Cachet :</p>
+            <div style="margin-top: 50px;">_________________________</div>
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+</div>
+<hr class="no-print">

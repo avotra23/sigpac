@@ -53,9 +53,11 @@ class PublicInscription(UtilisateurCreationForm):
 
 class OPJCreationForm(UtilisateurCreationForm):
     matricule = forms.CharField(max_length=20,label="Matriculation",widget=forms.TextInput(attrs={'placeholder':'000000','required':'required'}))
+    corps_d_appartenance = forms.CharField(max_length=100,label="Cors d'appartenance ",widget=forms.TextInput(attrs={'placeholder':'Siege','required':'required'}))
+
     class Meta(UtilisateurCreationForm.Meta):
         model = Utilisateur
-        fields = UtilisateurCreationForm.Meta.fields + ('matricule',)
+        fields = UtilisateurCreationForm.Meta.fields + ('matricule','corps_d_appartenance')
     pass
 
 class AdminCreationForm(UtilisateurCreationForm):

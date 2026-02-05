@@ -141,8 +141,15 @@
 
                         {% if form.matricule %}
                         <div class="form-group">
-                            <label class="form-label" for="{{ form.matricule.id_for_label }}">{{ form.matricule.label }}</label>
+                            <label class="form-label" for="{{ form.matricule.id_for_label }}">Matricule</label>
                             {{ form.matricule }}
+                            <div id="error-matricule" class="error-msg"></div>
+                        </div>
+                        {% endif %}
+                         {% if form.corps_d_appartenance %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.corps_d_appartenance.id_for_label }}">Corps d'appartenance</label>
+                            {{ form.corps_d_appartenance }}
                             <div id="error-matricule" class="error-msg"></div>
                         </div>
                         {% endif %}
