@@ -1,0 +1,55 @@
+<div class="card-floating mx-auto" style="max-width: 600px;">
+                            <div class="right-section">
+                                <h2>{{ title }}</h2> 
+                                <form method="POST" action="{% url 'utilisateur:modifier_utilisateur' utilisateur_a_modifier.pk %}">
+                                    {% csrf_token %}
+                                    
+                                    {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% for field in form %}
+                                                    
+                                        {% if field.name not in champs_speciaux_a_exclure %}
+                                            <div class="mb-3">
+                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        
+                                                        {{ field }}
+                                                       
+                                                        {% if field.field.widget.input_type == 'select' or field.field.widget.input_type == 'select_multiple' %}
+                                                            <script>document.getElementById('{{ field.id_for_label }}').classList.add('form-select');</script>
+                                                        {% else %}
+                                                            <script>document.getElementById('{{ field.id_for_label }}').classList.add('form-control');</script>
+                                                        {% endif %}
+                                                        
+                                                        {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %} 
+                                             </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <hr>
+                                    <div class="mb-3">
+                                         <label class="form-label" for="{{ form.groups.id_for_label }}">{{ form.groups.label }}</label>
+                                            {{ form.groups }}
+                                                <script>document.getElementById('{{ form.groups.id_for_label }}').classList.add('form-select');</script>
+                                            {% if form.groups.errors %}<div class="text-danger small">{{ form.groups.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        {{ form.is_active }}
+                                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                                        {% if form.is_active.errors %}<div class="text-danger small">{{ form.is_active.errors }}</div>{% endif %}
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        {{ form.is_superuser }}
+                                            <label class="form-check-label" for="{{ form.is_superuser.id_for_label }}">{{ form.is_superuser.label }}</label>
+                                        {% if form.is_superuser.errors %}<div class="text-danger small">{{ form.is_superuser.errors }}</div>{% endif %}
+                                    </div>
+                                                
+                                    <hr>
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="submit" class="btn btn-success">Enregistrer les modifications</button>
+                                        <a href="{% url 'utilisateur:acc_admin' mode='utilisateur' %}" class="btn btn-secondary">Annuler</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>

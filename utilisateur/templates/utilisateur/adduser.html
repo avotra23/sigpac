@@ -1,0 +1,93 @@
+ <div class="card-floating mx-auto p-3" style="max-width: 600px; height: 90vh; display: flex; flex-direction: column;">
+                                <div class="right-section border-bottom pb-2 mb-3">
+                                    <h2>Ajout utilisateur</h2>
+                                </div>
+
+                                <div class="card-body-scrollable flex-grow-1" style="overflow-y: auto;">
+                                    <form method="POST" action="{% url 'utilisateur:inscription' %}">
+                                        {% csrf_token %}
+                                        
+                                        {% if form.non_field_errors %}
+                                            <div class="alert alert-danger">
+                                                {{ form.non_field_errors }}
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="form-row mb-3 d-flex justify-content-between">
+                                            <div class="form-group w-50 pe-2">
+                                                <label class="form-label" for="{{ form.nom.id_for_label }}">{{ form.nom.label }}</label>
+                                                {{ form.nom }} 
+                                                <script>document.getElementById('{{ form.nom.id_for_label }}').classList.add('form-control');</script>
+                                                {% if form.nom.errors %}<div class="text-danger small">{{ form.nom.errors }}</div>{% endif %}
+                                            </div>
+                                            
+                                            <div class="form-group w-50 ps-2">
+                                                <label class="form-label" for="{{ form.prenom.id_for_label }}">{{ form.prenom.label }}</label>
+                                                {{ form.prenom }}
+                                                <script>document.getElementById('{{ form.prenom.id_for_label }}').classList.add('form-control');</script>
+                                                {% if form.prenom.errors %}<div class="text-danger small">{{ form.prenom.errors }}</div>{% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                                            {{ form.email }}
+                                            <script>document.getElementById('{{ form.email.id_for_label }}').classList.add('form-control');</script>
+                                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.telephone.id_for_label }}">{{ form.telephone.label }}</label>
+                                            {{ form.telephone }}
+                                            <script>document.getElementById('{{ form.telephone.id_for_label }}').classList.add('form-control');</script>
+                                            {% if form.telephone.errors %}<div class="text-danger small">{{ form.telephone.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="form-row mb-3 d-flex justify-content-between">
+                                            <div class="form-group w-50 pe-2">
+                                                <label class="form-label" for="{{ form.poste.id_for_label }}">{{ form.poste.label }}</label>
+                                                {{ form.poste }}
+                                                <script>document.getElementById('{{ form.poste.id_for_label }}').classList.add('form-select');</script>
+                                                {% if form.poste.errors %}<div class="text-danger small">{{ form.poste.errors }}</div>{% endif %}
+                                            </div>
+                                            
+                                            <div class="form-group w-50 ps-2">
+                                                <label class="form-label" for="{{ form.localite.id_for_label }}">{{ form.localite.label }}</label>
+                                                {{ form.localite }}
+                                                <script>document.getElementById('{{ form.localite.id_for_label }}').classList.add('form-select');</script>
+                                                {% if form.localite.errors %}<div class="text-danger small">{{ form.localite.errors }}</div>{% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.group_choice.id_for_label }}">{{ form.group_choice.label }}</label>
+                                            {{ form.group_choice }}
+                                            <script>document.getElementById('{{ form.group_choice.id_for_label }}').classList.add('form-select');</script>
+                                            {% if form.group_choice.errors %}<div class="text-danger small">{{ form.group_choice.errors }}</div>{% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                                            <div class="input-group">
+                                            {{ form.password }}
+                                            <button class="btn btn-toggle-password border-0" type="button"><i class="bi bi-eye"></i></button>
+                                            <script>document.getElementById('{{ form.password.id_for_label }}').classList.add('form-control');</script>
+                                        </div>
+                                        {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label" for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                                        {{ form.password2 }}
+                                        <script>document.getElementById('{{ form.password2.id_for_label }}').classList.add('form-control');</script>
+                                        {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors }}</div>{% endif %}
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">Enregistrer l'utilisateur</button>
+                                </form>
+                            </div>
+
+                            <div class="text-center mt-2 pt-2 border-top">
+                                <a href="{% url 'utilisateur:acc_admin' mode='utilisateur' %}">Retour à la liste</a>
+                            </div>
+                        </div>

@@ -1,0 +1,29 @@
+{% load static %}
+<div class="sidebar-top">
+            <div class="sidebar-logo text-center mb-5">
+                <div class="logo-circle">
+                    <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                </div>
+                <small>Pôles Anti-Corruption</small>
+            </div>
+            <div class="menu-item menu-toggle"> <span>Registre <i class="bi bi-caret-down-fill float-end"></i></span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item"><a href="{% url 'utilisateur:acc_admin' mode='RA' %}">Registre d'Arriver</a></div>
+                <div class="submenu-item"><a href="">Registre ST</a></div>
+                <div class="submenu-item"><a href="">Registre CCO</a></div>
+            </div>
+            <div class="menu-item menu-toggle"> <span>Administrateur <i class="bi bi-caret-down-fill float-end"></i></span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item"><a href="{% url 'utilisateur:acc_admin' mode='groupe' %}" class="{% if mode == 'groupe' %}active{% endif %}">Groupe d’utilisateur</a></div>
+                <div class="submenu-item"><a href="{% url 'utilisateur:acc_admin' mode='localite' %}" class="{% if mode == 'localite' %}active{% endif %}">Localité</a></div>
+                <div class="submenu-item"><a href="{% url 'utilisateur:acc_admin' mode='utilisateur' %}" class="{% if mode == 'utilisateur' %}active{% endif %}">Utilisateur</a></div>
+            </div>
+            
+        </div>
+
+        <div class="sidebar-bottom">
+            <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+            <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
+        </div>

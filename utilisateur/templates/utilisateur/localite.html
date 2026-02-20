@@ -1,0 +1,17 @@
+<table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom de la Localité</th>
+                                    <th>Nombre d'Utilisateurs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for localite in data_list %}
+                                    <tr>
+                                        <td>{{ localite.pk }}</td>
+                                        <td>{{ localite.nom_loc }}</td>
+                                        <td>{{ localite.user_count }}</td> </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>

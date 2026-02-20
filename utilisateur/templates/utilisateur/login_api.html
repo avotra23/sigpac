@@ -141,6 +141,12 @@
     </div>
 </div>
 <div id="error-message" class="text-danger mt-2" style="display:none;"></div>
+<<<<<<< HEAD
+=======
+
+<script src="{% static 'js/jquery-3.7.1.min.js'%} "></script>
+<script src="{% static 'js/sweetalert211.js' %}"></script>
+>>>>>>> 4995eca (Activation admin)
 <script>
     function togglePass() {
     const p = document.getElementById('resetNewPass');
@@ -240,12 +246,28 @@ function updateUI(msg, colorClass) {
             window.location.href = "{% url 'pac:procureur' %}";
         } else if (result.role === 'greffier') {
             window.location.href = "{% url 'pac:greffier' %}";
+        
+        } else if (result.role === 'admin') {
+            window.location.href = "{% url 'utilisateur:acc_admin' %}";
         } else {
             // Optionnel : gérer l'erreur de login (ex: mauvais mdp)
             if (result.detail) {
-                alert(result.detail);
+               
+                 Swal.fire({
+                    icon: 'Error',
+                    title: 'Connexion error',
+                    text: result.detail,
+                    timer: 1000,
+                    showConfirmButton: true
+                });
             } else {
-                alert("Erreur de connexion");
+                 Swal.fire({
+                    icon: 'Error',
+                    title: 'Connexion error',
+                    text: 'Erreur de connexion! Veuillez reessayez',
+                    timer: 1000,
+                    showConfirmButton: true
+                });
             }
         }
     })

@@ -1,0 +1,17 @@
+ <table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom du Groupe</th>
+                                    <th>Nombre d'Utilisateurs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in data_list %}
+                                    <tr>
+                                        <td>{{ group.pk }}</td>
+                                        <td>{{ group.name }}</td>
+                                        <td>{{ group.user_count }}</td> </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>

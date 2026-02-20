@@ -1,0 +1,53 @@
+<table class="table table-bordered table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th><th>Nom</th><th>Prenoms</th><th>Telephone</th><th>E-mail</th><th>Poste</th><th>Localite</th><th>Statut</th><th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in data_list %}
+                                    <tr>
+                                        <td>{{i.pk}}</td>
+                                        <td>{{i.nom}}</td>
+                                        <td>{{i.prenom}}</td>
+                                        <td>+261 {{i.telephone}}</td>
+                                        <td>{{i.email}}</td>
+                                        <td>{{i.poste}}</td>
+                                        <td>{{i.localite}}</td>
+                                        <td>
+                                            {% if i.is_superuser %}
+                                                <span class="badge bg-danger">SUPERUTILISATEUR</span>
+                                            {% elif i.groups.all %}
+                                               <span class="badge bg-secondary"> {{ i.groups.first.name|upper }} </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'utilisateur:modifier_utilisateur' i.pk %}" class="btn btn-sm btn-success me-1" title="Modifier"><i class="bi bi-pencil-fill"></i> </a>
+                                            
+                                            <button class="btn btn-sm btn-danger btn-delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal-{{ i.pk }}" title="Supprimer"> <i class="bi bi-trash-fill"></i> </button>
+                                            
+                                            <div class="modal fade" id="confirmDeleteModal-{{ i.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la Suppression</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            Êtes-vous sûr de vouloir supprimer l'utilisateur **{{ i.nom }} {{ i.prenom }}** (ID: {{ i.pk }}) ?
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                            <form method="POST" action="{% url 'utilisateur:supprimer_utilisateur' i.pk %}" style="display:inline;">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
