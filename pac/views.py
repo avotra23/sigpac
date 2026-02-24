@@ -85,7 +85,8 @@ def public(request):
         'plaintes': api_data.get('plaintes'),
         'plainte_detail': api_data.get('plainte_detail'),
         'form_title': api_data.get('form_title'),
-        "back_url": reverse('pac:public') + "?mode=list"
+        "back_url": reverse('pac:public') + "?mode=list",
+        "groups" : "public",
     }
     
     if mode == 'form':
@@ -112,6 +113,7 @@ def opj_list_view(request):
         'opj_detail': api_data.get('opj_detail'),
         'form_title': api_data.get('form_title'),
         "back_url": reverse('pac:opj'),
+        "groups":"opj",
     }
     
     if mode == 'form':

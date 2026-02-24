@@ -2,85 +2,155 @@
 {% load static %}
 {% block title %} Administrateur {% endblock title %}
 {% block content %}
-<style>
-    .submenu {
-    display: none; 
-    /* Ajoutez d'autres styles comme padding si nécessaire */
-}
-.submenu-item a.active {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-left: 3px solid #fff;
-    font-weight: bold;
-}
-</style>
-<div class="main-container d-flex"> 
+    <style>
+            .submenu {
+            display: none; 
+            /* Ajoutez d'autres styles comme padding si nécessaire */
+            }
+        .submenu-item a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid #fff;
+            font-weight: bold;
+        }
+        /* --- Style des Tableaux Modernisés --- */
+        .custom-table-container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #eef2f5;
+        }
 
-    <div class="sidebar">
-        {% include 'utilisateur/sidebar.html'%}
+        .table-pac-modern {
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-pac-modern thead {
+            background-color: #072b47;
+            color: #ffffff;
+        }
+
+        .table-pac-modern th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 15px;
+            border: none;
+        }
+
+        .table-pac-modern td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            color: #495057;
+            border-bottom: 1px solid #f1f4f8;
+            font-size: 0.9rem;
+        }
+
+        .table-pac-modern tbody tr:hover {
+            background-color: #f8f9ff !important;
+            transition: 0.2s;
+        }
+
+        /* Badge de statut personnalisé */
+        .badge-role {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+
+        /* Barre de recherche style */
+        .search-wrapper {
+            position: relative;
+            max-width: 400px;
+        }
+        .search-wrapper input {
+            padding-left: 35px;
+            border-radius: 20px;
+            border: 1px solid #ced4da;
+        }
+        .search-wrapper i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        /* Sytle pour le chart*/
+        .icon-circle {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        canvas#groupChart {
+            max-height: 300px !important;
+        }
+
+        .row.g-4 {
+            margin-top: 10px;
+        }
+    </style>
+    <div class="top-bar-pac">
+         PAC {{user.localite}}
     </div>
-        
-        <div class="main-content flex-grow-1">
-            <div class="top-bar-pac">
-                PAC {{user.localite}}
-            </div>
-            <div class="content-wrapper p-4">
-                
-                {% if messages %}
-                <div class="messages-container mb-3">
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                
-                <div class="d-flex justify-content-between align-items-center mb-3" style="margin-left:20px;">
-                    <h2 style='text-align:center;'>{{ title }}</h2>
-                    {% if mode == 'utilisateur' %}
-                        <a href="{% url 'utilisateur:acc_admin' mode='ajout' %}" class="btn btn-primary btn-ajouter"><i class="bi bi-plus-lg"></i> Ajouter </a>
-                    {% endif %}
-                </div>
-                <div class="table-responsive mt-3" style="margin-left:20px;">
-
-                    {% if mode == 'utilisateur' %}
-                        {% include 'utilisateur/usertable.html'%}
-                    {% elif mode == 'groupe' %}
-                       {% include 'utilisateur/groupuser.html'%}
-
-                    {% elif mode == 'localite' %}
-                        {% include 'utilisateur/localite.html'%}
+    <div class="content-wrapper p-4">
                     
-                    {% elif mode == 'modifier' %}
-                        {% include 'utilisateur/modifuser.html'%}
-                    {% elif mode == 'ajout' %}
-                       {% include 'utilisateur/adduser.html'%}
-                    {% elif mode == 'RA' %}
-                            {% include 'utilisateur/uRa.html'%} 
+                    {% if messages %}
+                    <div class="messages-container mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% endif %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h3 text-dark border-bottom pb-2">{{ title }}</h2>
+                        {% if mode == 'utilisateur' %}
+                            <a href="{% url 'utilisateur:acc_admin' mode='ajout' %}" class="btn btn-primary btn-ajouter"><i class="bi bi-plus-lg"></i> Ajouter </a>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="table-responsive mt-3" style="margin-left:20px;">
 
-                </div>
-            </div>
-        </div>
-</div>
+                        {% if mode == 'utilisateur' %}
+                            {% include 'utilisateur/usertable.html'%}
+                        {% elif mode == 'groupe' %}
+                        {% include 'utilisateur/groupuser.html'%}
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                        {% elif mode == 'localite' %}
+                            {% include 'utilisateur/localite.html'%}
+                        
+                        {% elif mode == 'modifier' %}
+                            {% include 'utilisateur/modifuser.html'%}
+                        {% elif mode == 'ajout' %}
+                        {% include 'utilisateur/adduser.html'%}
+                        {% elif mode == 'RA' %}
+                                {% include 'utilisateur/uRa.html'%} 
+                        {% endif %}
 
-<script>
-    $(document).ready(function() {
-    $('.menu-toggle').on('click', function() {
-        const nextSubmenu = $(this).next('.submenu');
-        
-        // Ferme les autres et bascule celui-ci
-        $('.submenu').not(nextSubmenu).slideUp(300);
-        nextSubmenu.slideToggle(300);
-        
-        // Gestion des flèches
-        $(this).find('i').toggleClass('bi-caret-down-fill bi-caret-up-fill');
-        $('.menu-toggle').not(this).find('i')
-                         .removeClass('bi-caret-up-fill')
-                         .addClass('bi-caret-down-fill');
-    });
-});
+                    </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+        $('.menu-toggle').on('click', function() {
+            const nextSubmenu = $(this).next('.submenu');
+            
+            // Ferme les autres et bascule celui-ci
+            $('.submenu').not(nextSubmenu).slideUp(300);
+            nextSubmenu.slideToggle(300);
+            
+            // Gestion des flèches
+            $(this).find('i').toggleClass('bi-caret-down-fill bi-caret-up-fill');
+            $('.menu-toggle').not(this).find('i')
+                            .removeClass('bi-caret-up-fill')
+                            .addClass('bi-caret-down-fill');
+        });
+        });
 </script>
 {% endblock content %}

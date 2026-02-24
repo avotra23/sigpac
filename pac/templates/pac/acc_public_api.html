@@ -5,7 +5,11 @@
 
 {% block content %}
 {% include "nav.html" %}
-
+<style>
+.main-content {
+        margin-left: 0 !important; /* On force le retrait de la marge pour les visiteurs */
+    }
+</style>
 <div class="container mt-4">
 
     {# --- Messages de succès/erreur Django --- #}

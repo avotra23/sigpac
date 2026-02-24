@@ -6,10 +6,7 @@
 {% block content %} 
 {% include "nav.html" %}
 
-<div class="main-container d-flex"> 
-    {% include "sidebar.html" %}
 
-    <div class="main-content flex-grow-1">
         <div class="top-bar-pac d-flex justify-content-between align-items-center bg-danger text-white p-2 shadow-sm">
             <div style="margin-left:50px;">
                 <i class="bi bi-person-circle"></i> {{ user.nom }} — <small>{{ user.poste }}</small>
@@ -152,8 +149,7 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+
 
 {% block extra_js %}
     {{ block.super }}

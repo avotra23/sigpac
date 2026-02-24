@@ -107,6 +107,7 @@ def acc_admin(request, mode='utilisateur'):
     elif mode =='ajout':
         form = AdminCreationForm()
     elif mode == 'RA':
+        title = "REGISTRE D'ARRIVE"
         form =" "
         plaintes_filtrees = RegistreArrive.objects.filter(
             utilisateur_creation__localite=request.user.localite
@@ -140,7 +141,7 @@ def modifier_utilisateur(request, pk):
             form.save()
             messages.success(request, f"L'utilisateur **{utilisateur.pk}** a été modifié avec succès.")
             
-            return redirect('acc_admin', mode='utilisateur') 
+            return redirect('utilisateur:acc_admin', mode='utilisateur') 
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:

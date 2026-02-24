@@ -1,4 +1,5 @@
 {% load static %}
+{% if user.is_superuser %}
 <div class="sidebar-top">
             <div class="sidebar-logo text-center mb-5">
                 <div class="logo-circle">
@@ -9,7 +10,7 @@
             <div class="menu-item menu-toggle"> <span>Registre <i class="bi bi-caret-down-fill float-end"></i></span>
             </div>
             <div class="submenu">
-                <div class="submenu-item"><a href="{% url 'utilisateur:acc_admin' mode='RA' %}">Registre d'Arriver</a></div>
+                <div class="submenu-item"><a href="{% url 'utilisateur:acc_admin' mode='RA' %}"  class="{% if mode == 'RA' %}active{% endif %}">Registre d'Arriver</a></div>
                 <div class="submenu-item"><a href="">Registre ST</a></div>
                 <div class="submenu-item"><a href="">Registre CCO</a></div>
             </div>
@@ -25,5 +26,76 @@
 
         <div class="sidebar-bottom">
             <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
-            <a href="#" class="settings"><i class="bi bi-gear-fill"></i> Paramètres</a>
+            <a class="dropdown-item rounded-2 py-2 settings" href="#" data-bs-toggle="modal" data-bs-target="#profileModal" ><i class="bi bi-gear-fill"></i> Paramètres</a>
         </div>
+</div>
+{% else %}
+    {% if groups == "procureur"%}
+    
+            <div class="sidebar-top">
+                <div class="sidebar-logo text-center mb-5">
+                    <div class="logo-circle">
+                        <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                    </div>
+                    <small>Pôles Anti-Corruption</small>
+                </div>
+                <div class="menu-item {% if menu_active == 'arrive' %} active {% endif %}"> 
+                    <a href="{{back_url}}">Plainte en ligne</a>
+                </div>
+                <div class="menu-item {% if menu_active == 'OPJ' %} active {% endif %}"><a href="{% url 'pac:procureur' %}?mode=ListeOPJ">Plainte OPJ</a></div>
+                <div class="menu-item {% if menu_active == 'RA' %} active {% endif %}"><a href="{% url 'pac:procureur' %}?mode=ListeRA">Dossier transmis au Greffier</a></div>
+                <div class="menu-item {% if menu_active == 'CSS' %} active {% endif %}"><a href="{% url 'pac:procureur' %}?mode=ListeCSS">Dossier transmis au CSS</a></div>
+                <div class="menu-item"><a href="#">Statistique</a></div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+            
+            </div>
+   
+    {% elif groups == "greffier" %}
+    
+        <div class="sidebar-top">
+                    <div class="sidebar-logo text-center mb-5">
+                        <div class="logo-circle">
+                            <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                        </div>
+                        <small>Pôles Anti-Corruption</small>
+                    </div>
+                    
+                    <div class="menu-item {% if request.GET.type == 'pre-arrive' or not request.GET.type %}active{% endif %}"> 
+                        <a href="{% url 'pac:greffier' %}?type=pre-arrive">Pre-Registre Arriver</a>
+                    </div>
+                    <div class="menu-item {% if request.GET.type == 'arrive' %}active{% endif %}"> 
+                        <a href="{% url 'pac:greffier' %}?type=arrive">Registre Arriver</a>
+                    </div>
+                    <div class="menu-item {% if request.GET.type == 'st' %}active{% endif %}"><a href="{% url 'pac:greffier' %}?type=st">Registre ST</a></div>
+                    <div class="menu-item {% if request.GET.type == 'csca' %}active{% endif %}"><a href="#">Registre CSCA</a></div>
+                    <div class="menu-item {% if request.GET.type == 'rrp' %}active{% endif %}"><a href="#">Registre RP</a></div>
+                    <div class="menu-item {% if request.GET.type == 'cco' %}active{% endif %}"><a href="#">Registre CCO</a></div>
+                    <div class="menu-item {% if request.GET.type == 'rap' %}active{% endif %}"><a href="#">Registre d’Appel</a></div>
+        </div>
+   
+    {% elif groups == "dcn" %}
+    
+            <div class="sidebar-top">
+                <div class="sidebar-logo text-center mb-5">
+                    <div class="logo-circle">
+                        <img src="{% static 'image/logo-pac.png'%}" alt="logo-pac" class="logo-img">
+                    </div>
+                    <small>Pôles Anti-Corruption</small>
+                </div>
+                <div class="menu-item {% if menu_active == 'arrive' %}active{% endif %}"> 
+                    <a href="{{back_url}}">Plainte en ligne</a>
+                </div>
+                <div class="menu-item "><a href="{% url 'pac:dcn' %}?mode=trib">Tribunal Traitant</a></div>
+                <div class="menu-item"><a href="#">Statistique</a></div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
+            
+            </div>
+    
+    {% endif %}
+{% endif %}

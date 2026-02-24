@@ -6,13 +6,6 @@
 {% block content %} 
 
 {% include "nav.html" %}
-
-<div class="main-container d-flex"> 
-
-    {% include "sidebar.html"%}
-
-    <div class="main-content flex-grow-1">
-
         <div class="top-bar-pac d-flex justify-content-between" style="background-color:rgb(49, 49, 154); color:white; padding: 10px 15px;">
             <div style="margin-left:50px;">
                 {{ user.nom }} - {{ user.poste }}
@@ -21,7 +14,7 @@
                 PAC {{ user.localite|default:"[Localité]" }}
             </div>
         </div>
-        <div class="content-wrapper p-4" style="margin-left:5%;">
+        <div class="content-wrapper p-4">
             
             {% if messages %}
                 {% for message in messages %}
@@ -252,9 +245,6 @@
 
         </div>
 
-    </div>
-</div>
-
 
 {% block extra_js %}
     {{ block.super }}
@@ -262,19 +252,18 @@
     <script src="{% static 'js/jquery-3.6.0.min.js'%}"></script> 
     <script type="text/javascript" charset="utf8" src="{% static 'js/dataTables.min.js'%}"></script>
     <script>
-        <script>
-    $(document).ready(function() {
-        $('#registre-plainte').DataTable({
-            "paging": false,       // Désactive la pagination DataTables
-            "searching": false,    // Désactive la barre de recherche DataTables
-            "info": false,         // Désactive l'info "Affichage de X sur Y"
-            "ordering": true,      // Vous pouvez garder le tri des colonnes sur la page actuelle
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
-            }
+        
+        $(document).ready(function() {
+            $('#registre-plainte').DataTable({
+                "paging": false,       // Désactive la pagination DataTables
+                "searching": false,    // Désactive la barre de recherche DataTables
+                "info": false,         // Désactive l'info "Affichage de X sur Y"
+                "ordering": true,      // Vous pouvez garder le tri des colonnes sur la page actuelle
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+                }
+            });
         });
-    });
-</script>
     </script>
 {% endblock extra_js %}
 {% endblock content %}

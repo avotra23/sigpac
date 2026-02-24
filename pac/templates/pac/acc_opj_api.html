@@ -4,7 +4,11 @@
 
 {% block content %}
 {% include "nav.html" %}
-
+<style>
+.main-content {
+        margin-left: 0 !important; /* On force le retrait de la marge pour les visiteurs */
+    }
+</style>
 <div class="container mt-4">
     {% if messages %}
         {% for message in messages %}
@@ -151,68 +155,68 @@
     </script>
     <script>
         document.getElementById('opjForm').addEventListener('submit', function(e) {
-    e.preventDefault(); // Empêche le rechargement classique de la page
+        e.preventDefault(); // Empêche le rechargement classique de la page
 
-    const form = this;
-    const formData = new FormData(form); // Capture texte et fichiers (enctype="multipart/form-data")
-    const url = "{% url 'pac:api_opj_views' %}";
+        const form = this;
+        const formData = new FormData(form); // Capture texte et fichiers (enctype="multipart/form-data")
+        const url = "{% url 'pac:api_opj_views' %}";
 
-    // 1. Afficher l'alerte "Traitement en cours"
-    Swal.fire({
-        title: 'Traitement...',
-        text: 'Veuillez patienter pendant l\'enregistrement du dossier.',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-
-    // 2. Envoi des données via Fetch
-    fetch(url, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            
-        }
-    })
-    .then(response => {
-        return response.json().then(data => {
-            if (response.ok) {
-                // 3. Succès
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Succès !',
-                    text: data.detail || 'Plainte envoyée avec succès',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    // Redirection après succès (vers la liste des dossiers par exemple)
-                    window.location.href = "{% url 'pac:opj' %}";
-                });
-            } else {
-                // 4. Gestion des erreurs (ex: validation serializer)
-                let errorMsg = "Veuillez vérifier les champs du formulaire.";
-                if (typeof data === 'object') {
-                    errorMsg = Object.values(data).flat().join('\n');
-                }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: errorMsg
-                });
+        // 1. Afficher l'alerte "Traitement en cours"
+        Swal.fire({
+            title: 'Traitement...',
+            text: 'Veuillez patienter pendant l\'enregistrement du dossier.',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
             }
         });
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Erreur réseau',
-            text: 'Impossible de joindre le serveur.'
+
+        // 2. Envoi des données via Fetch
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                
+            }
+        })
+        .then(response => {
+            return response.json().then(data => {
+                if (response.ok) {
+                    // 3. Succès
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Succès !',
+                        text: data.detail || 'Plainte envoyée avec succès',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        // Redirection après succès (vers la liste des dossiers par exemple)
+                        window.location.href = "{% url 'pac:opj' %}";
+                    });
+                } else {
+                    // 4. Gestion des erreurs (ex: validation serializer)
+                    let errorMsg = "Veuillez vérifier les champs du formulaire.";
+                    if (typeof data === 'object') {
+                        errorMsg = Object.values(data).flat().join('\n');
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: errorMsg
+                    });
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur réseau',
+                text: 'Impossible de joindre le serveur.'
+            });
         });
     });
-});
     </script>
 {% endblock %}
 {% endblock content %}

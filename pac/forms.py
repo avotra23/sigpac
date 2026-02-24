@@ -37,7 +37,7 @@ class PlainteForm(forms.ModelForm):
             'tranga_kolikoly': "Tranga Kolikoly (Le Fait/Acte de Corruption)",
             'ilay_olona_kolikoly': "Ilay Olona Manao kolikoly (L'auteur de la corruption)",
             'toorna_birao': "Toerana - Birao - Sampan-draharaha manao ilay kolikoly (Lieu - Bureau - Service de la corruption)",
-            'piece_jointe': "Pièce(s) jointe(s) (Optionnel)",
+            'piece_jointe': "Pièce(s) jointe(s) (10 Mo Max - Optionnel)",
         }
 
 

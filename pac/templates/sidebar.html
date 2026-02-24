@@ -1,6 +1,6 @@
 {% load static %}
 {% if groups == "procureur"%}
-<div class="sidebar">
+
         <div class="sidebar-top">
             <div class="sidebar-logo text-center mb-5">
                 <div class="logo-circle">
@@ -10,7 +10,7 @@
             </div>
             <div class="menu-item {% if menu_active == 'arrive' %} active {% endif %}"> 
                 <a href="{{back_url}}">Plainte en ligne</a>
-            </div>
+            <   /div>
             <div class="menu-item {% if menu_active == 'OPJ' %} active {% endif %}"><a href="{% url 'pac:procureur' %}?mode=ListeOPJ">Plainte OPJ</a></div>
             <div class="menu-item {% if menu_active == 'RA' %} active {% endif %}"><a href="{% url 'pac:procureur' %}?mode=ListeRA">Dossier transmis au Greffier</a></div>
             <div class="menu-item {% if menu_active == 'CSS' %} active {% endif %}"><a href="{% url 'pac:procureur' %}?mode=ListeCSS">Dossier transmis au CSS</a></div>
@@ -21,9 +21,9 @@
             <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
            
         </div>
-</div>
+
 {% elif groups == "greffier" %}
-<div class="sidebar">
+
     <div class="sidebar-top">
                 <div class="sidebar-logo text-center mb-5">
                     <div class="logo-circle">
@@ -44,9 +44,9 @@
                 <div class="menu-item {% if request.GET.type == 'cco' %}active{% endif %}"><a href="#">Registre CCO</a></div>
                 <div class="menu-item {% if request.GET.type == 'rap' %}active{% endif %}"><a href="#">Registre d’Appel</a></div>
     </div>
-</div>
-{% else %}
-<div class="sidebar">
+
+{% elif groups == "DCN" %}
+
         <div class="sidebar-top">
             <div class="sidebar-logo text-center mb-5">
                 <div class="logo-circle">
@@ -65,5 +65,5 @@
             <a href="{% url 'utilisateur:logout' %}"><i class="bi bi-arrow-left-circle-fill"></i> Se Déconnecter</a>
            
         </div>
-</div>
+
 {% endif %}

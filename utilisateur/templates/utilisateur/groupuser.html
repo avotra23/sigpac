@@ -1,17 +1,91 @@
- <table class="table table-bordered table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nom du Groupe</th>
-                                    <th>Nombre d'Utilisateurs</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for group in data_list %}
-                                    <tr>
-                                        <td>{{ group.pk }}</td>
-                                        <td>{{ group.name }}</td>
-                                        <td>{{ group.user_count }}</td> </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="custom-table-container">
+            <table class="table table-pac-modern align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Nom du Groupe</th>
+                        <th class="text-center">Effectif</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in data_list %}
+                    <tr>
+                        <td><span class="text-muted">#{{ group.pk }}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle bg-light text-primary me-2" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                    <i class="bi bi-people-fill" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <strong>{{ group.name }}</strong>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill px-3" style="background-color: #072b47 !important;">
+                                {{ group.user_count }} membres
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">Aucun groupe trouvé.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm p-3" style="border-radius: 15px;">
+            <h5 class="text-center mb-4" style="color: #072b47; font-weight: 600;">Répartition des Utilisateurs</h5>
+            <canvas id="groupChart" width="400" height="400"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('groupChart').getContext('2d');
+        
+        // Extraction des données Django pour le JS
+        const labels = [{% for group in data_list %}"{{ group.name }}",{% endfor %}];
+        const dataValues = [{% for group in data_list %}{{ group.user_count }},{% endfor %}];
+
+        new Chart(ctx, {
+            type: 'doughnut', // Type "Beignet" pour un look moderne
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: [
+                        '#072b47', // Bleu nuit (votre couleur)
+                        '#f7a01d', // Orange PAC
+                        '#2e7d32', // Vert
+                        '#c62828', // Rouge
+                        '#4a759c', // Bleu clair
+                        '#6c757d'  // Gris
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                },
+                cutout: '70%' // Épaisseur du beignet
+            }
+        });
+    });
+</script>

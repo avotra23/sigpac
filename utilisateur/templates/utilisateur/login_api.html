@@ -3,32 +3,83 @@
 {% block title%}LOGIN PAC{% endblock title%}
 {% block content %}
 <style>
+    /* 1. ANNULATION DES MARGES DE BASE.HTML */
+    /* On force le contenu à prendre toute la largeur sans tenir compte de la sidebar */
     body {
-        /* Un dégradé élégant qui rappelle l'autorité et la confiance */
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Cible les conteneurs probables de base.html pour supprimer le décalage */
+    .main-content, #content-wrapper, main {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* 2. POSITIONNEMENT DU WRAPPER */
+    .wrapper {
         min-height: 100vh;
+        width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0;
-    }
-
-    .wrapper {
-        width: 100%;
-        display: flex;
-        justify-content: center;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         padding: 20px;
     }
 
-    /* Optionnel : Ajout d'un effet de verre (Glassmorphism) sur la carte */
+    /* 3. DESIGN DE LA CARTE */
     .card-floating {
         background: rgba(255, 255, 255, 0.95);
         border-radius: 15px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.2);
         overflow: hidden;
         border: 1px solid rgba(255,255,255,0.2);
+        display: flex; /* Aligne gauche et droite */
+        width: 900px;
+        max-width: 100%;
+        min-height: 550px;
+    }
+
+    .left-section {
+        flex: 1;
+        background: #072b47;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .right-section {
+        flex: 1.2;
+        padding: 50px;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .logo-img {
+        width: 120px;
+        margin-bottom: 20px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 850px) {
+        .card-floating {
+            flex-direction: column;
+            width: 100%;
+            min-width: unset;
+        }
+        .left-section {
+            padding: 30px;
+        }
     }
 </style>
-
 
 <div class="wrapper">
     <div class="card-floating">
@@ -141,63 +192,60 @@
     </div>
 </div>
 <div id="error-message" class="text-danger mt-2" style="display:none;"></div>
-<<<<<<< HEAD
-=======
 
 <script src="{% static 'js/jquery-3.7.1.min.js'%} "></script>
 <script src="{% static 'js/sweetalert211.js' %}"></script>
->>>>>>> 4995eca (Activation admin)
 <script>
     function togglePass() {
-    const p = document.getElementById('resetNewPass');
-    const i = document.getElementById('eyeIcon');
-    p.type = p.type === 'password' ? 'text' : 'password';
-    i.classList.toggle('bi-eye');
-    i.classList.toggle('bi-eye-slash');
-}
-
-function handleReset() {
-    const email = document.getElementById('resetEmail').value;
-    const telephone = document.getElementById('resetTel').value;
-    const password = document.getElementById('resetNewPass').value;
-    const statusDiv = document.getElementById('resetStatus');
-    const btn = document.getElementById('btnReset');
-
-    if(!email || !telephone || !password) {
-        updateUI("Veuillez remplir tous les champs.", "alert-warning");
-        return;
+        const p = document.getElementById('resetNewPass');
+        const i = document.getElementById('eyeIcon');
+        p.type = p.type === 'password' ? 'text' : 'password';
+        i.classList.toggle('bi-eye');
+        i.classList.toggle('bi-eye-slash');
     }
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    function handleReset() {
+        const email = document.getElementById('resetEmail').value;
+        const telephone = document.getElementById('resetTel').value;
+        const password = document.getElementById('resetNewPass').value;
+        const statusDiv = document.getElementById('resetStatus');
+        const btn = document.getElementById('btnReset');
 
-    fetch("{% url 'utilisateur:api_reset_password' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': "{{ csrf_token }}"
-        },
-        body: JSON.stringify({ email: email, telephone: telephone, password: password })
-    })
-    .then(r => r.json().then(data => ({s: r.status, d: data})))
-    .then(res => {
-        if(res.s === 200) {
-            updateUI(res.d.detail, "alert-success");
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            updateUI(res.d.detail, "alert-danger");
-            btn.disabled = false;
-            btn.innerText = "Confirmer le changement";
+        if(!email || !telephone || !password) {
+            updateUI("Veuillez remplir tous les champs.", "alert-warning");
+            return;
         }
-    });
-}
 
-function updateUI(msg, colorClass) {
-    const div = document.getElementById('resetStatus');
-    div.innerText = msg;
-    div.className = `mt-3 p-3 rounded-3 small text-center alert ${colorClass}`;
-    div.classList.remove('d-none');
-}
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        fetch("{% url 'utilisateur:api_reset_password' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ email: email, telephone: telephone, password: password })
+        })
+        .then(r => r.json().then(data => ({s: r.status, d: data})))
+        .then(res => {
+            if(res.s === 200) {
+                updateUI(res.d.detail, "alert-success");
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                updateUI(res.d.detail, "alert-danger");
+                btn.disabled = false;
+                btn.innerText = "Confirmer le changement";
+            }
+        });
+    }
+
+    function updateUI(msg, colorClass) {
+        const div = document.getElementById('resetStatus');
+        div.innerText = msg;
+        div.className = `mt-3 p-3 rounded-3 small text-center alert ${colorClass}`;
+        div.classList.remove('d-none');
+    }
 </script>
 <script src="{% static 'js/bootstrap.bundle.min.js'%}"></script>
 <script>
