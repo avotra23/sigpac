@@ -6,6 +6,7 @@
 {% block content %} 
 
 {% include "nav.html" %}
+    
         <div class="top-bar-pac d-flex justify-content-between" style="background-color:rgb(49, 49, 154); color:white; padding: 10px 15px;">
             <div style="margin-left:50px;">
                 {{ user.nom }} - {{ user.poste }}
@@ -239,6 +240,8 @@
                             </tbody>
                         </table>
                     </div>
+                {% elif menu_active == "stat" %}
+                    {% include 'pac/stat.html'%}
                 {% endif %}
 
             
@@ -252,18 +255,52 @@
     <script src="{% static 'js/jquery-3.6.0.min.js'%}"></script> 
     <script type="text/javascript" charset="utf8" src="{% static 'js/dataTables.min.js'%}"></script>
     <script>
-        
-        $(document).ready(function() {
-            $('#registre-plainte').DataTable({
-                "paging": false,       // Désactive la pagination DataTables
-                "searching": false,    // Désactive la barre de recherche DataTables
-                "info": false,         // Désactive l'info "Affichage de X sur Y"
-                "ordering": true,      // Vous pouvez garder le tri des colonnes sur la page actuelle
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+       
+    function initDataTable() {
+        if ($.fn.DataTable.isDataTable('#registre-plainte')) {
+            $('#registre-plainte').DataTable().destroy();
+        }
+
+        $('#registre-plainte').DataTable({
+            "paging": false,
+            "searching": false,
+            "info": false,
+            "ordering": true,
+            "language": {
+                "sEmptyTable":     "Aucune donnée disponible dans le tableau",
+                "sInfo":           "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
+                "sInfoEmpty":      "Affichage de l'élément 0 à 0 sur 0 élément",
+                "sInfoFiltered":   "(filtré à partir de _MAX_ éléments au total)",
+                "sLengthMenu":     "Afficher _MENU_ éléments",
+                "sLoadingRecords": "Chargement...",
+                "sProcessing":     "Traitement...",
+                "sSearch":         "Rechercher :",
+                "sZeroRecords":    "Aucun élément correspondant trouvé",
+                "oPaginate": {
+                    "sFirst":    "Premier",
+                    "sLast":     "Dernier",
+                    "sNext":     "Suivant",
+                    "sPrevious": "Précédent"
+                },
+                "oAria": {
+                    "sSortAscending":  ": activer pour trier la colonne par ordre croissant",
+                    "sSortDescending": ": activer pour trier la colonne par ordre décroissant"
                 }
-            });
+            }
         });
-    </script>
+    }
+
+    $(document).ready(function() {
+        initDataTable();
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        // Correction : on vérifie si le swap concerne le conteneur du tableau
+        if (evt.detail.target.id === "registre-plainte" || $(evt.detail.target).find('#registre-plainte').length > 0) {
+            initDataTable();
+        }
+    });
+</script>
+
 {% endblock extra_js %}
 {% endblock content %}

@@ -6,11 +6,7 @@
 {% block content %} 
 
 {% include "nav.html" %}
-    <div class="main-container d-flex"> 
 
-        {% include "sidebar.html" %}
-
-        <div class="main-content flex-grow-1">
 
             <div class="top-bar-pac d-flex justify-content-between" style="background-color:rgb(49, 49, 154);color:white;">
                 <div style="margin-left:50px;">{{ user.nom }} - {{ user.poste }}</div>
@@ -31,6 +27,8 @@
                     {% include "pac/raform.html" %}
                 {% elif mode == 'form_st' %}
                     {% include "pac/stform.html" %}
+                {% elif mode == 'form_csca' %}
+                    {% include "pac/cscaform.html" %}
                 {% else %}
                     {# --- AFFICHAGE DES DÉTAILS --- #}
                     {% if reg_detail %}
@@ -44,6 +42,7 @@
                             </a>
                             {% endif %}
                         </div>
+                        <!--Barre de recherche-->
                         <form method="GET" action="{% url 'pac:greffier' %}" class="row g-2 mb-4">
                             <input type="hidden" name="mode" value="{{ mode_actuel }}">
                             
@@ -64,8 +63,11 @@
                             </div>
                             {% endif %}
                         </form>
+
                         {% if request.GET.type == 'st' %}
                             {% include "pac/tableST.html" %}
+                        {% elif request.GET.type == 'csca'%}
+                            {% include "pac/tableCSCA.html" %}
                         {% else %}
                         
                         <div class="table-responsive mt-3">
@@ -213,11 +215,10 @@
 
             </div>
 
-        </div>
-    </div>
+   
 
 <link href="{% static 'css/sweetalert2.min.css'%}" rel="stylesheet">
-<script src="{% static 'js/sweetalert2@11.js' %}"></script>
+<script src="{% static 'js/sweetalert211.js' %}"></script>
 
 <script src="{% static 'js/jquery.min.js'%}"></script>
 <script>
@@ -242,26 +243,17 @@
 </script>
 <script>
     $(document).ready(function() {
-    $('.btn-switch').on('click', function() {
-        // 1. Récupérer l'ID (depuis l'attribut data-record-id du bouton)
-        var recordId = $(this).data('record-id');
-        
-        // 2. Récupérer le N° ENR dans la première colonne de la ligne
-        var nEnrArrive = $(this).closest('tr').find('td:first').text();
-        
-        // 3. Cibler la modale
-        var switchModal = $('#switch');
-        
-        // 4. Mettre à jour le titre visuel
-        switchModal.find('#switchmodal').text('Switcher le registre ' + nEnrArrive);
-        
-        // 5. Injecter l'ID dans le champ caché pour la View (doit être ra_id)
-        switchModal.find('input[name="ra_id"]').val(recordId);
-
-        // 6. Afficher la modale
-        switchModal.modal('show');
+        $('.btn-switch').on('click', function() {
+            var recordId = $(this).data('record-id');
+            var nEnrArrive = $(this).closest('tr').find('td:first').text();
+            
+            var switchModal = $('#switch');
+            switchModal.find('#switchmodal').text('Transférer le dossier : ' + nEnrArrive);
+            
+            // TRÈS IMPORTANT : On injecte l'ID dans le champ caché de la modale
+            switchModal.find('input[name="ra_id"]').val(recordId);
+        });
     });
-});
 </script>
 <script>
     document.querySelectorAll('.btn-validation').forEach(button => {
@@ -359,16 +351,65 @@
     });
 });
 </script>
-{% block extra_js %}
 <script>
-        $(document).ready(function() {
-            $('#registre-plainte').DataTable({
-                "paging": false, 
-                "searching": false, 
-                "info": false, 
-                "ordering": true,
-                "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json" }
+$(document).on('click', '#submitCSCA', function(e) {
+    e.preventDefault();
+    let form = $('#formCSCA')[0];
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    Swal.fire({
+        title: 'Confirmer',
+        text: "Transférer ce dossier au CSCA ?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "?mode=save_csca",
+                type: "POST",
+                data: new FormData(form),
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    Swal.fire('Succès', response.message, 'success').then(() => {
+                        window.location.href = "{% url 'pac:greffier' %}?type=csca";
+                    });
+                }
             });
+        }
+    });
+});
+</script>
+{% block extra_js %}
+ <script>
+        function initDataTable() {
+            // Si DataTable existe déjà, on la détruit proprement
+            if ($.fn.DataTable.isDataTable('#registre-plainte')) {
+                $('#registre-plainte').DataTable().destroy();
+            }
+
+            // On initialise
+            $('#registre-plainte').DataTable({
+                "paging": false,
+                "searching": false,
+                "info": false,
+                "ordering": true,
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            initDataTable();
+        });
+
+        // Relancer l'initialisation après chaque swap HTMX
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === "registre-plainte" || $(evt.detail.target).find('#registre-plainte').length > 0) {
+                initDataTable();
+            }
         });
     </script>
     {{ block.super }}
@@ -381,4 +422,4 @@
     });
     </script>
 {% endblock extra_js %}
-    {% endblock content %}
+{% endblock content %}

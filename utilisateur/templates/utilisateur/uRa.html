@@ -21,7 +21,7 @@
                                                 <tr>
                                                     <td>{{ registre.n_enr_arrive }}</td>
                                                     <td>{{ registre.date_arrivee|date:"d/m/Y" }}</td>
-                                                    <td>{{ registre.provenance|truncatechars:50 }}</td>
+                                                    <td>{{ registre.expediteur|truncatechars:50 }}</td>
                                                     <td>{{ registre.get_nature_display }}</td>
                                                     <td>{{ registre.observation|truncatechars:50|default:"-" }}</td>
                                                     <td>

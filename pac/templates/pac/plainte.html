@@ -51,12 +51,14 @@
         <div class="mb-4">
             <label for="{{ form.piece_jointe.id_for_label }}" class="section-label fw-bold">{{ form.piece_jointe.label }}</label>
             {{ form.piece_jointe }}
+            <div id="file-error" class="text-danger small mt-1" style="display:none;"></div>
+            
             {% for error in form.piece_jointe.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            
             {% if form.instance.piece_jointe %}
                 <p class="mt-2">Fichier actuel: <a class="form-control" href="{{ form.instance.piece_jointe.url }}" target="_blank">{{ form.instance.piece_jointe.name }}</a></p>
             {% endif %}
         </div>
-
         <div class="text-end">
             <a href="{% url 'pac:public' %}?mode=list" class="btn btn-secondary btn-lg me-2">Annuler</a>
             <button type="submit" class="btn btn-primary btn-lg btn-envoyer">
@@ -65,3 +67,44 @@
         </div>
     </form>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]'); // Cible le champ fichier
+    const errorDiv = document.getElementById('file-error');
+    const submitBtn = document.querySelector('.btn-envoyer');
+
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 Mo en octets
+    const ALLOWED_EXTENSIONS = /(\.jpg|\.jpeg|\.png|\.pdf|\.doc|\.docx)$/i;
+
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        
+        if (file) {
+            let errorMessage = "";
+
+            // 1. Vérification de l'extension
+            if (!ALLOWED_EXTENSIONS.exec(file.name)) {
+                errorMessage = "Format invalide. Veuillez choisir un fichier PDF, DOC ou Image (JPG, PNG).";
+            } 
+            // 2. Vérification de la taille
+            else if (file.size > MAX_SIZE) {
+                errorMessage = "Le fichier est trop lourd (maximum 10 Mo).";
+            }
+
+            // Affichage du message et blocage du bouton
+            if (errorMessage) {
+                errorDiv.textContent = errorMessage;
+                errorDiv.style.display = 'block';
+                this.classList.add('is-invalid'); // Style Bootstrap
+                submitBtn.disabled = true;
+                this.value = ""; // Optionnel : réinitialise le champ
+            } else {
+                errorDiv.style.display = 'none';
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+                submitBtn.disabled = false;
+            }
+        }
+    });
+});
+</script>

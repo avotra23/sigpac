@@ -1,0 +1,64 @@
+<div class="content-wrapper">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">Nouveau Dossier CSCA (Lien RA: {{ ra_source.n_enr_arrive }})</h3>
+        </div>
+        <div class="card-body">
+            <form id="formCSCA">
+                {% csrf_token %}
+                <input type="hidden" name="ra_id" value="{{ ra_source.id }}">
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Date CSCA</label>
+                        <input type="date" name="date_csca" class="form-control" value="{{ date_arrivee_systeme|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Demandeur</label>
+                        <input type="text" name="demandeur" class="form-control" placeholder="Nom du demandeur" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Entité</label>
+                        <input type="text" name="entite" class="form-control" placeholder="Entité concernée" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Objet</label>
+                        <textarea name="objet" class="form-control" rows="2">{{ ra_source.nature }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Intitulé</label>
+                        <textarea name="intitule" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Réquisitoire du MP</label>
+                        <textarea name="requisitoire_mp" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Décision</label>
+                        <textarea name="decision" class="form-control" rows="2" required></textarea>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Transmission Président</label>
+                        <input type="text" name="transmission_president" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Appel</label>
+                        <input type="text" name="appel" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Résultat Appel</label>
+                        <input type="text" name="resultat_appel" class="form-control">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">Annuler</button>
+                    <button type="submit" id="submitCSCA" class="btn btn-success px-4">Enregistrer au CSCA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

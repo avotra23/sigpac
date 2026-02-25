@@ -322,12 +322,45 @@ def plainte_anonyme_api(request):
 def acc_dcn(request):
     mode = request.GET.get('mode', 'list')
     detail_id = request.GET.get('detail_id')
-    search_query = request.GET.get('search', '')  # Valeur a rechercher
+    search_query = request.GET.get('search', '')
+    tribunal_filtre = request.GET.get('tribunal')
+    statute = request.GET.get('statut')
     
+    stats_tribunaux = []
     
-    plaintes_qs = Plainte.objects.all().order_by('-date_plainte')
+    # 1. Traitement du Dispatch (POST)
+    if request.method == 'POST' and mode == 'dispatch':
+        plainte_id = request.POST.get('idplainte')
+        pac_destination = request.POST.get('pac')
+        plainte_a_dispatcher = get_object_or_404(Plainte, pk=plainte_id)
+        plainte_a_dispatcher.statut = "DISPATCHE"
+        plainte_a_dispatcher.pac_affecte = pac_destination
+        plainte_a_dispatcher.save(update_fields=['statut', 'pac_affecte'])
+        messages.success(request, f"La plainte a été dispatchée vers le PAC {pac_destination}")
+        mode = 'list' # Retour à la liste après dispatch
 
-    #Donner retourner par filtrage
+    # 2. Calcul des Statistiques (Toujours calculées pour éviter les erreurs de graphiques)
+    for code, label in Plainte.LOCALITE_CHOICES:
+        qs_en_ligne = Plainte.objects.filter(pac_affecte=code)
+        qs_opj = OPJ.objects.filter(pac_affecte=code)
+        
+        stats_tribunaux.append({
+            'code': code,
+            'nom': label,
+            'nb_entree': qs_en_ligne.count() + qs_opj.count(),
+            'nb_sortie': qs_en_ligne.filter(statut='TRAITEE').count() + qs_opj.filter(statut='TRAITEE').count(),
+            'nb_en_cours': qs_en_ligne.filter(statut__in=['DISPATCHE', 'COURS']).count() + qs_opj.filter(statut__in=['DISPATCHE', 'COURS']).count(),
+            'nb_css': qs_en_ligne.filter(statut='CSS').count() + qs_opj.filter(statut='CSS').count(),
+        })
+
+    # 3. Préparation de la QuerySet principale (Filtrage et Recherche)
+    if tribunal_filtre:
+        plaintes_qs = Plainte.objects.filter(pac_affecte=tribunal_filtre).order_by('-date_plainte')
+        if statute:
+            plaintes_qs = plaintes_qs.filter(statut=statute)
+    else:
+        plaintes_qs = Plainte.objects.all().order_by('-date_plainte')
+
     if search_query:
         plaintes_qs = plaintes_qs.filter(
             Q(n_chrono_tkk__icontains=search_query) |
@@ -335,138 +368,119 @@ def acc_dcn(request):
             Q(tranga_kolikoly__icontains=search_query)
         )
 
-    # Logique de Pagination Django
-    paginator = Paginator(plaintes_qs, 10) # 10 plaintes par page
+    # 4. Pagination
+    paginator = Paginator(plaintes_qs, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # 5. Construction du Contexte FINAL
     context = {
         "user": request.user,
-        "po": page_obj,  # On passe l'objet page au lieu du queryset complet
+        "po": page_obj,
         "search_query": search_query,
         "back_url": reverse('pac:dcn'),
         "groups": "dcn",
-        "menu_active": "arrive" if mode != 'trib' else "trib",
-        "titre_menu": "Plainte en ligne" if mode != 'trib' else "Les tribunaux traitant"
+        "stats_tribunaux": stats_tribunaux,
+        # IMPORTANT : On force 'arrive' pour que le tableau soit visible en mode liste
+        "menu_active": mode if mode in ['trib', 'stat'] else "arrive",
+        "titre_menu": "Plaintes en ligne"
     }
-    if request.method == 'POST' and mode == 'dispatch':
-        plainte_id = request.POST.get('idplainte')
-        pac_destination = request.POST.get('pac')
-        plainte_a_dispatcher = Plainte.objects.get(pk=plainte_id)
 
-        print(plainte_a_dispatcher)
-        plainte_a_dispatcher.statut = "DISPATCHE"
-        plainte_a_dispatcher.pac_affecte = pac_destination
-        plainte_a_dispatcher.save(update_fields=['statut','pac_affecte'])
-        return render(request, "pac/acc_dcn.html",context)
-    if mode == 'list':
-        # Mode LISTE
-        context['plaintes'] = Plainte.objects.all()
+    # Ajustements spécifiques selon le mode
+    if mode == 'list' and detail_id:
+        context['plainte_detail'] = get_object_or_404(Plainte, pk=detail_id)
+
+    elif mode == 'trib':
+        context["titre_menu"] = "Les Tribunaux traitants au sein du PAC"
+
+    elif mode == 'stat':
+        context["titre_menu"] = "Tableau de Bord National"
+        # KPI Globaux
+        traitees = Plainte.objects.filter(statut='TRAITEE').count() + OPJ.objects.filter(statut='TRAITEE').count()
+        total_g = Plainte.objects.count() + OPJ.objects.count()
         
-        if detail_id:
-            try:
-                context['plainte_detail'] = Plainte.objects.get(pk=detail_id)
-            except Plainte.DoesNotExist:
-                messages.error(request, "La plainte demandée n'existe pas.")
-    if mode == 'trib':
-        context["menu_active"] = "trib"
-        context["titre_menu"] = "Statistiques par Pôle Anti-Corruption (PAC)"
-        
-        stats_tribunaux = []
+        context['kpi'] = {
+            'total': total_g,
+            'traitées': traitees,
+            'attente': Plainte.objects.filter(statut='ATTENTE').count(),
+            'en_cours': (Plainte.objects.filter(statut__in=['DISPATCHE', 'COURS']).count() + OPJ.objects.filter(statut__in=['DISPATCHE', 'COURS']).count()),
+            'css': Plainte.objects.filter(statut='CSS').count() + OPJ.objects.filter(statut='CSS').count(),
+            'taux': round((traitees / total_g * 100), 1) if total_g > 0 else 0
+        }
+        context['labels_pac'] = [s['nom'] for s in stats_tribunaux]
+        context['data_pac'] = [s['nb_entree'] for s in stats_tribunaux]
 
-        # On utilise les choix définis dans n'importe quel modèle (ils sont identiques)
-        for code, label in Plainte.LOCALITE_CHOICES:
-            # On récupère les QuerySets pour les deux modèles
-            qs_en_ligne = Plainte.objects.filter(pac_affecte=code)
-            qs_opj = OPJ.objects.filter(pac_affecte=code)
-            qs_non_affectes = Plainte.objects.filter(pac_affecte__isnull=True) | Plainte.objects.filter(pac_affecte='')
-            # Calcul des entrées (En ligne + OPJ)
-            # Note : J'inclus 'ATTENTE' car c'est votre statut par défaut dans le modèle
-            statuts_entree = ['ATTENTE', 'DISPATCHE', 'COURS', 'TRAITEE']
-            
-            nb_entree = (
-                qs_en_ligne.filter(statut__in=statuts_entree).count() + 
-                qs_opj.filter(statut__in=statuts_entree).count() 
-            )
-            
-            nb_sortie = (
-                qs_en_ligne.filter(statut='TRAITEE').count() + 
-                qs_opj.filter(statut='TRAITEE').count()
-            )
-            
-            nb_en_cours = (
-                qs_en_ligne.filter(statut__in=['DISPATCHE', 'COURS']).count() + 
-                qs_opj.filter(statut__in=['DISPATCHE', 'COURS']).count()
-            )
-            
-            nb_css = (
-                qs_en_ligne.filter(statut='CSS').count() + 
-                qs_opj.filter(statut='CSS').count()
-            )
-
-            stats = {
-                'code': code,
-                'nom': label,
-                'nb_entree': nb_entree,
-                'nb_sortie': nb_sortie,
-                'nb_en_cours': nb_en_cours,
-                'nb_css': nb_css,
-            }
-            stats_tribunaux.append(stats)
-
-        context["stats_tribunaux"] = stats_tribunaux
-
-    # Logique pour voir le détail des plaintes d'un tribunal spécifique
-    tribunal_filtre = request.GET.get('tribunal')
-    statute = request.GET.get('statut')
     if tribunal_filtre:
-        context['po'] = Plainte.objects.filter(pac_affecte=tribunal_filtre)
-        if statute:
-            context['po'] = Plainte.objects.filter(pac_affecte=tribunal_filtre, statut = statute)
-        context['menu_active'] = 'arrive' # On réutilise le tableau de liste pour l'affichage
         context['titre_menu'] = f"Plaintes affectées à : {tribunal_filtre}"
-    return render(request, "pac/acc_dcn.html",context)
 
-
+    return render(request, "pac/acc_dcn.html", context)
 # API DCN 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def api_dcn_plaintes(request):
-    # Vérification du rôle (équivalent à user_passes_test)
+    # 1. Vérification du rôle
     if not is_dcn(request.user):
-        return Response({"detail": "Accès non autorisé pour ce rôle."}, status=403)
+        return Response({"detail": "Accès non autorisé."}, status=403)
 
-    # --- LOGIQUE DE DISPATCHING (POST) ---
-    if request.method == 'POST':
-        mode = request.data.get('mode') # On peut passer le mode dans le body
-        
-        if mode == 'dispatch':
-            plainte_id = request.data.get('idplainte')
-            pac_destination = request.data.get('pac')
-            
-            plainte = get_object_or_404(Plainte, pk=plainte_id)
-            plainte.statut = "DISPATCHE"
-            plainte.pac_affecte = pac_destination
-            plainte.save(update_fields=['statut', 'pac_affecte'])
-            
-            return Response({"detail": "Plainte dispatchée avec succès"}, status=200)
-        
-        return Response({"detail": "Action non reconnue"}, status=400)
-
-    # --- LOGIQUE DE CONSULTATION (GET) ---
     mode = request.GET.get('mode', 'list')
     detail_id = request.GET.get('detail_id')
+    
+    # Structure de base de la réponse
     response_data = {
         "groups": "dcn",
-        "menu_active": "arrive" if mode != 'trib' else "trib",
-        "titre_menu": "Plainte en ligne" if mode != 'trib' else "Les tribunaux traitants"
+        "menu_active": mode if mode in ['trib', 'stat'] else "arrive",
+        "titre_menu": "Plainte en ligne"
     }
 
-    if mode == 'list':
-        plaintes = Plainte.objects.all().order_by('-id')
+    # --- LOGIQUE STATISTIQUE (Commune à 'trib' et 'stat') ---
+    if mode in ['trib', 'stat']:
+        stats_tribunaux = []
+        for code, label in Plainte.LOCALITE_CHOICES:
+            qs_en_ligne = Plainte.objects.filter(pac_affecte=code)
+            qs_opj = OPJ.objects.filter(pac_affecte=code)
+            
+            stats_tribunaux.append({
+                'code': code,
+                'nom': label,
+                'nb_entree': qs_en_ligne.count() + qs_opj.count(),
+                'nb_sortie': qs_en_ligne.filter(statut='TRAITEE').count() + qs_opj.filter(statut='TRAITEE').count(),
+                'nb_en_cours': (qs_en_ligne.filter(statut__in=['DISPATCHE', 'COURS']).count() + 
+                               qs_opj.filter(statut__in=['DISPATCHE', 'COURS']).count()),
+                'nb_css': qs_en_ligne.filter(statut='CSS').count() + qs_opj.filter(statut='CSS').count(),
+            })
+        response_data['stats_tribunaux'] = stats_tribunaux
+
+    # --- MODE STATISTIQUES (KPI & Graphiques) ---
+    if mode == 'stat':
+        response_data['titre_menu'] = "Tableau de Bord National"
+        
+        # Calcul des KPI globaux
+        total_p = Plainte.objects.count()
+        total_o = OPJ.objects.count()
+        total_g = total_p + total_o
+        traitees = Plainte.objects.filter(statut='TRAITEE').count() + OPJ.objects.filter(statut='TRAITEE').count()
+        
+        response_data['kpi'] = {
+            'total': total_g,
+            'traitées': traitees,
+            'attente': Plainte.objects.filter(statut='ATTENTE').count(),
+            'en_cours': (Plainte.objects.filter(statut__in=['DISPATCHE', 'COURS']).count() + 
+                        OPJ.objects.filter(statut__in=['DISPATCHE', 'COURS']).count()),
+            'css': Plainte.objects.filter(statut='CSS').count() + OPJ.objects.filter(statut='CSS').count(),
+            'taux': round((traitees / total_g * 100), 1) if total_g > 0 else 0
+        }
+        # Données formatées pour les graphiques (Labels et Data)
+        response_data['labels_pac'] = [s['nom'] for s in response_data['stats_tribunaux']]
+        response_data['data_pac'] = [s['nb_entree'] for s in response_data['stats_tribunaux']]
+
+    # --- MODE LISTE OU TRIBUNAL ---
+    elif mode == 'trib':
+        response_data['titre_menu'] = "Les Tribunaux traitants au sein du PAC"
+    
+    else: # Mode 'list' par défaut
+        plaintes = Plainte.objects.all().order_by('-date_plainte')
         response_data['plaintes'] = PlainteSerializer(plaintes, many=True).data
         
-        # Si un ID spécifique est demandé dans la liste
         if detail_id:
             plainte_detail = Plainte.objects.filter(pk=detail_id).first()
             if plainte_detail:
@@ -639,7 +653,7 @@ def acc_greffier(request):
         'search_query': search_query,
         'date_arrivee_systeme': timezone.now().strftime("%Y-%m-%d"),
     }
-
+    # Enregistrement en ST
     if request.method == 'POST' and mode == 'save_st':
         try:
             with transaction.atomic():
@@ -666,13 +680,38 @@ def acc_greffier(request):
                 return JsonResponse({'status': 'success', 'message': message})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+    # Enregistrement en CSCA
+    if request.method == 'POST' and mode == 'save_csca':
+        try:
+            with transaction.atomic():
+                ra_id_post = request.POST.get('ra_id')
+                ra_source = get_object_or_404(RegistreArrive, pk=ra_id_post)
+                
+                # On utilise les noms exacts de votre modèle RegistreCSCA
+                csca_obj = RegistreCSCA.objects.create(
+                    registre_arrive=ra_source,
+                    utilisateur_creation=request.user,
+                    date_csca=request.POST.get('date_csca'),
+                    demandeur=request.POST.get('demandeur'),
+                    entite=request.POST.get('entite'),
+                    objet=request.POST.get('objet'),
+                    intitule=request.POST.get('intitule'),
+                    requisitoire_mp=request.POST.get('requisitoire_mp'),
+                    decision=request.POST.get('decision'),
+                    transmission_president=request.POST.get('transmission_president'),
+                    appel=request.POST.get('appel'),
+                    resultat_appel=request.POST.get('resultat_appel')
+                )
+                return JsonResponse({'status': 'success', 'message': f"Enregistré sous le N° {csca_obj.n_chrono}"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     # --- 2. LOGIQUE VALIDATION (ATTRIBUTION N° RA) ---
     if validation_id:
         registre = get_object_or_404(RegistreArrive, pk=validation_id, utilisateur_creation__localite=request.user.localite)
         n_ra = registre.attribuer_ra()
         messages.success(request, f"Validé avec le N° : {n_ra}")
         return redirect('pac:greffier')
-
     # --- 3. LOGIQUE DÉTAILS ---
     if detail_id:
         if reg_type == 'st':
@@ -681,16 +720,23 @@ def acc_greffier(request):
                 pk=detail_id
             )
             context['is_st'] = True
+        elif reg_type == 'csca':
+            context['titre'] = "Registre CSCA"
         else:
-            context['reg_detail'] = get_object_or_404(
-                RegistreArrive.objects.prefetch_related('st_details').select_related('utilisateur_creation'), 
+            # On récupère le RA
+            ra_obj = get_object_or_404(
+                RegistreArrive.objects.select_related('utilisateur_creation'), 
                 pk=detail_id
             )
+            context['reg_detail'] = ra_obj
+            # ON RÉCUPÈRE LE DERNIER ST LIÉ (C'est ici que ça se joue)
+            context['st_associe'] = ra_obj.st_details.first() 
             context['is_st'] = False
+            
         context['mode'] = 'detail'
         context['reg_type'] = reg_type
-
-    # --- 4. LOGIQUE FORMULAIRE RA (CRÉATION) ---
+        
+       # --- 4. LOGIQUE FORMULAIRE RA (CRÉATION) ---
     if mode == 'form' or (request.method == 'POST' and mode != 'save_st' and mode != 'dispatch'):
         if request.method == 'POST':
             form = RegistreArriveForm(request.POST)
@@ -715,7 +761,11 @@ def acc_greffier(request):
                 'ra_source': ra_source,
                 'titre': "Transfert en Soit Transmis",  
             })
-            return render(request, 'pac/acc_greffier.html', context)
+        elif target_type == 'CSCA':
+            context.update({'mode': 'form_csca', 
+                            'ra_source': ra_source, 
+                            'titre': "Transfert CSCA"})
+        return render(request, 'pac/acc_greffier.html', context)
 
     # --- 6. FILTRAGE, RECHERCHE ET PAGINATION ---
     # Sélection du Queryset de base selon le type
@@ -724,6 +774,11 @@ def acc_greffier(request):
             utilisateur_creation__localite=request.user.localite
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_st')
         context['titre'] = "Registre du Soit Transmis (ST)"
+    elif reg_type == 'csca':
+        queryset = RegistreCSCA.objects.filter(
+            utilisateur_creation__localite=request.user.localite
+        ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_csca')
+        context['titre'] = "Registre CSCA"
     else:
         # Base pour Arrivée et Pre-RA
         queryset = RegistreArrive.objects.filter(

@@ -16,22 +16,20 @@
 </head>
 
 <body>
-
-   <div class="{% if user.is_authenticated %}{% if groups != "opj" and groups != "public" %}main-container d-flex{% endif %}{% endif %}" style="width: 100%;">
-        
-        {% if user.is_authenticated %}
-            {% if groups != "opj" and groups != "public" %}
-                <div class="sidebar" style="width: 220px;">
-                    {% include 'utilisateur/sidebar.html' %}
-                </div>
-            {% endif %}
-        {% endif %}
-        
-        {# On n'ajoute flex-grow-1 que si la sidebar existe #}
-        <div class="main-content {% if user.is_authenticated %}flex-grow-1{% endif %}">
-                {% block content %}{% endblock content %}
+   
+   <div class="main-container {% if user.is_authenticated and groups and groups != 'opj' and groups != 'public' %}d-flex{% endif %}" style="width: 100%;">
+    
+    {% if user.is_authenticated and groups and groups != "opj" and groups != "public" %}
+        <div class="sidebar" style="width: 220px; flex-shrink: 0;">
+            {% include 'utilisateur/sidebar.html' %}
         </div>
+    {% endif %}
+    
+    <div class="main-content {% if user.is_authenticated and groups and groups != 'opj' and groups != 'public' %}flex-grow-1{% endif %}">
+        {% block content %}
+        {% endblock content %}
     </div>
+</div>
 
     
 

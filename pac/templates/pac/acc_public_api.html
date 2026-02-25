@@ -168,18 +168,26 @@
     </script>
 <script>
 $(document).ready(function() {
-    // On cible le formulaire de plainte
-    $(document).ready(function() {
-    $('#plainteForm').on('submit', function(e) {
+    // Utilisation de .off() avant .on() pour s'assurer qu'un seul écouteur est attaché
+    $(document).off('submit', '#plainteForm').on('submit', '#plainteForm', function(e) {
         e.preventDefault();
+        
+        var $form = $(this);
+        var $submitBtn = $form.find('.btn-envoyer');
         var formData = new FormData(this);
         
-        // On récupère l'ID si on est en modification pour l'envoyer à l'API
+        // Récupération de l'ID via l'URL ou le champ caché
         const urlParams = new URLSearchParams(window.location.search);
-        const pId = urlParams.get('plainte_id');
-        if (pId) formData.append('plainte_id', pId);
+        const pId = urlParams.get('plainte_id') || $form.find('input[name="plainte_id"]').val();
+        
+        // Désactiver le bouton pour éviter les clics frénétiques
+        $submitBtn.prop('disabled', true);
 
-        Swal.fire({ title: 'Chargement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ 
+            title: 'Chargement...', 
+            allowOutsideClick: false, 
+            didOpen: () => Swal.showLoading() 
+        });
 
         $.ajax({
             url: pId ? "{% url 'pac:api_public_plaintes' %}" + pId + "/" : "{% url 'pac:api_public_plaintes' %}",
@@ -190,16 +198,17 @@ $(document).ready(function() {
             headers: { "X-CSRFToken": "{{ csrf_token }}" },
             success: function(response) {
                 Swal.fire('Succès !', response.detail, 'success').then(() => {
-                    
                     window.location.href = "{% url 'pac:public' %}?mode=list";
                 });
+            },
+            error: function(xhr) {
+                $submitBtn.prop('disabled', false); // Réactiver en cas d'erreur
+                Swal.fire('Erreur', "Une erreur est survenue lors de l'enregistrement.", 'error');
             }
         });
     });
 });
-});
 </script>
-
 {% endblock extra_js %}
 {% endblock content %}
 

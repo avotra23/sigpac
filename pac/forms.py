@@ -19,6 +19,11 @@ class PlainteForm(forms.ModelForm):
                     f"La taille du fichier ne doit pas dépasser {MAX_UPLOAD_SIZE_DISPLAY}. "
                     f"Taille actuelle : {round(uploaded_file.size / (1024 * 1024), 2)} Mo."
                 )
+            extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            import os
+            ext = os.path.splitext(uploaded_file.name)[1].lower()
+            if ext not in extensions:
+                raise forms.ValidationError("Format de fichier non supporté.")
         
         # Retourne le fichier nettoyé (obligatoire dans la méthode clean)
         return uploaded_file

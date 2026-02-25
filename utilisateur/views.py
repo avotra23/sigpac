@@ -119,6 +119,7 @@ def acc_admin(request, mode='utilisateur'):
         'title': title,
         'mode': mode,         
         'form' : form,
+        'groups' : "admin",
     }
     
 
@@ -314,3 +315,5 @@ def update_profile_api(request):
     # Pour le GET (si besoin d'initialiser le formulaire)
     serializer = ProfileUpdateSerializer(user)
     return Response(serializer.data)
+
+

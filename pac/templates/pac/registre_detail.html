@@ -163,27 +163,35 @@
                     <div class="icon-box bg-warning text-dark">
                         <i class="bi bi-gear-fill"></i>
                     </div>
-                    <h5 class="mb-0 fw-bold">Sois Transmis(ST)</h5>
+                    <h5 class="mb-0 fw-bold">Sois Transmis (ST)</h5>
                 </div>
                 <div class="badge bg-dark px-3 py-2">
-                    CHRONO # {% if is_st %}{{ reg_detail.n_chrono }}{% else %}{{ reg_detail.st_detail.n_chrono }}{% endif %}
+                    CHRONO # {% if is_st %}{{ reg_detail.n_chrono }}{% elif st_associe %}{{ st_associe.n_chrono }}{% else %}---{% endif %}
                 </div>
             </div>
             <div class="card-body p-4">
-                {% if is_st or reg_detail.st_detail %}
+                {# Modification de la condition ici #}
+                {% if is_st or st_associe %}
                 <div class="row align-items-center">
                     <div class="col-md-6 mb-3">
                         <div class="info-label text-warning">Destinataire</div>
                         <div class="info-value">
-                             <i class="bi bi-person-badge me-2"></i>
-                             {% if is_st %}{{ reg_detail.destinataire }}{% else %}{{ reg_detail.st_detail.destinataire }}{% endif %}
+                            <i class="bi bi-person-badge me-2"></i>
+                            {% if is_st %}{{ reg_detail.destinataire }}{% else %}{{ st_associe.destinataire }}{% endif %}
                         </div>
                     </div>
                     <div class="col-md-6 mb-3 border-start ps-4">
                         <div class="info-label text-warning">Date de transfert</div>
                         <div class="info-value">
                             <i class="bi bi-clock-history me-2 text-muted"></i>
-                            {% if is_st %}{{ reg_detail.date_st|date:"d/m/Y" }}{% else %}{{ reg_detail.st_detail.date_st|date:"d/m/Y à H:i" }}{% endif %}
+                            {% if is_st %}{{ reg_detail.date_st|date:"d/m/Y" }}{% else %}{{ st_associe.date_st|date:"d/m/Y" }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3 border-start ps-4">
+                        <div class="info-label text-warning">Rappel</div>
+                        <div class="info-value">
+                            <i class="bi bi-clock-history me-2 text-muted"></i>
+                            {% if is_st %}{{ reg_detail. }}{% else %}{{ st_associe.date_st|date:"d/m/Y" }}{% endif %}
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,113 @@
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-white bg-primary" style="border-radius: 12px;">
+            <div class="card-body">
+                <h6 class="text-uppercase small opacity-75">Total Dossiers</h6>
+                <h2 class="fw-bold mb-0">{{ kpi.total|default:0 }}</h2>
+                <i class="bi bi-folder2-open position-absolute top-50 end-0 translate-middle-y me-3 opacity-25 fs-1"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-white bg-success" style="border-radius: 12px;">
+            <div class="card-body">
+                <h6 class="text-uppercase small opacity-75">Dossiers Traités</h6>
+                <h2 class="fw-bold mb-0">{{ kpi.traitées|default:0 }}</h2>
+                <i class="bi bi-check-circle position-absolute top-50 end-0 translate-middle-y me-3 opacity-25 fs-1"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-white bg-warning" style="border-radius: 12px;">
+            <div class="card-body text-dark">
+                <h6 class="text-uppercase small opacity-75">En Attente</h6>
+                <h2 class="fw-bold mb-0">{{ kpi.attente|default:0 }}</h2>
+                <i class="bi bi-clock-history position-absolute top-50 end-0 translate-middle-y me-3 opacity-25 fs-1"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-white bg-info" style="border-radius: 12px;">
+            <div class="card-body text-dark">
+                <h6 class="text-uppercase small opacity-75">Performance</h6>
+                <h2 class="fw-bold mb-0">{{ kpi.taux|default:0 }}%</h2>
+                <i class="bi bi-graph-up-arrow position-absolute top-50 end-0 translate-middle-y me-3 opacity-25 fs-1"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-3" style="border-radius: 15px;">
+            <h6 class="fw-bold mb-3" style="color: #072b47;">Volume de Plaintes par PAC</h6>
+            <div style="height: 300px;"><canvas id="pacChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-3" style="border-radius: 15px;">
+            <h6 class="fw-bold mb-3 text-center" style="color: #072b47;">État du Stock Global</h6>
+            <div style="height: 300px;"><canvas id="statusChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Données PAC (Bar Chart)
+        const labelsPac = {{ labels_pac|safe|default:"[]" }};
+        const dataPac = {{ data_pac|safe|default:"[]" }};
+
+        if (document.getElementById('pacChart')) {
+            new Chart(document.getElementById('pacChart'), {
+                type: 'bar',
+                data: {
+                    labels: labelsPac,
+                    datasets: [{
+                        label: 'Nombre de dossiers',
+                        data: dataPac,
+                        backgroundColor: '#4a759c',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // 2. Données Statuts (Doughnut Chart)
+        // On récupère les valeurs de kpi ou 0 si elles n'existent pas
+        const statusValues = [
+            {{ kpi.traitées|default:0 }},
+            {{ kpi.en_cours|default:0 }},
+            {{ kpi.attente|default:0 }},
+            {{ kpi.css|default:0 }}
+        ];
+
+        if (document.getElementById('statusChart')) {
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Traités', 'En cours', 'Attente', 'CSS'],
+                    datasets: [{
+                        data: statusValues,
+                        backgroundColor: ['#2e7d32', '#f7a01d', '#0d6efd', '#6c757d'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { 
+                        legend: { position: 'bottom' } 
+                    }
+                }
+            });
+        }
+    });
+</script>
