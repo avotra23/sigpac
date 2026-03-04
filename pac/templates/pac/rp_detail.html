@@ -1,0 +1,193 @@
+{# pac/rp_detail.html #}
+{# Usage : {% include "pac/rp_detail.html" with rp=reg_detail %} #}
+
+{% with rp=reg_detail am=reg_detail.autres_menu %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center"
+         style="background-color:#4a759c;color:white;">
+        <h5 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Détail — Registre RP</h5>
+        <div class="d-flex gap-2">
+            <a href="{% url 'pac:greffier' %}?mode=edit_rp&type=rrp&detail_id={{ rp.pk }}"
+               class="btn btn-warning btn-sm text-white">
+                <i class="bi bi-pencil-fill me-1"></i>Modifier
+            </a>
+            <a href="{% url 'pac:greffier' %}?type=rrp"
+               class="btn btn-light btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        {# ── Informations principales ── #}
+        <h6 class="text-primary fw-bold mb-3">
+            <i class="bi bi-info-circle me-1"></i>Informations Principales
+        </h6>
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <span class="text-muted small">N° RP</span>
+                <p class="fw-semibold mb-1">{{ rp.numero_rp|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">N° RA lié</span>
+                <p class="fw-semibold mb-1">{{ rp.registre_arrive.n_enr_arrive|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Date d'entrée</span>
+                <p class="fw-semibold mb-1">{{ rp.date_entree|date:"d/m/Y"|default:"-" }}</p>
+            </div>
+        </div>
+        <hr class="my-2">
+
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <span class="text-muted small">N° BE OPJ</span>
+                <p class="fw-semibold mb-1">{{ rp.n_be_opj|default:"-" }}</p>
+            </div>
+            <div class="col-md-8">
+                <span class="text-muted small">Plaignant</span>
+                <p class="fw-semibold mb-1">{{ rp.plaignant|default:"-" }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-md-8">
+                <span class="text-muted small">Infraction</span>
+                <p class="fw-semibold mb-1">{{ rp.infraction|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Date d'infraction</span>
+                <p class="fw-semibold mb-1">{{ rp.date_infraction|date:"d/m/Y"|default:"-" }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <span class="text-muted small">Montant</span>
+                <p class="fw-semibold mb-1">{{ rp.montant|default:"-" }}</p>
+            </div>
+            <div class="col-md-8">
+                <span class="text-muted small">Date mandat de dépôt</span>
+                <p class="fw-semibold mb-1">{{ rp.date_mandat_depot|date:"d/m/Y"|default:"-" }}</p>
+            </div>
+        </div>
+        <hr class="my-2">
+
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <span class="text-muted small">CSS</span>
+                <p class="fw-semibold mb-1">{{ rp.css|default:"-" }}</p>
+            </div>
+            <div class="col-md-8">
+                <span class="text-muted small">Observation</span>
+                <p class="fw-semibold mb-1">{{ rp.observation|default:"-" }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <span class="text-muted small">Réf Appel</span>
+                <p class="fw-semibold mb-1">{{ rp.ref_appel|default:"-" }}</p>
+            </div>
+            <div class="col-md-6">
+                <span class="text-muted small">Réf Juge d'instruction</span>
+                <p class="fw-semibold mb-1">{{ rp.ref_juge_instruction|default:"-" }}</p>
+            </div>
+        </div>
+
+        {# ── Personnes Physiques ── #}
+        <h6 class="text-primary fw-bold mt-4 mb-2">
+            <i class="bi bi-people-fill me-1"></i>Personnes Physiques
+        </h6>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Type</th><th>N° Prév.</th><th>Nom</th><th>Prénom</th>
+                        <th>Âge</th><th>Nationalité</th><th>Fonction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pp in rp.personnes_physiques.all %}
+                    <tr>
+                        <td>
+                            <span class="badge {% if pp.type_personne == 'plaignant' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                                {{ pp.get_type_personne_display }}
+                            </span>
+                        </td>
+                        <td>{{ pp.numero_prevenu }}</td>
+                        <td>{{ pp.nom }}</td>
+                        <td>{{ pp.prenom }}</td>
+                        <td>{{ pp.age|default:"-" }}</td>
+                        <td>{{ pp.nationalite }}</td>
+                        <td>{{ pp.fonction|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted">Aucune personne physique enregistrée.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# ── Personnes Morales ── #}
+        <h6 class="text-primary fw-bold mt-3 mb-2">
+            <i class="bi bi-building me-1"></i>Personnes Morales
+        </h6>
+        <div class="table-responsive mb-4">
+            <table class="table table-sm table-bordered align-middle">
+                <thead class="table-light">
+                    <tr><th>Raison Sociale</th><th>Forme Juridique</th><th>Activité</th></tr>
+                </thead>
+                <tbody>
+                    {% for pm in rp.personnes_morales.all %}
+                    <tr>
+                        <td>{{ pm.raison_sociale }}</td>
+                        <td>{{ pm.forme_juridique }}</td>
+                        <td>{{ pm.activite }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center text-muted">Aucune personne morale enregistrée.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# ── Autres Menu / Suivi ── #}
+        {% if am %}
+        <h6 class="text-primary fw-bold mt-3 mb-2">
+            <i class="bi bi-journal-text me-1"></i>Suivi et Procédures
+        </h6>
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <span class="text-muted small">Mandat d'arrêt</span>
+                <p class="fw-semibold mb-1">{{ am.mandat_arret|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Année</span>
+                <p class="fw-semibold mb-1">{{ am.annee|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Citation directe</span>
+                <p class="fw-semibold mb-1">{{ am.citation_directe|default:"-" }}</p>
+            </div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-md-4">
+                <span class="text-muted small">Renvoi audience</span>
+                <p class="fw-semibold mb-1">{{ am.renvoi_audience|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Réquisitoire informé</span>
+                <p class="fw-semibold mb-1">{{ am.requisitoire_informe|default:"-" }}</p>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small">Renvoi CCO</span>
+                <p class="fw-semibold mb-1">{{ am.renvoi_cco|default:"-" }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>{# /card-body #}
+</div>{# /card #}
+{% endwith %}

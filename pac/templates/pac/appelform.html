@@ -1,0 +1,205 @@
+{% load static %}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{#  pac/appelform.html — Formulaire Registre d'Appel (inclus dans greffier)  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+<div class="form-content">
+
+    <h2>Registre d'Appel</h2>
+
+    {# Champs cachés #}
+    {% csrf_token %}
+    <input type="hidden" id="appel_id"
+           value="{% if appel_instance %}{{ appel_instance.pk }}{% endif %}">
+    <input type="hidden" id="ra_id_value_appel"
+           value="{% if ra_source %}{{ ra_source.pk }}{% elif appel_instance and appel_instance.registre_arrive %}{{ appel_instance.registre_arrive.pk }}{% endif %}">
+
+    {# ── Bandeau N° RA lié ──────────────────────────────────────────────── #}
+    <div class="row mb-4 align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <label class="form-label mb-0 fw-semibold">N° RA</label>
+            {% if ra_source %}
+            <button type="button" class="btn btn-secondary btn-sm" style="
+                background-color:#e0e0e0;color:#000;border:1px solid #ccc;font-weight:500;">
+                {{ ra_source.n_enr_arrive|default:"NUM EXISTANT" }}
+            </button>
+            <span class="text-muted small">— {{ ra_source.expediteur|truncatechars:60 }}</span>
+            {% elif appel_instance and appel_instance.registre_arrive %}
+            <button type="button" class="btn btn-secondary btn-sm" style="
+                background-color:#e0e0e0;color:#000;border:1px solid #ccc;font-weight:500;">
+                {{ appel_instance.registre_arrive.n_enr_arrive }}
+            </button>
+            {% else %}
+            <button type="button" class="btn btn-secondary btn-sm" style="
+                background-color:#e0e0e0;color:#000;border:1px solid #ccc;font-weight:500;">
+                NUM EXISTANT
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── N° Chrono Appel (auto) + Date d'appel ────────────────────────── #}
+    <div class="row mb-4 align-items-end">
+        <div class="col-lg-4">
+            <label class="form-label">N° Chrono appel</label>
+            <input type="text" class="form-control" id="appel_n_chrono_display"
+                   readonly style="background-color:#e9ecef;font-weight:600;color:#7c3aed;"
+                   placeholder="Généré automatiquement..."
+                   value="{% if appel_instance %}{{ appel_instance.n_chrono_appel }}{% endif %}">
+            <small class="text-muted">Attribué lors du premier enregistrement</small>
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Date d'appel</label>
+            <input type="date" class="form-control" id="appel_date_appel"
+                   value="{% if appel_instance %}{{ appel_instance.date_appel|date:'Y-m-d' }}{% else %}{{ date_arrivee_systeme }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── N° RP + Réf. Juge d'instruction ──────────────────────────────── #}
+    <div class="row mb-4 align-items-end">
+        <div class="col-lg-4">
+            <label class="form-label">
+                N° RP
+                {% if pre_n_rp and not appel_instance %}
+                <span class="badge bg-success ms-1" style="font-size:.7rem;">
+                    <i class="bi bi-lightning-fill"></i> Auto
+                </span>
+                {% endif %}
+            </label>
+            <input type="text" class="form-control" id="appel_n_rp"
+                   value="{% if appel_instance %}{{ appel_instance.n_rp }}{% elif pre_n_rp %}{{ pre_n_rp }}{% endif %}"
+                   {% if pre_n_rp and not appel_instance %}style="background-color:#f0fff4;border-color:#86efac;"{% endif %}>
+            {% if pre_n_rp and not appel_instance %}
+            <small class="text-success"><i class="bi bi-check-circle me-1"></i>Récupéré depuis le Registre RP</small>
+            {% endif %}
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">
+                Ref juge Instruction
+                {% if pre_ref_juge and not appel_instance %}
+                <span class="badge bg-success ms-1" style="font-size:.7rem;">
+                    <i class="bi bi-lightning-fill"></i> Auto
+                </span>
+                {% endif %}
+            </label>
+            <input type="text" class="form-control" id="appel_ref_juge_instruction"
+                   value="{% if appel_instance %}{{ appel_instance.ref_juge_instruction }}{% elif pre_ref_juge %}{{ pre_ref_juge }}{% endif %}"
+                   {% if pre_ref_juge and not appel_instance %}style="background-color:#f0fff4;border-color:#86efac;"{% endif %}>
+            {% if pre_ref_juge and not appel_instance %}
+            <small class="text-success"><i class="bi bi-check-circle me-1"></i>Récupéré depuis le Registre RP</small>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Résumé de l'affaire ──────────────────────────────────────────── #}
+    <div class="mb-4">
+        <label class="form-label fw-semibold">Résumé de l'affaire</label>
+        <textarea class="form-control" id="appel_resume_affaire" rows="4">{% if appel_instance %}{{ appel_instance.resume_affaire }}{% endif %}</textarea>
+    </div>
+
+    {# ── Inculpation ──────────────────────────────────────────────────── #}
+    <div class="mb-4">
+        <label class="form-label fw-semibold">Inculpation</label>
+        <textarea class="form-control" id="appel_inculpation" rows="4">{% if appel_instance %}{{ appel_instance.inculpation }}{% endif %}</textarea>
+    </div>
+
+    {# ── Déclaration d'appel ──────────────────────────────────────────── #}
+    <div class="mb-4">
+        <label class="form-label fw-semibold">Déclaration d'appel</label>
+        <textarea class="form-control" id="appel_declaration_appel" rows="4">{% if appel_instance %}{{ appel_instance.declaration_appel }}{% endif %}</textarea>
+    </div>
+
+    {# ── N° BE appel ──────────────────────────────────────────────────── #}
+    <div class="mb-4">
+        <label class="form-label fw-semibold">N° BE appel</label>
+        <textarea class="form-control" id="appel_n_be_appel" rows="3">{% if appel_instance %}{{ appel_instance.n_be_appel }}{% endif %}</textarea>
+    </div>
+
+</div>{# /form-content #}
+
+<div class="form-actions">
+    <a href="{% url 'pac:greffier' %}?type=appel" class="btn btn-annuler">Annuler</a>
+    <button type="button" class="btn btn-enregistrer" id="btn_save_appel">Enregistrer</button>
+</div>
+
+{# ── JS AJAX ──────────────────────────────────────────────────────────────── #}
+<link href="{% static 'css/sweetalert2.min.css' %}" rel="stylesheet">
+<script src="{% static 'js/sweetalert211.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const baseUrl      = "{% url 'pac:greffier' %}";
+    let currentAppelId = document.getElementById('appel_id').value || null;
+
+    function val(id)       { return document.getElementById(id)?.value ?? ''; }
+    function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+
+    function getCsrf() {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) v = decodeURIComponent(c.slice(10));
+        });
+        return v;
+    }
+
+    function ajaxPost(modeVal, data) {
+        const body = new URLSearchParams({ csrfmiddlewaretoken: getCsrf(), mode: modeVal, ...data });
+        return fetch(baseUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+        }).then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)));
+    }
+
+    // ── Enregistrer Appel ─────────────────────────────────────────────────
+    document.getElementById('btn_save_appel').addEventListener('click', function () {
+        Swal.fire({
+            title: currentAppelId ? 'Confirmer la modification' : "Confirmer l'enregistrement",
+            text:  currentAppelId ? "Mettre à jour ce dossier d'Appel ?" : "Enregistrer ce nouveau dossier d'Appel ?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: currentAppelId ? 'Oui, modifier' : 'Oui, enregistrer',
+            cancelButtonText: 'Annuler',
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            Swal.fire({ title: 'Traitement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            ajaxPost('save_appel', {
+                appel_id:             currentAppelId || '',
+                ra_id:                val('ra_id_value_appel'),
+                date_appel:           val('appel_date_appel'),
+                n_rp:                 val('appel_n_rp'),
+                ref_juge_instruction: val('appel_ref_juge_instruction'),
+                resume_affaire:       val('appel_resume_affaire'),
+                inculpation:          val('appel_inculpation'),
+                declaration_appel:    val('appel_declaration_appel'),
+                n_be_appel:           val('appel_n_be_appel'),
+            })
+            .then(response => {
+                currentAppelId = response.appel_id;
+                setVal('appel_id', currentAppelId);
+                const displayEl = document.getElementById('appel_n_chrono_display');
+                if (displayEl && response.n_chrono_appel) displayEl.value = response.n_chrono_appel;
+
+                if (response.is_new) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: "Dossier d'Appel créé !",
+                        html: `N° attribué : <strong>${response.n_chrono_appel}</strong>`,
+                        confirmButtonText: 'Continuer',
+                        confirmButtonColor: '#7c3aed',
+                    }).then(() => {
+                        window.location.href = baseUrl + '?mode=edit_appel&type=appel&detail_id=' + currentAppelId;
+                    });
+                } else {
+                    Swal.fire({ icon: 'success', title: 'Mis à jour !', text: response.message, timer: 2000, showConfirmButton: false });
+                }
+            })
+            .catch(err => Swal.fire('Erreur', err?.message || "Erreur lors de l'enregistrement", 'error'));
+        });
+    });
+});
+</script>

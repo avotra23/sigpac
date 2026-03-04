@@ -1,0 +1,131 @@
+{% load static %}
+{# ══════════════════════════════════════════════════════════════════ #}
+{#  pac/tableAppel.html  — Tableau liste des Registres d'Appel       #}
+{# ══════════════════════════════════════════════════════════════════ #}
+
+
+
+<div class="table-responsive mt-3">
+    {% if registres %}
+    <table class="table table-hover align-middle" id="table-appel">
+        <thead class="table-dark">
+            <tr>
+                <th>N° Chrono Appel</th>
+                <th>N° RA</th>
+                <th>Date d'Appel</th>
+                <th>N° RP</th>
+                <th>Inculpation</th>
+                <th>N° BE Appel</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appel in registres %}
+            <tr>
+                <td class="fw-semibold" style="color:#7c3aed;">{{ appel.n_chrono_appel|default:"-" }}</td>
+                <td>{{ appel.registre_arrive.n_enr_arrive|default:"-" }}</td>
+                <td>{{ appel.date_appel|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ appel.n_rp|default:"-" }}</td>
+                <td>{{ appel.inculpation|truncatechars:40|default:"-" }}</td>
+                <td>{{ appel.n_be_appel|truncatechars:30|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'pac:greffier' %}?type=appel&detail_id={{ appel.pk }}"
+                       class="btn btn-sm btn-info me-1" title="Voir les détails">
+                        <i class="bi bi-eye-fill"></i>
+                    </a>
+                    <a href="{% url 'pac:greffier' %}?mode=edit_appel&type=appel&detail_id={{ appel.pk }}"
+                       class="btn btn-sm btn-success me-1" title="Modifier">
+                        <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger"
+                            data-bs-toggle="modal"
+                            data-bs-target="#confirmDeleteAppelModal"
+                            data-appel-id="{{ appel.pk }}"
+                            data-appel-num="{{ appel.n_chrono_appel|default:appel.pk }}"
+                            title="Supprimer">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">Aucun dossier d'Appel enregistré.</div>
+    {% endif %}
+</div>
+
+{% include "pac/pagination.html" with page_obj=registres mode_actuel=mode search_query=search_query %}
+
+{# ── Modale suppression Appel ───────────────────────────────────── #}
+<div class="modal fade" id="confirmDeleteAppelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Supprimer le dossier d'Appel <strong id="appel-num-to-delete"></strong> ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete-appel">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="{% static 'css/sweetalert2.min.css' %}" rel="stylesheet">
+<script src="{% static 'js/sweetalert211.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let appelIdToDelete = null;
+
+    function getCsrf() {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) v = decodeURIComponent(c.slice(10));
+        });
+        return v;
+    }
+
+    const deleteModal = document.getElementById('confirmDeleteAppelModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (e) {
+            const btn = e.relatedTarget;
+            appelIdToDelete = btn.dataset.appelId;
+            document.getElementById('appel-num-to-delete').textContent = btn.dataset.appelNum;
+        });
+    }
+
+    const confirmBtn = document.getElementById('btn-confirm-delete-appel');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function () {
+            if (!appelIdToDelete) return;
+            Swal.fire({ title: 'Suppression...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const body = new URLSearchParams({
+                csrfmiddlewaretoken: getCsrf(),
+                mode: 'delete_appel',
+                appel_id: appelIdToDelete
+            });
+
+            fetch("{% url 'pac:greffier' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            })
+            .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+            .then(response => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteAppelModal'));
+                if (modal) modal.hide();
+                Swal.fire({ icon: 'success', title: 'Supprimé !', text: response.message, timer: 1800, showConfirmButton: false })
+                    .then(() => location.reload());
+            })
+            .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+        });
+    }
+});
+</script>

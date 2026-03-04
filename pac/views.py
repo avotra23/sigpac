@@ -629,21 +629,26 @@ def acc_procureur(request):
 
     return render(request, "pac/acc_proc.html", context)#------------------------------------FIN PROCUREUR-----------------------------
 
+
 #------------------------------------GREFFIER-----------------------------
 @login_required
-@user_passes_test(is_greffier, login_url='accueil') 
+@user_passes_test(is_greffier, login_url='accueil')
 def acc_greffier(request):
-    # --- RÉCUPÉRATION DES PARAMÈTRES ---
-    mode = request.GET.get('mode', 'list')
-    reg_type = request.GET.get('type', 'pre_ra')  # Par défaut : Pre-RA
-    detail_id = request.GET.get('detail_id')
+
+    # ── 1. PARAMÈTRES ────────────────────────────────────────────────────────
+    # Lire 'mode' depuis POST (AJAX) ou GET (navigation)
+    if request.method == 'POST':
+        mode = request.POST.get('mode', request.GET.get('mode', 'list'))
+    else:
+        mode = request.GET.get('mode', 'list')
+
+    reg_type      = request.GET.get('type', 'pre_ra')
+    detail_id     = request.GET.get('detail_id')
     validation_id = request.GET.get('valider_id')
-    ra_id = request.GET.get('ra_id')
-    target_type = request.GET.get('target_type')
-    
-    # Paramètres de recherche et pagination
-    search_query = request.GET.get('search', '')
-    page_number = request.GET.get('page', 1)
+    ra_id         = request.GET.get('ra_id')
+    target_type   = request.GET.get('target_type')
+    search_query  = request.GET.get('search', '')
+    page_number   = request.GET.get('page', 1)
 
     context = {
         'user': request.user,
@@ -653,138 +658,598 @@ def acc_greffier(request):
         'search_query': search_query,
         'date_arrivee_systeme': timezone.now().strftime("%Y-%m-%d"),
     }
-    # Enregistrement en ST
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  2. HANDLERS POST AJAX
+    # ════════════════════════════════════════════════════════════════════════
+
+    # ── SAVE ST ──────────────────────────────────────────────────────────────
     if request.method == 'POST' and mode == 'save_st':
         try:
             with transaction.atomic():
-                st_id = request.POST.get('st_id')
+                st_id      = request.POST.get('st_id')
                 ra_id_post = request.POST.get('ra_id')
-                ra_source = get_object_or_404(RegistreArrive, pk=ra_id_post)
-
-                # Si st_id existe, on modifie, sinon on crée
+                ra_source  = get_object_or_404(RegistreArrive, pk=ra_id_post)
                 if st_id:
-                    st_obj = get_object_or_404(RegistreST, pk=st_id)
+                    st_obj  = get_object_or_404(RegistreST, pk=st_id)
                     message = "Dossier ST mis à jour"
                 else:
-                    st_obj = RegistreST(registre_arrive=ra_source, utilisateur_creation=request.user)
+                    st_obj  = RegistreST(registre_arrive=ra_source, utilisateur_creation=request.user)
                     message = "Dossier enregistré au ST avec succès"
-
-                st_obj.date_st = request.POST.get('date_st')
-                st_obj.objet = request.POST.get('objet')
+                st_obj.date_st      = request.POST.get('date_st')
+                st_obj.objet        = request.POST.get('objet')
                 st_obj.destinataire = request.POST.get('destinataire')
-                st_obj.observation = request.POST.get('observation')
-                st_obj.rappel = request.POST.get('rappel')
-                st_obj.resultat = request.POST.get('resultat')
+                st_obj.observation  = request.POST.get('observation')
+                st_obj.rappel       = request.POST.get('rappel')
+                st_obj.resultat     = request.POST.get('resultat')
                 st_obj.save()
-
                 return JsonResponse({'status': 'success', 'message': message})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    
-    # Enregistrement en CSCA
+
+    # ── SAVE CSCA ─────────────────────────────────────────────────────────────
     if request.method == 'POST' and mode == 'save_csca':
         try:
             with transaction.atomic():
+                csca_id    = request.POST.get('csca_id')
                 ra_id_post = request.POST.get('ra_id')
-                ra_source = get_object_or_404(RegistreArrive, pk=ra_id_post)
-                
-                # On utilise les noms exacts de votre modèle RegistreCSCA
-                csca_obj = RegistreCSCA.objects.create(
-                    registre_arrive=ra_source,
-                    utilisateur_creation=request.user,
-                    date_csca=request.POST.get('date_csca'),
-                    demandeur=request.POST.get('demandeur'),
-                    entite=request.POST.get('entite'),
-                    objet=request.POST.get('objet'),
-                    intitule=request.POST.get('intitule'),
-                    requisitoire_mp=request.POST.get('requisitoire_mp'),
-                    decision=request.POST.get('decision'),
-                    transmission_president=request.POST.get('transmission_president'),
-                    appel=request.POST.get('appel'),
-                    resultat_appel=request.POST.get('resultat_appel')
-                )
-                return JsonResponse({'status': 'success', 'message': f"Enregistré sous le N° {csca_obj.n_chrono}"})
+                ra_source  = get_object_or_404(RegistreArrive, pk=ra_id_post)
+                if csca_id:
+                    csca_obj = get_object_or_404(RegistreCSCA, pk=csca_id)
+                    message  = f"Dossier CSCA N° {csca_obj.n_chrono} mis à jour"
+                else:
+                    csca_obj = RegistreCSCA(registre_arrive=ra_source, utilisateur_creation=request.user)
+                    message  = "Nouveau dossier CSCA enregistré"
+                csca_obj.date_csca              = request.POST.get('date_csca')
+                csca_obj.demandeur              = request.POST.get('demandeur')
+                csca_obj.entite                 = request.POST.get('entite')
+                csca_obj.objet                  = request.POST.get('objet')
+                csca_obj.intitule               = request.POST.get('intitule')
+                csca_obj.requisitoire_mp        = request.POST.get('requisitoire_mp')
+                csca_obj.decision               = request.POST.get('decision')
+                csca_obj.transmission_president = request.POST.get('transmission_president')
+                csca_obj.appel                  = request.POST.get('appel')
+                csca_obj.resultat_appel         = request.POST.get('resultat_appel')
+                csca_obj.save()
+                return JsonResponse({'status': 'success', 'message': message})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    # --- 2. LOGIQUE VALIDATION (ATTRIBUTION N° RA) ---
+
+    # ── SAVE RP ───────────────────────────────────────────────────────────────
+    if request.method == 'POST' and mode == 'save_rp':
+        try:
+            with transaction.atomic():
+                rp_id   = request.POST.get('rp_id')
+                ra_id_p = request.POST.get('ra_id')
+                is_new  = not bool(rp_id)
+                rp_obj  = get_object_or_404(RegistreRP, pk=rp_id) if rp_id else RegistreRP(utilisateur_creation=request.user)
+                if ra_id_p:
+                    rp_obj.registre_arrive = get_object_or_404(RegistreArrive, pk=ra_id_p)
+                elif not ra_id_p and not is_new:
+                    rp_obj.registre_arrive = None
+                rp_obj.date_entree          = request.POST.get('date_entree') or None
+                rp_obj.n_be_opj             = request.POST.get('n_be_opj', '')
+                rp_obj.plaignant            = request.POST.get('plaignant', '')
+                rp_obj.infraction           = request.POST.get('infraction', '')
+                rp_obj.date_infraction      = request.POST.get('date_infraction') or None
+                rp_obj.montant              = request.POST.get('montant', '')
+                rp_obj.date_mandat_depot    = request.POST.get('date_mandat_depot') or None
+                rp_obj.css                  = request.POST.get('css', '')
+                rp_obj.observation          = request.POST.get('observation', '')
+                rp_obj.ref_appel            = request.POST.get('ref_appel', '')
+                rp_obj.ref_juge_instruction = request.POST.get('ref_juge_instruction', '')
+                rp_obj.save()
+                return JsonResponse({
+                    'status':    'success',
+                    'message':   f"Dossier RP {'créé' if is_new else 'mis à jour'} — N° {rp_obj.numero_rp}",
+                    'rp_id':     rp_obj.pk,
+                    'numero_rp': rp_obj.numero_rp,
+                    'is_new':    is_new,
+                })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # ── SAVE / DELETE PERSONNE MORALE RP ──────────────────────────────────────
+    if request.method == 'POST' and mode == 'save_pm_rp':
+        try:
+            with transaction.atomic():
+                rp_obj = get_object_or_404(RegistreRP, pk=request.POST.get('rp_id'))
+                pm_id  = request.POST.get('pm_id')
+                pm_obj = get_object_or_404(PersonneMoraleRP, pk=pm_id, registre_rp=rp_obj) if pm_id else PersonneMoraleRP(registre_rp=rp_obj)
+                pm_obj.raison_sociale  = request.POST.get('raison_sociale', '')
+                pm_obj.forme_juridique = request.POST.get('forme_juridique', '')
+                pm_obj.activite        = request.POST.get('activite', '')
+                pm_obj.save()
+                return JsonResponse({'status': 'success', 'message': "Personne morale enregistrée", 'pm_id': pm_obj.pk})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    if request.method == 'POST' and mode == 'delete_pm_rp':
+        try:
+            get_object_or_404(PersonneMoraleRP, pk=request.POST.get('pm_id')).delete()
+            return JsonResponse({'status': 'success', 'message': "Personne morale supprimée"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # ── SAVE / DELETE PERSONNE PHYSIQUE RP ────────────────────────────────────
+    if request.method == 'POST' and mode == 'save_pp_rp':
+        try:
+            with transaction.atomic():
+                rp_obj = get_object_or_404(RegistreRP, pk=request.POST.get('rp_id'))
+                pp_id  = request.POST.get('pp_id')
+                pp_obj = get_object_or_404(PersonnePhysiqueRP, pk=pp_id, registre_rp=rp_obj) if pp_id else PersonnePhysiqueRP(registre_rp=rp_obj)
+                pp_obj.type_personne  = request.POST.get('type_personne', 'prevenu')
+                pp_obj.numero_prevenu = request.POST.get('numero_prevenu', '')
+                pp_obj.nom            = request.POST.get('nom', '')
+                pp_obj.prenom         = request.POST.get('prenom', '')
+                pp_obj.age            = request.POST.get('age') or None
+                pp_obj.nationalite    = request.POST.get('nationalite', '')
+                pp_obj.genre          = request.POST.get('genre', '')
+                pp_obj.fonction       = request.POST.get('fonction', '')
+                pp_obj.save()
+                return JsonResponse({'status': 'success', 'message': "Personne physique enregistrée", 'pp_id': pp_obj.pk})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    if request.method == 'POST' and mode == 'delete_pp_rp':
+        try:
+            get_object_or_404(PersonnePhysiqueRP, pk=request.POST.get('pp_id')).delete()
+            return JsonResponse({'status': 'success', 'message': "Personne supprimée"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # ── SAVE AUTRES MENU RP ───────────────────────────────────────────────────
+    if request.method == 'POST' and mode == 'save_autres_rp':
+        try:
+            with transaction.atomic():
+                rp_obj    = get_object_or_404(RegistreRP, pk=request.POST.get('rp_id'))
+                am_obj, _ = AutresMenuRP.objects.get_or_create(registre_rp=rp_obj)
+                am_obj.mandat_arret         = request.POST.get('mandat_arret', '')
+                am_obj.annee                = request.POST.get('annee', '')
+                am_obj.citation_directe     = request.POST.get('citation_directe', '')
+                am_obj.renvoi_audience      = request.POST.get('renvoi_audience', '')
+                am_obj.requisitoire_informe = request.POST.get('requisitoire_informe', '')
+                am_obj.renvoi_cco           = request.POST.get('renvoi_cco', '')
+                am_obj.save()
+                return JsonResponse({'status': 'success', 'message': "Autres menu enregistré"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    if request.method == 'POST' and mode == 'delete_rp':
+        try:
+            get_object_or_404(RegistreRP, pk=request.POST.get('rp_id')).delete()
+            return JsonResponse({'status': 'success', 'message': "Dossier RP supprimé"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  SAVE / DELETE CCO  ← NOUVEAU
+    # ════════════════════════════════════════════════════════════════════════
+    if request.method == 'POST' and mode == 'save_cco':
+        try:
+            with transaction.atomic():
+                cco_id  = request.POST.get('cco_id')
+                ra_id_p = request.POST.get('ra_id')
+                is_new  = not bool(cco_id)
+                cco_obj = get_object_or_404(RegistreCCO, pk=cco_id) if cco_id else RegistreCCO(utilisateur_creation=request.user)
+                if ra_id_p:
+                    cco_obj.registre_arrive = get_object_or_404(RegistreArrive, pk=ra_id_p)
+                elif not is_new:
+                    cco_obj.registre_arrive = None
+                cco_obj.date_cco             = request.POST.get('date_cco') or None
+                cco_obj.n_chrono_st          = request.POST.get('n_chrono_st', '')
+                cco_obj.n_dossier            = request.POST.get('n_dossier', '')
+                cco_obj.requisitoire_parquet = request.POST.get('requisitoire_parquet', '')
+                cco_obj.objet                = request.POST.get('objet', '')
+                cco_obj.n_be_cco             = request.POST.get('n_be_cco', '')
+                cco_obj.save()
+                return JsonResponse({
+                    'status':   'success',
+                    'message':  f"CCO {'créé' if is_new else 'mis à jour'} — N° {cco_obj.n_chrono}",
+                    'cco_id':   cco_obj.pk,
+                    'n_chrono': cco_obj.n_chrono,
+                    'is_new':   is_new,
+                })
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    if request.method == 'POST' and mode == 'delete_cco':
+        try:
+            get_object_or_404(RegistreCCO, pk=request.POST.get('cco_id')).delete()
+            return JsonResponse({'status': 'success', 'message': "Dossier CCO supprimé"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  SAVE / DELETE APPEL  ← NOUVEAU
+    # ════════════════════════════════════════════════════════════════════════
+    if request.method == 'POST' and mode == 'save_appel':
+        try:
+            with transaction.atomic():
+                appel_id  = request.POST.get('appel_id')
+                ra_id_p   = request.POST.get('ra_id')
+                is_new    = not bool(appel_id)
+
+                appel_obj = get_object_or_404(RegistreAppel, pk=appel_id) if appel_id \
+                            else RegistreAppel(utilisateur_creation=request.user)
+
+                if ra_id_p:
+                    appel_obj.registre_arrive = get_object_or_404(RegistreArrive, pk=ra_id_p)
+                elif not is_new:
+                    appel_obj.registre_arrive = None
+
+                appel_obj.date_appel           = request.POST.get('date_appel') or None
+                appel_obj.n_rp                 = request.POST.get('n_rp', '')
+                appel_obj.ref_juge_instruction = request.POST.get('ref_juge_instruction', '')
+                appel_obj.resume_affaire       = request.POST.get('resume_affaire', '')
+                appel_obj.inculpation          = request.POST.get('inculpation', '')
+                appel_obj.declaration_appel    = request.POST.get('declaration_appel', '')
+                appel_obj.n_be_appel           = request.POST.get('n_be_appel', '')
+                appel_obj.save()
+
+                # ── Remonter jusqu'à la source et passer en TRAITEE ──────────
+                source_maj = None   # objet Plainte ou OPJ mis à jour
+                source_type = None  # 'plainte' ou 'opj'
+
+                if appel_obj.registre_arrive:
+                    ra = appel_obj.registre_arrive
+
+                    if ra.nature == 'opj' and ra.n_chrono_opj:
+                        opj = OPJ.objects.filter(n_chrono_opj=ra.n_chrono_opj).first()
+                        if opj and opj.statut != 'TRAITEE':
+                            opj.statut = 'TRAITEE'
+                            opj.save(update_fields=['statut'])
+                            source_maj  = opj
+                            source_type = 'opj'
+
+                    elif ra.plainte_origine:
+                        plainte = ra.plainte_origine
+                        if plainte.statut != 'TRAITEE':
+                            plainte.statut = 'TRAITEE'
+                            plainte.save(update_fields=['statut'])
+                            source_maj  = plainte
+                            source_type = 'plainte'
+
+                    elif ra.nbe_dossier:
+                        plainte = Plainte.objects.filter(n_chrono_tkk=ra.nbe_dossier).first()
+                        if plainte and plainte.statut != 'TRAITEE':
+                            plainte.statut = 'TRAITEE'
+                            plainte.save(update_fields=['statut'])
+                            source_maj  = plainte
+                            source_type = 'plainte'
+
+                # ── Message de retour ─────────────────────────────────────────
+                message = (
+                    f"Appel {'créé' if is_new else 'mis à jour'} — N° {appel_obj.n_chrono_appel}"
+                )
+                if source_maj:
+                    ref = (
+                        source_maj.n_chrono_opj if source_type == 'opj'
+                        else source_maj.n_chrono_tkk
+                    )
+                    message += f" | Dossier source {ref} marqué TRAITÉE ✔"
+
+                return JsonResponse({
+                    'status':         'success',
+                    'message':        message,
+                    'appel_id':       appel_obj.pk,
+                    'n_chrono_appel': appel_obj.n_chrono_appel,
+                    'is_new':         is_new,
+                    'source_traitee': bool(source_maj),
+                })
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    if request.method == 'POST' and mode == 'delete_appel':
+        try:
+            get_object_or_404(RegistreAppel, pk=request.POST.get('appel_id')).delete()
+            return JsonResponse({'status': 'success', 'message': "Dossier Appel supprimé"})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  3. VALIDATION N° RA
+    # ════════════════════════════════════════════════════════════════════════
     if validation_id:
-        registre = get_object_or_404(RegistreArrive, pk=validation_id, utilisateur_creation__localite=request.user.localite)
+        registre = get_object_or_404(
+            RegistreArrive,
+            pk=validation_id,
+            utilisateur_creation__localite=request.user.localite
+        )
         n_ra = registre.attribuer_ra()
         messages.success(request, f"Validé avec le N° : {n_ra}")
         return redirect('pac:greffier')
-    # --- 3. LOGIQUE DÉTAILS ---
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  4. LOGIQUE DÉTAILS  (reg_type détermine l'objet affiché)
+    # ════════════════════════════════════════════════════════════════════════
     if detail_id:
-        if reg_type == 'st':
-            context['reg_detail'] = get_object_or_404(
-                RegistreST.objects.select_related('registre_arrive', 'utilisateur_creation'), 
-                pk=detail_id
-            )
-            context['is_st'] = True
-        elif reg_type == 'csca':
-            context['titre'] = "Registre CSCA"
-        else:
-            # On récupère le RA
-            ra_obj = get_object_or_404(
-                RegistreArrive.objects.select_related('utilisateur_creation'), 
-                pk=detail_id
-            )
-            context['reg_detail'] = ra_obj
-            # ON RÉCUPÈRE LE DERNIER ST LIÉ (C'est ici que ça se joue)
-            context['st_associe'] = ra_obj.st_details.first() 
-            context['is_st'] = False
-            
-        context['mode'] = 'detail'
+        context['mode']     = 'detail'
         context['reg_type'] = reg_type
-        
-       # --- 4. LOGIQUE FORMULAIRE RA (CRÉATION) ---
-    if mode == 'form' or (request.method == 'POST' and mode != 'save_st' and mode != 'dispatch'):
-        if request.method == 'POST':
-            form = RegistreArriveForm(request.POST)
-            if form.is_valid():
-                registre = form.save(commit=False)
-                registre.utilisateur_creation = request.user
-                registre.save()
-                messages.success(request, "Nouveau registre enregistré.")
-                return redirect('pac:greffier')
+
+        if reg_type == 'st':
+            st_obj = get_object_or_404(
+                RegistreST.objects.select_related('registre_arrive', 'utilisateur_creation'),
+                pk=detail_id
+            )
+            ra = st_obj.registre_arrive
+            context.update({
+                'reg_detail':    st_obj,
+                'ra_source':     ra,
+                'is_st': True, 'is_csca': False, 'is_cco': False, 'is_appel': False,
+                'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra).first()  if ra else None,
+                'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra).first()   if ra else None,
+                'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first() if ra else None,
+            })
+
+        elif reg_type == 'csca':
+            csca_obj = get_object_or_404(
+                RegistreCSCA.objects.select_related('registre_arrive', 'utilisateur_creation'),
+                pk=detail_id
+            )
+            ra = csca_obj.registre_arrive
+            context.update({
+                'reg_detail':    csca_obj,
+                'ra_source':     ra,
+                'is_st': False, 'is_csca': True, 'is_cco': False, 'is_appel': False,
+                'st_associe':    RegistreST.objects.filter(registre_arrive=ra).first()    if ra else None,
+                'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra).first()   if ra else None,
+                'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first() if ra else None,
+            })
+
+        elif reg_type == 'rrp':
+            rp_obj = get_object_or_404(
+                RegistreRP.objects.select_related(
+                    'registre_arrive', 'registre_arrive__plainte_origine', 'utilisateur_creation'
+                ).prefetch_related('personnes_physiques', 'personnes_morales'),
+                pk=detail_id
+            )
+            context.update({
+                'reg_detail': rp_obj,
+                'is_st': False, 'is_csca': False, 'is_cco': False, 'is_appel': False,
+            })
+            ra = rp_obj.registre_arrive
+            if ra:
+                context.update({
+                    'ra_source':     ra,
+                    'st_associe':    ra.st_details.first(),
+                    'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra).first(),
+                    'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra).first(),
+                    'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first(),
+                })
+                context.update(_resolve_source(ra))
+            else:
+                context.update({
+                    'ra_source': None, 'st_associe': None, 'csca_associe': None,
+                    'cco_associe': None, 'appel_associe': None,
+                    'plainte_source': None, 'opj_source': None,
+                })
+
+        # ── DÉTAIL CCO ← NOUVEAU ─────────────────────────────────────────────
+        elif reg_type == 'cco':
+            cco_obj = get_object_or_404(
+                RegistreCCO.objects.select_related('registre_arrive', 'utilisateur_creation'),
+                pk=detail_id
+            )
+            ra = cco_obj.registre_arrive
+            context.update({
+                'reg_detail': cco_obj,
+                'ra_source':  ra,
+                'is_st': False, 'is_csca': False, 'is_cco': True, 'is_appel': False,
+            })
+            if ra:
+                context.update({
+                    'st_associe':    ra.st_details.first(),
+                    'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra).first(),
+                    'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first(),
+                })
+                context.update(_resolve_source(ra))
+
+        # ── DÉTAIL APPEL ← NOUVEAU ───────────────────────────────────────────
+        elif reg_type == 'appel':
+            appel_obj = get_object_or_404(
+                RegistreAppel.objects.select_related('registre_arrive', 'utilisateur_creation'),
+                pk=detail_id
+            )
+            ra = appel_obj.registre_arrive
+            context.update({
+                'reg_detail': appel_obj,
+                'ra_source':  ra,
+                'is_st': False, 'is_csca': False, 'is_cco': False, 'is_appel': True,
+            })
+            if ra:
+                context.update({
+                    'st_associe':   ra.st_details.first(),
+                    'csca_associe': RegistreCSCA.objects.filter(registre_arrive=ra).first(),
+                    'cco_associe':  RegistreCCO.objects.filter(registre_arrive=ra).first(),
+                })
+                context.update(_resolve_source(ra))
+
         else:
-            form = RegistreArriveForm()
-            last_id = RegistreArrive.objects.aggregate(Max('id'))['id__max'] or 0
-            context['n_enr_provisoire'] = str(last_id + 1).zfill(4)
+            # ── DÉTAIL RA (pre_ra / arrive) ──────────────────────────────────
+            ra_obj = get_object_or_404(
+                RegistreArrive.objects.select_related('utilisateur_creation'),
+                pk=detail_id
+            )
+            context.update({
+                'reg_detail':    ra_obj,
+                'ra_source':     ra_obj,
+                'is_st': False, 'is_csca': False, 'is_cco': False, 'is_appel': False,
+                'st_associe':    ra_obj.st_details.first(),
+                'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra_obj).first(),
+                'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra_obj).first(),
+                'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra_obj).first(),
+            })
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  5. FORMULAIRE RA (création classique)
+    # ════════════════════════════════════════════════════════════════════════
+    if mode == 'form' and request.method != 'POST':
+        form    = RegistreArriveForm()
+        last_id = RegistreArrive.objects.aggregate(Max('id'))['id__max'] or 0
+        context['n_enr_provisoire'] = str(last_id + 1).zfill(4)
         context['form'] = form
 
-    # --- 5. LOGIQUE DE REDIRECTION VERS FORMULAIRE ST (SWITCH) ---
+    elif mode == 'form' and request.method == 'POST':
+        form = RegistreArriveForm(request.POST)
+        if form.is_valid():
+            registre = form.save(commit=False)
+            registre.utilisateur_creation = request.user
+            registre.save()
+            messages.success(request, "Nouveau registre enregistré.")
+            return redirect('pac:greffier')
+        context['form'] = form
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  6. DISPATCH → formulaire ST / RP / CSCA / CCO / APPEL
+    # ════════════════════════════════════════════════════════════════════════
     if mode == 'dispatch' and ra_id:
         ra_source = get_object_or_404(RegistreArrive, pk=ra_id)
+
         if target_type == 'ST':
+            context.update({'mode': 'form_st', 'ra_source': ra_source, 'titre': "Transfert en Soit Transmis"})
+
+        elif target_type == 'RP':
+            plainte_source, opj_source = _get_sources(ra_source)
+            pre_n_be_opj, pre_plaignant, pre_infraction = _get_prefill(ra_source, opj_source, plainte_source)
             context.update({
-                'mode': 'form_st',
-                'ra_source': ra_source,
-                'titre': "Transfert en Soit Transmis",  
+                'mode':                     'form_rp',
+                'ra_source':                ra_source,
+                'plainte_source':           plainte_source,
+                'opj_source':               opj_source,
+                'titre':                    f"Nouveau RP — RA N° {ra_source.n_enr_arrive}",
+                'registres_arrive_valides': _ra_valides(request),
+                'pre_n_be_opj':             pre_n_be_opj,
+                'pre_plaignant':            pre_plaignant,
+                'pre_infraction':           pre_infraction,
             })
+
         elif target_type == 'CSCA':
-            context.update({'mode': 'form_csca', 
-                            'ra_source': ra_source, 
-                            'titre': "Transfert CSCA"})
+            context.update({'mode': 'form_csca', 'ra_source': ra_source, 'titre': "Transfert CSCA"})
+
+        # ── CCO ← pré-remplir n_chrono_st et n_dossier depuis ST + RA ──────────
+        elif target_type == 'CCO':
+            st_lie = ra_source.st_details.first()
+            context.update({
+                'mode':               'form_cco',
+                'ra_source':          ra_source,
+                'titre':              f"Nouveau CCO — RA N° {ra_source.n_enr_arrive}",
+                # ST → n_chrono_st  |  RA → n_dossier (nbe_dossier ou n_enr_arrive)
+                'pre_n_chrono_st':    st_lie.n_chrono  if st_lie else '',
+                'pre_n_dossier':      ra_source.nbe_dossier or ra_source.n_enr_arrive or '',
+            })
+
+        # ── APPEL ← pré-remplir n_rp et ref_juge depuis RegistreRP lié ──────
+        elif target_type == 'RA':   # "RA" dans le <select> = Registre d'Appel
+            rp_lie = RegistreRP.objects.filter(registre_arrive=ra_source).first()
+            context.update({
+                'mode':                   'form_appel',
+                'ra_source':              ra_source,
+                'titre':                  f"Nouveau Registre d'Appel — RA N° {ra_source.n_enr_arrive}",
+                # RP → n_rp (numero_rp)  |  RP → ref_juge_instruction
+                'pre_n_rp':               rp_lie.numero_rp           if rp_lie else '',
+                'pre_ref_juge':           rp_lie.ref_juge_instruction if rp_lie else '',
+            })
+
         return render(request, 'pac/acc_greffier.html', context)
 
-    # --- 6. FILTRAGE, RECHERCHE ET PAGINATION ---
-    # Sélection du Queryset de base selon le type
+    # ════════════════════════════════════════════════════════════════════════
+    #  7. MODES ÉDITION
+    # ════════════════════════════════════════════════════════════════════════
+    if mode == 'edit_rp' and detail_id:
+        rp_instance = get_object_or_404(
+            RegistreRP.objects.select_related('registre_arrive')
+                              .prefetch_related('personnes_physiques', 'personnes_morales'),
+            pk=detail_id
+        )
+        plainte_source, opj_source = _get_sources(rp_instance.registre_arrive) if rp_instance.registre_arrive else (None, None)
+        context.update({
+            'mode':                     'form_rp',
+            'rp_instance':              rp_instance,
+            'ra_source':                rp_instance.registre_arrive,
+            'plainte_source':           plainte_source,
+            'opj_source':               opj_source,
+            'titre':                    f"Modification — RP N° {rp_instance.numero_rp}",
+            'registres_arrive_valides': _ra_valides(request),
+        })
+        return render(request, 'pac/acc_greffier.html', context)
+
+    if mode == 'edit_st' and detail_id:
+        st_instance = get_object_or_404(RegistreST, pk=detail_id)
+        context.update({
+            'mode': 'form_st', 'st_instance': st_instance,
+            'ra_source': st_instance.registre_arrive,
+            'titre': "Modification du Soit-Transmis",
+        })
+        return render(request, 'pac/acc_greffier.html', context)
+
+    if mode == 'edit_csca' and detail_id:
+        csca_instance = get_object_or_404(RegistreCSCA, pk=detail_id)
+        context.update({
+            'mode': 'form_csca', 'csca_instance': csca_instance,
+            'ra_source': csca_instance.registre_arrive,
+            'titre': f"Modification du dossier CSCA N° {csca_instance.n_chrono}",
+        })
+        return render(request, 'pac/acc_greffier.html', context)
+
+    # ── EDIT CCO ← NOUVEAU ───────────────────────────────────────────────────
+    if mode == 'edit_cco' and detail_id:
+        cco_instance = get_object_or_404(RegistreCCO, pk=detail_id)
+        context.update({
+            'mode': 'form_cco', 'cco_instance': cco_instance,
+            'ra_source': cco_instance.registre_arrive,
+            'titre': f"Modification CCO N° {cco_instance.n_chrono}",
+        })
+        return render(request, 'pac/acc_greffier.html', context)
+
+    # ── EDIT APPEL ← NOUVEAU ─────────────────────────────────────────────────
+    if mode == 'edit_appel' and detail_id:
+        appel_instance = get_object_or_404(RegistreAppel, pk=detail_id)
+        context.update({
+            'mode': 'form_appel', 'appel_instance': appel_instance,
+            'ra_source': appel_instance.registre_arrive,
+            'titre': f"Modification Appel N° {appel_instance.n_chrono_appel}",
+        })
+        return render(request, 'pac/acc_greffier.html', context)
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  8. FILTRAGE / RECHERCHE / PAGINATION
+    # ════════════════════════════════════════════════════════════════════════
     if reg_type == "st":
         queryset = RegistreST.objects.filter(
             utilisateur_creation__localite=request.user.localite
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_st')
         context['titre'] = "Registre du Soit Transmis (ST)"
+
     elif reg_type == 'csca':
         queryset = RegistreCSCA.objects.filter(
             utilisateur_creation__localite=request.user.localite
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_csca')
         context['titre'] = "Registre CSCA"
+
+    elif reg_type == 'rrp':
+        queryset = RegistreRP.objects.filter(
+            utilisateur_creation__localite=request.user.localite
+        ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_creation')
+        context['titre'] = "Registre RP"
+
+    elif reg_type == 'cco':   # ← NOUVEAU
+        queryset = RegistreCCO.objects.filter(
+            utilisateur_creation__localite=request.user.localite
+        ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_creation')
+        context['titre'] = "Registre CCO"
+
+    elif reg_type == 'appel':   # ← NOUVEAU
+        queryset = RegistreAppel.objects.filter(
+            utilisateur_creation__localite=request.user.localite
+        ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_creation')
+        context['titre'] = "Registre d'Appel"
+
     else:
-        # Base pour Arrivée et Pre-RA
         queryset = RegistreArrive.objects.filter(
             utilisateur_creation__localite=request.user.localite
         ).select_related('utilisateur_creation').prefetch_related('st_details')
-
         if reg_type == "arrive":
             queryset = queryset.filter(n_enr_arrive__isnull=False).order_by('-date_arrivee')
             context['titre'] = "Registre Arrivée"
@@ -792,40 +1257,101 @@ def acc_greffier(request):
             queryset = queryset.filter(n_enr_arrive__isnull=True).order_by('-date_arrivee')
             context['titre'] = "Pre-RA"
 
-    # Application de la recherche (Search)
+    # Recherche (elif pour ne pas écraser le queryset)
     if search_query:
         if reg_type == "st":
             queryset = queryset.filter(
-                Q(objet__icontains=search_query) | 
+                Q(objet__icontains=search_query) |
                 Q(destinataire__icontains=search_query) |
                 Q(registre_arrive__n_enr_arrive__icontains=search_query)
             )
+        elif reg_type == "csca":
+            queryset = queryset.filter(
+                Q(objet__icontains=search_query) |
+                Q(demandeur__icontains=search_query) |
+                Q(registre_arrive__n_enr_arrive__icontains=search_query)
+            )
+        elif reg_type == 'rrp':
+            queryset = queryset.filter(
+                Q(numero_rp__icontains=search_query) |
+                Q(plaignant__icontains=search_query) |
+                Q(infraction__icontains=search_query)
+            )
+        elif reg_type == 'cco':
+            queryset = queryset.filter(
+                Q(n_chrono__icontains=search_query) |
+                Q(n_dossier__icontains=search_query) |
+                Q(n_chrono_st__icontains=search_query) |
+                Q(registre_arrive__n_enr_arrive__icontains=search_query)
+            )
+        elif reg_type == 'appel':
+            queryset = queryset.filter(
+                Q(n_chrono_appel__icontains=search_query) |
+                Q(n_rp__icontains=search_query) |
+                Q(inculpation__icontains=search_query)
+            )
         else:
             queryset = queryset.filter(
-                Q(n_enr_arrive__icontains=search_query) | 
-                Q(expediteur__icontains=search_query) | 
+                Q(n_enr_arrive__icontains=search_query) |
+                Q(expediteur__icontains=search_query) |
                 Q(observation__icontains=search_query)
             )
 
-    # Pagination (10 éléments par page)
     paginator = Paginator(queryset, 10)
-    page_obj = paginator.get_page(page_number)
-    
+    page_obj  = paginator.get_page(page_number)
     context['registres'] = page_obj
-    context['page_obj'] = page_obj
+    context['page_obj']  = page_obj
 
-    #---7 Gestion des modification ST
-    if mode == 'edit_st' and detail_id:
-        st_instance = get_object_or_404(RegistreST, pk=detail_id)
-        context.update({
-            'mode': 'form_st',
-            'st_instance': st_instance,
-            'ra_source': st_instance.registre_arrive, # On récupère le RA lié
-            'titre': "Modification du Soit-Transmis",
-        })
-        return render(request, 'pac/acc_greffier.html', context)
     return render(request, 'pac/acc_greffier.html', context)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+#  HELPERS PRIVÉS (à placer juste après acc_greffier dans views.py)
+# ═══════════════════════════════════════════════════════════════════════════
 
+def _resolve_source(ra):
+    """Retourne dict {plainte_source, opj_source} depuis un RegistreArrive."""
+    if ra.nature == 'opj' and ra.n_chrono_opj:
+        return {
+            'opj_source':     OPJ.objects.filter(n_chrono_opj=ra.n_chrono_opj).select_related('utilisateur_creation').first(),
+            'plainte_source': None,
+        }
+    elif ra.plainte_origine:
+        return {'plainte_source': ra.plainte_origine, 'opj_source': None}
+    elif ra.nbe_dossier:
+        return {
+            'plainte_source': Plainte.objects.filter(n_chrono_tkk=ra.nbe_dossier).first(),
+            'opj_source': None,
+        }
+    return {'plainte_source': None, 'opj_source': None}
+
+
+def _get_sources(ra):
+    """Retourne (plainte_source, opj_source) depuis un RegistreArrive."""
+    if not ra:
+        return None, None
+    if ra.nature == 'opj' and ra.n_chrono_opj:
+        return None, OPJ.objects.filter(n_chrono_opj=ra.n_chrono_opj).first()
+    elif ra.plainte_origine:
+        return ra.plainte_origine, None
+    elif ra.nbe_dossier:
+        return Plainte.objects.filter(n_chrono_tkk=ra.nbe_dossier).first(), None
+    return None, None
+
+
+def _get_prefill(ra_source, opj_source, plainte_source):
+    """Retourne (pre_n_be_opj, pre_plaignant, pre_infraction) pour pré-remplir RP."""
+    if opj_source:
+        return opj_source.n_chrono_opj or '', opj_source.ny_mpitory or '', opj_source.tranga_kolikoly or ''
+    elif plainte_source:
+        return '', plainte_source.ny_mpitory or '', plainte_source.tranga_kolikoly or ''
+    return '', ra_source.expediteur or '', ra_source.objet_demande or ''
+
+
+def _ra_valides(request):
+    """QuerySet des RA validés (avec n_enr_arrive) du même PAC."""
+    return RegistreArrive.objects.filter(
+        utilisateur_creation__localite=request.user.localite,
+        n_enr_arrive__isnull=False
+    ).order_by('-date_arrivee')
 

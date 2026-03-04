@@ -1,0 +1,480 @@
+{% load static %}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{#  pac/tracabilite_chain.html                                               #}
+{#  Affiche la chaîne complète : Source → RA → ST → CSCA → CCO → Appel      #}
+{#  Variables : ra_source, opj_source, plainte_source,                       #}
+{#              st_associe, csca_associe, cco_associe, appel_associe         #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+
+{# ══ SOURCE ORIGINALE (Plainte / OPJ) ══════════════════════════════════════ #}
+{% if opj_source or plainte_source %}
+<hr class="section-divider">
+<div class="d-flex align-items-center mb-3">
+    <div class="flex-grow-1" style="border-top:2px dashed #fd7e14;"></div>
+    <span class="mx-3 fw-bold" style="white-space:nowrap;color:#fd7e14;">
+        <i class="bi bi-diagram-3-fill me-1"></i>Source originale du dossier
+    </span>
+    <div class="flex-grow-1" style="border-top:2px dashed #fd7e14;"></div>
+</div>
+
+{% if opj_source %}
+{# ── Source OPJ ─────────────────────────────────────────────────────────── #}
+<div class="card custom-card mb-3" style="border-left:5px solid #fd7e14;">
+    <div class="card-header-styled" style="background:rgba(253,126,20,0.1);color:#c96a00;">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white me-3" style="background:#fd7e14;">
+                <i class="bi bi-shield-fill-exclamation"></i>
+            </div>
+            <div>
+                <h6 class="mb-0 fw-bold">Plainte OPJ — {{ opj_source.n_chrono_opj }}</h6>
+                <small>Déposée le {{ opj_source.date_plainte|date:"d/m/Y" }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="info-label">N° Chrono OPJ</div>
+                <div class="info-value fw-bold text-warning">{{ opj_source.n_chrono_opj }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Plaignant (Mpitory)</div>
+                <div class="info-value">{{ opj_source.ny_mpitory|default:"-" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Date de la plainte</div>
+                <div class="info-value">{{ opj_source.date_plainte|date:"d/m/Y"|default:"-" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Mis en cause</div>
+                <div class="info-value">{{ opj_source.ilay_olona_kolikoly|default:"-" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Infraction / Objet</div>
+                <div class="info-value">{{ opj_source.tranga_kolikoly|default:"-" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Statut</div>
+                <div class="info-value">
+                    <span class="badge bg-success">{{ opj_source.statut }}</span>
+                </div>
+            </div>
+            {% if opj_source.observation %}
+            <div class="col-md-12">
+                <div class="info-label">Observation du procureur</div>
+                <div class="info-value fst-italic">{{ opj_source.observation }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% elif plainte_source %}
+{# ── Source Plainte en ligne ─────────────────────────────────────────────── #}
+<div class="card custom-card mb-3" style="border-left:5px solid #0dcaf0;">
+    <div class="card-header-styled" style="background:rgba(13,202,240,0.1);color:#0a8fa8;">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white me-3" style="background:#0dcaf0;">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <div>
+                <h6 class="mb-0 fw-bold">Plainte en ligne — {{ plainte_source.n_chrono_tkk }}</h6>
+                <small>Déposée le {{ plainte_source.date_plainte|date:"d/m/Y" }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="info-label">N° Chrono</div>
+                <div class="info-value fw-bold" style="color:#0a8fa8;">{{ plainte_source.n_chrono_tkk }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Plaignant (Mpitory)</div>
+                <div class="info-value">{{ plainte_source.ny_mpitory|default:"-" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Date de la plainte</div>
+                <div class="info-value">{{ plainte_source.date_plainte|date:"d/m/Y"|default:"-" }}</div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-label">Mis en cause</div>
+                <div class="info-value">{{ plainte_source.ilay_olona_kolikoly|default:"-" }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-label">Objet / Infraction</div>
+                <div class="info-value">{{ plainte_source.tranga_kolikoly|default:"-" }}</div>
+            </div>
+            <div class="col-md-2">
+                <div class="info-label">Statut</div>
+                <div class="info-value">
+                    <span class="badge bg-primary">{{ plainte_source.statut }}</span>
+                </div>
+            </div>
+            {% if plainte_source.observation %}
+            <div class="col-md-12">
+                <div class="info-label">Observation du procureur</div>
+                <div class="info-value fst-italic">{{ plainte_source.observation }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}{# /opj_source or plainte_source #}
+
+
+{# ══ RA SOURCE ══════════════════════════════════════════════════════════════ #}
+{% if ra_source %}
+<hr class="section-divider">
+<div class="d-flex align-items-center mb-4">
+    <div class="flex-grow-1" style="border-top:2px solid #4f46e5;"></div>
+    <span class="mx-3 fw-bold text-primary" style="white-space:nowrap;">
+        <i class="bi bi-link-45deg me-1"></i>Dossier RA Source lié
+    </span>
+    <div class="flex-grow-1" style="border-top:2px solid #4f46e5;"></div>
+</div>
+
+<div class="card custom-card">
+    <div class="card-header-styled header-blue">
+        <div class="d-flex align-items-center">
+            <div class="icon-box bg-primary text-white"><i class="bi bi-envelope-paper"></i></div>
+            <h5 class="mb-0 fw-bold">Informations Générales (Source RA)</h5>
+        </div>
+        <span class="badge bg-primary px-3 py-2">
+            N° {{ ra_source.n_enr_arrive|default:"EN ATTENTE" }}
+        </span>
+    </div>
+    <div class="card-body p-4">
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="info-label">Expéditeur</div>
+                <div class="info-value text-primary">
+                    <i class="bi bi-building me-2"></i>{{ ra_source.expediteur }}
+                </div>
+            </div>
+            <div class="col-md-4 border-start ps-4">
+                <div class="info-label">Date de Réception</div>
+                <div class="info-value">
+                    <i class="bi bi-calendar3 me-2 text-muted"></i>{{ ra_source.date_arrivee|date:"d F Y" }}
+                </div>
+            </div>
+            <div class="col-md-4 border-start ps-4">
+                <div class="info-label">Nature du document</div>
+                <div class="info-value">
+                    <span class="text-uppercase" style="font-size:.9rem;color:#475569;">
+                        {{ ra_source.get_nature_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2">
+            <div class="info-label">Objet du dossier</div>
+            <div class="objet-box">{{ ra_source.objet_demande }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}{# /ra_source #}
+
+
+{# ══ ST ASSOCIÉ ═════════════════════════════════════════════════════════════ #}
+<div class="card custom-card border-top border-warning border-4">
+    <div class="card-header-styled header-yellow">
+        <div class="d-flex align-items-center">
+            <div class="icon-box bg-warning text-dark"><i class="bi bi-gear-fill"></i></div>
+            <h5 class="mb-0 fw-bold">Soit Transmis (ST)</h5>
+        </div>
+        <div class="badge bg-dark px-3 py-2">
+            {% if st_associe %}CHRONO # {{ st_associe.n_chrono }}{% else %}---{% endif %}
+        </div>
+    </div>
+    <div class="card-body p-4">
+        {% if st_associe %}
+        <div class="row align-items-center">
+            <div class="col-md-4 mb-3">
+                <div class="info-label text-warning">Destinataire</div>
+                <div class="info-value">
+                    <i class="bi bi-person-badge me-2"></i>{{ st_associe.destinataire }}
+                </div>
+            </div>
+            <div class="col-md-4 mb-3 border-start ps-4">
+                <div class="info-label text-warning">Date de transfert</div>
+                <div class="info-value">
+                    <i class="bi bi-clock-history me-2 text-muted"></i>{{ st_associe.date_st|date:"d/m/Y" }}
+                </div>
+            </div>
+            <div class="col-md-4 mb-3 border-start ps-4">
+                <div class="info-label text-warning">Rappel</div>
+                <div class="info-value">{{ st_associe.rappel|default:"-" }}</div>
+            </div>
+            {% if st_associe.objet %}
+            <div class="col-12 mt-2">
+                <div class="info-label text-warning">Objet ST</div>
+                <div class="objet-box" style="border-left-color:#f59e0b;">{{ st_associe.objet }}</div>
+            </div>
+            {% endif %}
+            {% if st_associe.observation %}
+            <div class="col-12 mt-2">
+                <div class="info-label text-warning">Observation</div>
+                <div class="objet-box" style="border-left-color:#f59e0b;">{{ st_associe.observation }}</div>
+            </div>
+            {% endif %}
+            {% if st_associe.resultat %}
+            <div class="col-12 mt-2">
+                <div class="info-label text-warning">Résultat</div>
+                <div class="info-value">{{ st_associe.resultat }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-center py-3 bg-light rounded-3">
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Aucun soit-transmis enregistré pour ce dossier.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+{# ══ CSCA ASSOCIÉ ════════════════════════════════════════════════════════════ #}
+<div class="card custom-card shadow-sm">
+    <div class="card-header-styled" style="background-color:rgba(6,182,212,0.08);">
+        <div class="d-flex align-items-center">
+            <div class="icon-box bg-info text-white"><i class="bi bi-gavel"></i></div>
+            <h5 class="mb-0 fw-bold">Commission Supérieure (CSCA)</h5>
+        </div>
+        <div class="badge bg-info text-dark px-3 py-2">
+            {% if csca_associe %}CHRONO # {{ csca_associe.n_chrono }}{% else %}EN ATTENTE{% endif %}
+        </div>
+    </div>
+    <div class="card-body p-4">
+        {% if csca_associe %}
+        {% with d=csca_associe %}
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="info-label text-info">Demandeur / Entité</div>
+                <div class="info-value">{{ d.demandeur }}</div>
+                <div class="small text-muted">{{ d.entite }}</div>
+            </div>
+            <div class="col-md-4 border-start ps-4">
+                <div class="info-label text-info">Date CSCA</div>
+                <div class="info-value">
+                    <i class="bi bi-calendar-event me-2"></i>{{ d.date_csca|date:"d/m/Y" }}
+                </div>
+            </div>
+            <div class="col-md-4 border-start ps-4">
+                <div class="info-label text-info">Décision</div>
+                <div class="info-value">
+                    <span class="badge {% if 'Favorable' in d.decision %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ d.decision }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-label text-info">Intitulé de l'affaire</div>
+                <div class="p-3 bg-light rounded border-start border-3 border-info">{{ d.intitule }}</div>
+            </div>
+        </div>
+        {% if d.requisitoire_mp %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-label text-info">Réquisitoire MP</div>
+                <div class="p-3 bg-light rounded border-start border-3 border-info">{{ d.requisitoire_mp }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% if d.transmission_president %}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="info-label text-info">Transmission Président</div>
+                <div class="info-value">{{ d.transmission_president }}</div>
+            </div>
+            {% if d.appel %}
+            <div class="col-md-6 border-start ps-4">
+                <div class="info-label text-info">Appel CSCA</div>
+                <div class="info-value">{{ d.appel }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% if d.resultat_appel %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="info-label text-info">Résultat de l'appel CSCA</div>
+                <div class="info-value">{{ d.resultat_appel }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% else %}
+        <div class="text-center py-3 bg-light rounded-3">
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Ce dossier n'est pas encore passé en commission CSCA.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+{# ══ CCO ASSOCIÉ ═════════════════════════════════════════════════════════════ #}
+<div class="card custom-card shadow-sm">
+    <div class="card-header-styled" style="background-color:rgba(234,88,12,0.08);">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white" style="background:#ea580c;"><i class="bi bi-bank2"></i></div>
+            <h5 class="mb-0 fw-bold">Chambre Correctionnelle (CCO)</h5>
+        </div>
+        <div class="badge px-3 py-2" style="background:#ea580c;">
+            {% if cco_associe %}CCO # {{ cco_associe.n_chrono }}{% else %}EN ATTENTE{% endif %}
+        </div>
+    </div>
+    <div class="card-body p-4">
+        {% if cco_associe %}
+        {% with d=cco_associe %}
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="info-label" style="color:#ea580c;">N° Chrono CCO</div>
+                <div class="info-value fw-bold" style="color:#ea580c;">{{ d.n_chrono }}</div>
+            </div>
+            <div class="col-md-4 border-start ps-4">
+                <div class="info-label" style="color:#ea580c;">Date CCO</div>
+                <div class="info-value">
+                    <i class="bi bi-calendar3 me-2 text-muted"></i>{{ d.date_cco|date:"d/m/Y"|default:"-" }}
+                </div>
+            </div>
+            <div class="col-md-4 border-start ps-4">
+                <div class="info-label" style="color:#ea580c;">N° Chrono ST</div>
+                <div class="info-value">{{ d.n_chrono_st|default:"-" }}</div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="info-label" style="color:#ea580c;">N° Dossier</div>
+                <div class="info-value">{{ d.n_dossier|default:"-" }}</div>
+            </div>
+            <div class="col-md-6 border-start ps-4">
+                <div class="info-label" style="color:#ea580c;">N° BE CCO</div>
+                <div class="info-value">{{ d.n_be_cco|default:"-" }}</div>
+            </div>
+        </div>
+        {% if d.requisitoire_parquet %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-label" style="color:#ea580c;">Réquisitoire du parquet</div>
+                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#ea580c !important;">
+                    {{ d.requisitoire_parquet }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if d.objet %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="info-label" style="color:#ea580c;">Objet</div>
+                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#ea580c !important;">
+                    {{ d.objet }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% else %}
+        <div class="text-center py-3 bg-light rounded-3">
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Ce dossier n'est pas encore passé en CCO.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+{# ══ REGISTRE D'APPEL ASSOCIÉ ════════════════════════════════════════════════ #}
+<div class="card custom-card shadow-sm">
+    <div class="card-header-styled" style="background-color:rgba(124,58,237,0.08);">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white" style="background:#7c3aed;"><i class="bi bi-flag-fill"></i></div>
+            <h5 class="mb-0 fw-bold">Registre d'Appel <span class="badge ms-2" style="background:#7c3aed;font-size:.7rem;">DERNIÈRE ÉTAPE</span></h5>
+        </div>
+        <div class="badge px-3 py-2" style="background:#7c3aed;">
+            {% if appel_associe %}APPEL # {{ appel_associe.n_chrono_appel }}{% else %}EN ATTENTE{% endif %}
+        </div>
+    </div>
+    <div class="card-body p-4">
+        {% if appel_associe %}
+        {% with d=appel_associe %}
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="info-label" style="color:#7c3aed;">N° Chrono Appel</div>
+                <div class="info-value fw-bold" style="color:#7c3aed;">{{ d.n_chrono_appel }}</div>
+            </div>
+            <div class="col-md-3 border-start ps-4">
+                <div class="info-label" style="color:#7c3aed;">Date d'appel</div>
+                <div class="info-value">
+                    <i class="bi bi-calendar3 me-2 text-muted"></i>{{ d.date_appel|date:"d/m/Y"|default:"-" }}
+                </div>
+            </div>
+            <div class="col-md-3 border-start ps-4">
+                <div class="info-label" style="color:#7c3aed;">N° RP</div>
+                <div class="info-value">{{ d.n_rp|default:"-" }}</div>
+            </div>
+            <div class="col-md-3 border-start ps-4">
+                <div class="info-label" style="color:#7c3aed;">Réf. Juge instruction</div>
+                <div class="info-value">{{ d.ref_juge_instruction|default:"-" }}</div>
+            </div>
+        </div>
+        {% if d.resume_affaire %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-label" style="color:#7c3aed;">Résumé de l'affaire</div>
+                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#7c3aed !important;">
+                    {{ d.resume_affaire }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if d.inculpation %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-label" style="color:#7c3aed;">Inculpation</div>
+                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#7c3aed !important;">
+                    {{ d.inculpation }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if d.declaration_appel %}
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="info-label" style="color:#7c3aed;">Déclaration d'appel</div>
+                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#7c3aed !important;">
+                    {{ d.declaration_appel }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if d.n_be_appel %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="info-label" style="color:#7c3aed;">N° BE Appel</div>
+                <div class="info-value">{{ d.n_be_appel }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% else %}
+        <div class="text-center py-3 bg-light rounded-3">
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Ce dossier n'a pas encore fait l'objet d'un appel.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>

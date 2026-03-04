@@ -1,425 +1,401 @@
-    {% extends "base.html" %}
-    {% load static %}
+{% extends "base.html" %}
+{% load static %}
 
-    {% block title %} Gestion Registre Arrivé {% endblock title %}
+{% block title %} Gestion Registre Arrivé {% endblock title %}
 
-{% block content %} 
+{% block content %}
 
 {% include "nav.html" %}
 
+<div class="top-bar-pac d-flex justify-content-between"
+     style="background-color:rgb(49,49,154);color:white;">
+    <div style="margin-left:50px;">{{ user.nom }} - {{ user.poste }}</div>
+    <div>PAC {{ user.localite|default:"[Localité]" }}</div>
+</div>
 
-            <div class="top-bar-pac d-flex justify-content-between" style="background-color:rgb(49, 49, 154);color:white;">
-                <div style="margin-left:50px;">{{ user.nom }} - {{ user.poste }}</div>
-                <div>PAC {{ user.localite|default:"[Localité]" }}</div>
+<div class="content-wrapper p-4" style="margin-left:5%;">
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-success mt-3" role="alert">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {# ════════════════════════════════════════════════════════════════ #}
+    {# SÉLECTION DU CONTENU PRINCIPAL                                   #}
+    {# ════════════════════════════════════════════════════════════════ #}
+
+    {% if mode == 'form' %}
+        {% include "pac/raform.html" %}
+
+    {% elif mode == 'form_st' %}
+        {% include "pac/stform.html" %}
+
+    {% elif mode == 'form_csca' %}
+        {% include "pac/cscaform.html" %}
+
+    {% elif mode == 'form_rp' %}
+        {% include "pac/rpform.html" %}
+
+    {# ── CCO ← NOUVEAU ──────────────────────────────────────────────── #}
+    {% elif mode == 'form_cco' %}
+        {% include "pac/ccoform.html" %}
+
+    {# ── APPEL ← NOUVEAU ────────────────────────────────────────────── #}
+    {% elif mode == 'form_appel' %}
+        {% include "pac/appelform.html" %}
+
+    {% else %}
+        {# ── Détail d'un registre ──────────────────────────────────── #}
+        {% if reg_detail %}
+            {% include "pac/registre_detail.html" %}
+        {% endif %}
+
+        {# ── Entête liste + bouton Ajouter ────────────────────────── #}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>{{ titre|default:"Pre-Registre-Arrive" }}</h2>
+
+            {% if titre == "Pre-RA" or not titre or titre == "Registre date_arrivee" %}
+            <a href="{% url 'pac:greffier' %}?mode=form" class="btn btn-primary btn-ajouter">
+                <i class="bi bi-plus-lg"></i> Ajouter
+            </a>
+            {% endif %}
+        </div>
+
+        {# ── Barre de recherche ────────────────────────────────────── #}
+        <form method="GET" action="{% url 'pac:greffier' %}" class="row g-2 mb-4">
+            <input type="hidden" name="mode"  value="{{ mode_actuel }}">
+            <input type="hidden" name="type"  value="{{ request.GET.type|default:'pre-arrive' }}">
+            <div class="col-md-4">
+                <div class="input-group shadow-sm">
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Recherche dans {{ titre }}..."
+                           value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary px-3">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
             </div>
+            {% if search_query %}
+            <div class="col-md-2">
+                <a href="{% url 'pac:greffier' %}?type={{ request.GET.type|default:'pre-arrive' }}"
+                   class="btn btn-outline-secondary w-100">Réinitialiser</a>
+            </div>
+            {% endif %}
+        </form>
 
-            <div class="content-wrapper p-4" style="margin-left:5%;">
-                
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-success mt-3" role="alert">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
+        {# ── Tables spécialisées ─────────────────────────────────────── #}
+        {% if request.GET.type == 'st' %}
+            {% include "pac/tableST.html" %}
 
-                {% if mode == 'form' %}
-                    {% include "pac/raform.html" %}
-                {% elif mode == 'form_st' %}
-                    {% include "pac/stform.html" %}
-                {% elif mode == 'form_csca' %}
-                    {% include "pac/cscaform.html" %}
-                {% else %}
-                    {# --- AFFICHAGE DES DÉTAILS --- #}
-                    {% if reg_detail %}
-                        {% include "pac/registre_detail.html" %}
-                    {% endif %}
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2>{{titre|default:"Pre-Registre-Arrive"}}</h2>
-                            {% if titre == "Pre-RA" or not titre or titre == "Registre date_arrivee" %}
-                            <a href="{% url 'pac:greffier' %}?mode=form" class="btn btn-primary btn-ajouter">
-                                <i class="bi bi-plus-lg"></i> Ajouter
+        {% elif request.GET.type == 'csca' %}
+            {% include "pac/tableCSCA.html" %}
+
+        {% elif request.GET.type == 'rrp' %}
+            {% include "pac/tableRP.html" %}
+
+        {# ── CCO ← NOUVEAU ──────────────────────────────────────────── #}
+        {% elif request.GET.type == 'cco' %}
+            {% include "pac/tableCCO.html" %}
+
+        {# ── APPEL ← NOUVEAU ────────────────────────────────────────── #}
+        {% elif request.GET.type == 'appel' %}
+            {% include "pac/tableAppel.html" %}
+
+        {# ── RA / Pre-RA (table générique) ──────────────────────────── #}
+        {% else %}
+        <div class="table-responsive mt-3">
+            {% if registres %}
+            <table class="table table-hover align-middle" id="registre-plainte">
+                <thead class="table-dark">
+                    <tr>
+                        <th>N° ENR</th>
+                        <th>Date d'arrivée</th>
+                        <th>Provenance</th>
+                        <th>Nature</th>
+                        <th>Observation</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registre in registres %}
+                    <tr>
+                        <td>{{ registre.n_enr_arrive|default:"EN ATTENTE" }}</td>
+                        <td>{{ registre.date_arrivee|date:"d/m/Y" }}</td>
+                        <td>{{ registre.expediteur|truncatechars:50 }}</td>
+                        <td>{{ registre.get_nature_display }}</td>
+                        <td>{{ registre.observation|truncatechars:50|default:"-" }}</td>
+                        <td>
+                            {# Voir détail #}
+                            <a href="{% url 'pac:greffier' %}?type={{ reg_type }}&detail_id={{ registre.pk }}"
+                               class="btn btn-sm btn-info me-1" title="Voir les détails">
+                                <i class="bi bi-eye-fill"></i>
                             </a>
-                            {% endif %}
-                        </div>
-                        <!--Barre de recherche-->
-                        <form method="GET" action="{% url 'pac:greffier' %}" class="row g-2 mb-4">
-                            <input type="hidden" name="mode" value="{{ mode_actuel }}">
-                            
-                            <input type="hidden" name="type" value="{{ request.GET.type|default:'pre-arrive' }}">
 
-                            <div class="col-md-4">
-                                <div class="input-group shadow-sm">
-                                    <input type="text" name="search" class="form-control" placeholder="Recherche dans {{ titre }}..." value="{{ search_query }}">
-                                    <button type="submit" class="btn btn-primary px-3">
-                                        <i class="bi bi-search"></i>
-                                    </button>
-                                </div>
-                            </div>
+                            {% if titre == "Pre-RA" or not titre %}
+                                {# Valider #}
+                                <a href="{% url 'pac:greffier' %}?valider_id={{ registre.id }}"
+                                   class="btn btn-sm btn-success px-3 shadow-sm btn-validation"
+                                   title="Valider et attribuer le N° RA">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Valider
+                                </a>
 
-                            {% if search_query %}
-                            <div class="col-md-2">
-                                <a href="{% url 'pac:greffier' %}?type={{ request.GET.type|default:'pre-arrive' }}" class="btn btn-outline-secondary w-100">Réinitialiser</a>
-                            </div>
-                            {% endif %}
-                        </form>
-
-                        {% if request.GET.type == 'st' %}
-                            {% include "pac/tableST.html" %}
-                        {% elif request.GET.type == 'csca'%}
-                            {% include "pac/tableCSCA.html" %}
-                        {% else %}
-                        
-                        <div class="table-responsive mt-3">
-                            {% if registres %}
-                            
-                               
-                                <table class="table table-hover align-middle" id="registre-plainte">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>N° ENR</th>
-                                            <th>Date d’arrivée</th>
-                                            <th>Provenance</th>
-                                            <th>Nature</th>
-                                            <th>Observation</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for registre in registres %}
-                                        <tr>
-                                            <td>{{ registre.n_enr_arrive|default:"EN ATTENTE" }}</td>
-                                            <td>{{ registre.date_arrivee|date:"d/m/Y" }}</td>
-                                            <td>{{ registre.expediteur|truncatechars:50 }}</td>
-                                            <td>{{ registre.get_nature_display }}</td>
-                                            <td>{{ registre.observation|truncatechars:50|default:"-" }}</td>
-                                            <td>
-                                                <a href="{% url 'pac:greffier' %}?type={{ reg_type }}&detail_id={{ registre.pk }}" class="btn btn-sm btn-info me-1" title="Voir les détails">
-                                    <i class="bi bi-eye-fill"></i>
-                                                </a>
-                                                
-                                                {% if titre == "Pre-RA" or not titre %}
-                                                    <a href="{% url 'pac:greffier' %}?valider_id={{ registre.id }}" 
-                                                        class="btn btn-sm btn-success px-3 shadow-sm btn-validation" 
-                                                        title="Valider et attribuer le N° RA">
-                                                        <i class="bi bi-check-circle-fill me-1"></i> Valider
-                                                    </a>
-                                                
-                                                {% else %}
-                                                    <!--MODAL -->
-                                                <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la Suppression</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                Êtes-vous sûr de vouloir supprimer le registre {{ registre.n_enr_arrive }}
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                                <form method="POST" action="" style="display:inline;">
-                                                                    {% csrf_token %}
-                                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="modal fade" id="switch" tabindex="-1" aria-labelledby="switchmodal" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered"> <div class="modal-content border-0 shadow-lg"> <div class="modal-header bg-light border-0 py-3">
-                                                                <div class="d-flex align-items-center">
-                                                                    <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                                                        <i class="bi bi-send-fill fs-5"></i>
-                                                                    </div>
-                                                                    <h5 class="modal-title fw-bold text-dark" id="switchmodal">Transférer le dossier</h5>
-                                                                </div>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-
-                                                            <div class="modal-body p-4">
-                                                                <p class="text-muted small mb-4">
-                                                                    Sélectionnez le registre de destination. Cette action permettra de dispatcher les informations vers le service approprié.
-                                                                </p>
-
-                                                                <form method="GET" action="{% url 'pac:greffier' %}">
-                                                                    <input type="hidden" name="mode" value="dispatch">
-                                                                    <input type="hidden" name="ra_id" value="">
-
-                                                                    <div class="mb-4">
-                                                                        <label class="form-label fw-semibold text-secondary small">REGISTRE DE DESTINATION</label>
-                                                                        <div class="input-group">
-                                                                            <span class="input-group-text bg-white border-end-0 text-primary">
-                                                                                <i class="bi bi-layers-half"></i>
-                                                                            </span>
-                                                                            <select name="target_type" class="form-select border-start-0 ps-0 shadow-none" style="cursor: pointer;">
-                                                                                <option value="ST" selected>Soit Transmis (ST)</option>
-                                                                                <option value="CCO">Registre CCO (Ordre)</option>
-                                                                                <option value="CSCA">Registre CSCA</option>
-                                                                                <option value="RP"> Registre Plainte (RP)</option>
-                                                                                <option value="RA">Registre d'Appel (RA)</option>
-                                                                            </select>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div class="row g-2 mt-2">
-                                                                        <div class="col-6">
-                                                                            <button type="button" class="btn btn-light w-100 fw-bold text-secondary py-2" data-bs-dismiss="modal">
-                                                                                Annuler
-                                                                            </button>
-                                                                        </div>
-                                                                        <div class="col-6">
-                                                                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-                                                                                Confirmer <i class="bi bi-arrow-right ms-2"></i>
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                            
-                                                <!--MODAL -->
-                                                
-                                                        <button class="btn btn-sm btn-danger btn-delete"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#confirmDeleteModal"
-                                                                data-record-id="{{ registre.id }}">
-                                                            <i class="bi bi-trash-fill"></i>
-                                                        </button>
-                                                    
-                                                        <button class="btn btn-sm btn-warning btn-switch"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#switch"
-                                                                data-record-id="{{ registre.id }}">
-                                                            <i class="bi bi-send-fill"></i>
-                                                        </button>
-                                                   
-                                                {% endif %}
-
-                                            </td>
-                                        </tr> 
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
                             {% else %}
-                                <div class="alert alert-info">Aucun registre d'arrivée n'a été trouvé.</div>
-                            {% endif %}
-                        </div>
-                        {% include "pac/pagination.html" with page_obj=registres mode_actuel=mode search_query=search_query %}
-                        {% endif %}
-                {% endif %}
+                                {# Supprimer #}
+                                <button class="btn btn-sm btn-danger btn-delete"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmDeleteModal"
+                                        data-record-id="{{ registre.id }}">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
 
+                                {# Switch / Transférer ← Options CCO et APPEL ajoutées #}
+                                <button class="btn btn-sm btn-warning btn-switch"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#switch"
+                                        data-record-id="{{ registre.id }}">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-info">Aucun registre d'arrivée n'a été trouvé.</div>
+            {% endif %}
+        </div>
+        {% include "pac/pagination.html" with page_obj=registres mode_actuel=mode search_query=search_query %}
+        {% endif %}{# /type check #}
+
+    {% endif %}{# /mode check #}
+
+</div>{# /content-wrapper #}
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# MODALES                                                              #}
+{# ════════════════════════════════════════════════════════════════════ #}
+
+{# ── Suppression ─────────────────────────────────────────────────── #}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Confirmer la Suppression</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="deleteModalBody">
+            Êtes-vous sûr de vouloir supprimer ce registre ?
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <form method="POST" action="" id="deleteForm" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+            </form>
+        </div>
+    </div></div>
+</div>
+
+{# ── Switch / Transférer ─────────────────────────────────────────── #}
+{# Inclut maintenant CCO et Registre d'Appel dans le select          #}
+<div class="modal fade" id="switch" tabindex="-1" aria-labelledby="switchmodal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-0 py-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                         style="width:40px;height:40px;">
+                        <i class="bi bi-send-fill fs-5"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-dark" id="switchmodal">Transférer le dossier</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-   
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">
+                    Sélectionnez le registre de destination. Cette action permet de dispatcher
+                    les informations vers le service approprié.
+                </p>
 
-<link href="{% static 'css/sweetalert2.min.css'%}" rel="stylesheet">
+                <form method="GET" action="{% url 'pac:greffier' %}">
+                    <input type="hidden" name="mode"   value="dispatch">
+                    <input type="hidden" name="ra_id"  value="">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary small">REGISTRE DE DESTINATION</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-primary">
+                                <i class="bi bi-layers-half"></i>
+                            </span>
+                            <select name="target_type" class="form-select border-start-0 ps-0 shadow-none"
+                                    style="cursor:pointer;">
+                                <option value="ST"  selected>Soit Transmis (ST)</option>
+                                <option value="CSCA">Registre CSCA</option>
+                                <option value="RP">  Registre Plainte (RP)</option>
+                                <option value="CCO"> Registre CCO</option>
+                                <option value="RA">  Registre d'Appel</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mt-2">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-light w-100 fw-bold text-secondary py-2"
+                                    data-bs-dismiss="modal">Annuler</button>
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                                Confirmer <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# SCRIPTS                                                              #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<link href="{% static 'css/sweetalert2.min.css' %}" rel="stylesheet">
 <script src="{% static 'js/sweetalert211.js' %}"></script>
+<script src="{% static 'js/jquery.min.js' %}"></script>
 
-<script src="{% static 'js/jquery.min.js'%}"></script>
 <script>
-    // Assurez-vous que ce script est **APRÈS** le chargement de jQuery et de Bootstrap JS
-    $(document).ready(function() {
-        // Logique pour la modale de SUPPRESSION
-        $('#confirmDeleteModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget); // Bouton qui a déclenché la modale
-            var recordId = button.data('record-id'); // Récupère l'ID
+$(document).ready(function () {
 
-            // Mettre à jour l'action du formulaire de suppression (AJUSTEZ L'URL SELON VOTRE LOGIQUE DJANGO)
-            var deleteUrl = '/votre/url/de/suppression/' + recordId + '/'; 
-            $('#deleteForm').attr('action', deleteUrl);
-
-            // Mettre à jour le message dans le corps de la modale (Optionnel)
-            var nChrono = button.closest('tr').find('td:first').text(); // Tentative de récupérer le N° ENR
-            $('#deleteModalBody').text('Êtes-vous sûr de vouloir supprimer le registre ' + nChrono + ' ?');
-        });
-        
-        
+    // ── Modale suppression ───────────────────────────────────────────
+    $('#confirmDeleteModal').on('show.bs.modal', function (e) {
+        var btn      = $(e.relatedTarget);
+        var recordId = btn.data('record-id');
+        var nChrono  = btn.closest('tr').find('td:first').text();
+        var deleteUrl = '/votre/url/de/suppression/' + recordId + '/';
+        $('#deleteForm').attr('action', deleteUrl);
+        $('#deleteModalBody').text('Êtes-vous sûr de vouloir supprimer le registre ' + nChrono + ' ?');
     });
-</script>
-<script>
-    $(document).ready(function() {
-        $('.btn-switch').on('click', function() {
-            var recordId = $(this).data('record-id');
-            var nEnrArrive = $(this).closest('tr').find('td:first').text();
-            
-            var switchModal = $('#switch');
-            switchModal.find('#switchmodal').text('Transférer le dossier : ' + nEnrArrive);
-            
-            // TRÈS IMPORTANT : On injecte l'ID dans le champ caché de la modale
-            switchModal.find('input[name="ra_id"]').val(recordId);
-        });
+
+    // ── Modale switch : injection de l'ID RA ────────────────────────
+    $('.btn-switch').on('click', function () {
+        var recordId  = $(this).data('record-id');
+        var nEnr      = $(this).closest('tr').find('td:first').text();
+        var modal     = $('#switch');
+        modal.find('#switchmodal').text('Transférer le dossier : ' + nEnr);
+        modal.find('input[name="ra_id"]').val(recordId);
     });
+
+});
 </script>
+
 <script>
-    document.querySelectorAll('.btn-validation').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault(); // Empêche le lien de s'ouvrir immédiatement
-            const url = this.getAttribute('href');
-
-            Swal.fire({
-                title: 'Confirmation',
-                text: "Êtes-vous sûr de vouloir valider ce registre et lui attribuer son numéro RA ?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#198754', // Couleur success de Bootstrap
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Oui, valider !',
-                cancelButtonText: 'Annuler',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Affichage du message de succès
-                    Swal.fire({
-                        title: 'Validé !',
-                        text: 'Le registre a été validé avec succès.',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-
-                    // Redirection après un court délai pour laisser l'utilisateur voir le succès
-                    setTimeout(() => {
-                        window.location.href = url;
-                    }, 1500);
-                }
-            });
+// ── Validation RA avec SweetAlert2 ──────────────────────────────────
+document.querySelectorAll('.btn-validation').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = this.getAttribute('href');
+        Swal.fire({
+            title: 'Confirmation',
+            text: "Valider ce registre et lui attribuer son numéro RA ?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Oui, valider !',
+            cancelButtonText: 'Annuler',
+            reverseButtons: true
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Validé !', text: 'Le registre a été validé avec succès.', icon: 'success', timer: 2000, showConfirmButton: false });
+                setTimeout(function () { window.location.href = url; }, 1500);
+            }
         });
-    });
-</script>
-<script>
-    $(document).on('click', '#submitST', function(e) {
-    e.preventDefault();
-    
-    let form = $('#formST')[0];
-    
-    // Vérification de la validité HTML5 (champ required)
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    let formData = new FormData(form);
-
-    Swal.fire({
-        title: 'Confirmation',
-        text: "Voulez-vous enregistrer ce dossier dans le registre ST ?",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#198754',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Oui, enregistrer',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Affichage d'un loader pendant le traitement
-            Swal.fire({
-                title: 'Traitement en cours...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
-            // Envoi AJAX
-            $.ajax({
-                url: "?mode=save_st",
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Réussi !',
-                        text: response.message,
-                        showConfirmButton: false,
-                        timer: 2000
-                    }).then(() => {
-                        // Redirection vers la liste du registre ST
-                        window.location.href = "{% url 'pac:greffier' %}?type=st";
-                    });
-                },
-                error: function(xhr) {
-                    let errorMsg = xhr.responseJSON ? xhr.responseJSON.message : "Erreur lors de l'enregistrement";
-                    Swal.fire('Erreur', errorMsg, 'error');
-                }
-            });
-        }
     });
 });
 </script>
+
 <script>
-$(document).on('click', '#submitCSCA', function(e) {
+// ── AJAX pour formulaire ST ─────────────────────────────────────────
+$(document).on('click', '#submitST', function (e) {
     e.preventDefault();
-    let form = $('#formCSCA')[0];
+    var form = $('#formST')[0];
     if (!form.checkValidity()) { form.reportValidity(); return; }
-
     Swal.fire({
-        title: 'Confirmer',
-        text: "Transférer ce dossier au CSCA ?",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#198754'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: "?mode=save_csca",
-                type: "POST",
-                data: new FormData(form),
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    Swal.fire('Succès', response.message, 'success').then(() => {
-                        window.location.href = "{% url 'pac:greffier' %}?type=csca";
-                    });
-                }
-            });
-        }
+        title: 'Confirmation', text: "Enregistrer ce dossier dans le registre ST ?",
+        icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#198754', cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Oui, enregistrer', cancelButtonText: 'Annuler'
+    }).then(function (result) {
+        if (!result.isConfirmed) return;
+        Swal.fire({ title: 'Traitement en cours...', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+        $.ajax({
+            url: "?mode=save_st", type: "POST",
+            data: new FormData(form), processData: false, contentType: false,
+            success: function (response) {
+                Swal.fire({ icon: 'success', title: 'Réussi !', text: response.message, showConfirmButton: false, timer: 2000 })
+                    .then(function () { window.location.href = "{% url 'pac:greffier' %}?type=st"; });
+            },
+            error: function (xhr) {
+                Swal.fire('Erreur', xhr.responseJSON ? xhr.responseJSON.message : "Erreur", 'error');
+            }
+        });
+    });
+});
+
+// ── AJAX pour formulaire CSCA ───────────────────────────────────────
+$(document).on('click', '#submitCSCA', function (e) {
+    e.preventDefault();
+    var form = $('#formCSCA')[0];
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    var mode = $(this).data('mode');
+    Swal.fire({
+        title: mode === 'update' ? 'Confirmer la modification' : 'Confirmer le transfert',
+        text:  mode === 'update' ? 'Enregistrer les modifications ?' : 'Transférer ce dossier au CSCA ?',
+        icon: 'question', showCancelButton: true,
+        confirmButtonColor: '#198754', cancelButtonColor: '#6c757d',
+        confirmButtonText: mode === 'update' ? 'Oui, modifier' : 'Oui, transférer',
+        cancelButtonText: 'Annuler'
+    }).then(function (result) {
+        if (!result.isConfirmed) return;
+        Swal.fire({ title: 'Traitement en cours...', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+        $.ajax({
+            url: "?mode=save_csca", type: "POST",
+            data: new FormData(form), processData: false, contentType: false,
+            success: function (response) {
+                Swal.fire({ icon: 'success', title: mode === 'update' ? 'Mis à jour !' : 'Enregistré !', text: response.message, timer: 2000 })
+                    .then(function () { window.location.href = "{% url 'pac:greffier' %}?type=csca"; });
+            },
+            error: function () { Swal.fire('Erreur', "Une erreur est survenue", 'error'); }
+        });
     });
 });
 </script>
+
 {% block extra_js %}
- <script>
-        function initDataTable() {
-            // Si DataTable existe déjà, on la détruit proprement
-            if ($.fn.DataTable.isDataTable('#registre-plainte')) {
-                $('#registre-plainte').DataTable().destroy();
-            }
-
-            // On initialise
-            $('#registre-plainte').DataTable({
-                "paging": false,
-                "searching": false,
-                "info": false,
-                "ordering": true,
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
-                }
-            });
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+<script>
+function initDataTable() {
+    if ($.fn.DataTable.isDataTable('#registre-plainte')) {
+        $('#registre-plainte').DataTable().destroy();
+    }
+    $('#registre-plainte').DataTable({
+        paging: false, searching: false, info: false, ordering: true,
+        language: {
+            emptyTable: "Aucune donnée disponible",
+            zeroRecords: "Aucun élément correspondant trouvé"
         }
-
-        $(document).ready(function() {
-            initDataTable();
-        });
-
-        // Relancer l'initialisation après chaque swap HTMX
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id === "registre-plainte" || $(evt.detail.target).find('#registre-plainte').length > 0) {
-                initDataTable();
-            }
-        });
-    </script>
-    {{ block.super }}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
-    
-    <script>
-        $(document).ready(function() {
-        $('#suivie').DataTable();
     });
-    </script>
+}
+$(document).ready(function () { initDataTable(); });
+document.body.addEventListener('htmx:afterSwap', function (evt) {
+    if (evt.detail.target.id === "registre-plainte" || $(evt.detail.target).find('#registre-plainte').length > 0) {
+        initDataTable();
+    }
+});
+</script>
+{{ block.super }}
 {% endblock extra_js %}
+
 {% endblock content %}

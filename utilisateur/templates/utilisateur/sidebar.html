@@ -71,9 +71,17 @@
                     </div>
                     <div class="menu-item {% if request.GET.type == 'st' %}active{% endif %}"><a href="{% url 'pac:greffier' %}?type=st">Registre ST</a></div>
                     <div class="menu-item {% if request.GET.type == 'csca' %}active{% endif %}"><a href="{% url 'pac:greffier' %}?type=csca">Registre CSCA</a></div>
-                    <div class="menu-item {% if request.GET.type == 'rrp' %}active{% endif %}"><a href="#">Registre RP</a></div>
-                    <div class="menu-item {% if request.GET.type == 'cco' %}active{% endif %}"><a href="#">Registre CCO</a></div>
-                    <div class="menu-item {% if request.GET.type == 'rap' %}active{% endif %}"><a href="#">Registre d’Appel</a></div>
+                    <div class="menu-item {% if request.GET.type == 'rrp' %}active{% endif %}">
+                       <a href="{% url 'pac:greffier' %}?type=rrp">Registre RP</a>
+                    </div>
+
+                    <div class="menu-item {% if request.GET.type == 'cco' %}active{% endif %}">
+                        <a href="{% url 'pac:greffier' %}?type=cco">Registre CCO</a>
+                    </div>
+                    <div class="menu-item {% if request.GET.type == 'appel' %}active{% endif %}">
+                        <a href="{% url 'pac:greffier' %}?type=appel">Registre d'Appel</a>
+                    </div>
+
         </div>
    
     {% elif groups == "dcn" %}

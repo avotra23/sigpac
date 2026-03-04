@@ -1,0 +1,131 @@
+{% load static %}
+{# ══════════════════════════════════════════════════════════════════ #}
+{#  pac/tableCCO.html  — Tableau liste des dossiers CCO              #}
+{# ══════════════════════════════════════════════════════════════════ #}
+
+
+
+<div class="table-responsive mt-3">
+    {% if registres %}
+    <table class="table table-hover align-middle" id="table-cco">
+        <thead class="table-dark">
+            <tr>
+                <th>N° Chrono CCO</th>
+                <th>N° RA</th>
+                <th>Date CCO</th>
+                <th>N° Chrono ST</th>
+                <th>N° Dossier</th>
+                <th>N° BE CCO</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cco in registres %}
+            <tr>
+                <td class="fw-semibold" style="color:#4a759c;">{{ cco.n_chrono|default:"-" }}</td>
+                <td>{{ cco.registre_arrive.n_enr_arrive|default:"-" }}</td>
+                <td>{{ cco.date_cco|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ cco.n_chrono_st|default:"-" }}</td>
+                <td>{{ cco.n_dossier|default:"-" }}</td>
+                <td>{{ cco.n_be_cco|truncatechars:30|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'pac:greffier' %}?type=cco&detail_id={{ cco.pk }}"
+                       class="btn btn-sm btn-info me-1" title="Voir les détails">
+                        <i class="bi bi-eye-fill"></i>
+                    </a>
+                    <a href="{% url 'pac:greffier' %}?mode=edit_cco&type=cco&detail_id={{ cco.pk }}"
+                       class="btn btn-sm btn-success me-1" title="Modifier">
+                        <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger btn-delete-cco"
+                            data-bs-toggle="modal"
+                            data-bs-target="#confirmDeleteCCOModal"
+                            data-cco-id="{{ cco.pk }}"
+                            data-cco-num="{{ cco.n_chrono|default:cco.pk }}"
+                            title="Supprimer">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">Aucun dossier CCO enregistré.</div>
+    {% endif %}
+</div>
+
+{% include "pac/pagination.html" with page_obj=registres mode_actuel=mode search_query=search_query %}
+
+{# ── Modale suppression CCO ─────────────────────────────────────── #}
+<div class="modal fade" id="confirmDeleteCCOModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Supprimer le dossier CCO <strong id="cco-num-to-delete"></strong> ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete-cco">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="{% static 'css/sweetalert2.min.css' %}" rel="stylesheet">
+<script src="{% static 'js/sweetalert211.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let ccoIdToDelete = null;
+
+    function getCsrf() {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) v = decodeURIComponent(c.slice(10));
+        });
+        return v;
+    }
+
+    const deleteModal = document.getElementById('confirmDeleteCCOModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (e) {
+            const btn = e.relatedTarget;
+            ccoIdToDelete = btn.dataset.ccoId;
+            document.getElementById('cco-num-to-delete').textContent = btn.dataset.ccoNum;
+        });
+    }
+
+    const confirmBtn = document.getElementById('btn-confirm-delete-cco');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function () {
+            if (!ccoIdToDelete) return;
+            Swal.fire({ title: 'Suppression...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const body = new URLSearchParams({
+                csrfmiddlewaretoken: getCsrf(),
+                mode: 'delete_cco',
+                cco_id: ccoIdToDelete
+            });
+
+            fetch("{% url 'pac:greffier' %}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body
+            })
+            .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+            .then(response => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteCCOModal'));
+                if (modal) modal.hide();
+                Swal.fire({ icon: 'success', title: 'Supprimé !', text: response.message, timer: 1800, showConfirmButton: false })
+                    .then(() => location.reload());
+            })
+            .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+        });
+    }
+});
+</script>

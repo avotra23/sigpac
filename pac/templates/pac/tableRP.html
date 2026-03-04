@@ -1,0 +1,121 @@
+{% load static %}
+
+<div class="table-responsive mt-3">
+    {% if registres %}
+    <table class="table table-hover align-middle" id="table-rp">
+        <thead class="table-dark">
+            <tr>
+                <th>N° RP</th>
+                <th>N° RA</th>
+                <th>Date d'entrée</th>
+                <th>Plaignant</th>
+                <th>Infraction</th>
+                <th>Montant</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rp in registres %}
+            <tr>
+                <td>{{ rp.numero_rp|default:"-" }}</td>
+                <td>{{ rp.registre_arrive.n_enr_arrive|default:"-" }}</td>
+                <td>{{ rp.date_entree|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ rp.plaignant|default:"-" }}</td>
+                <td>{{ rp.infraction|truncatechars:40|default:"-" }}</td>
+                <td>{{ rp.montant|default:"-" }}</td>
+                <td>
+                    <a href="{% url 'pac:greffier' %}?type=rrp&detail_id={{ rp.pk }}"
+                       class="btn btn-sm btn-info me-1" title="Voir les détails">
+                        <i class="bi bi-eye-fill"></i>
+                    </a>
+                    <a href="{% url 'pac:greffier' %}?mode=edit_rp&type=rrp&detail_id={{ rp.pk }}"
+                       class="btn btn-sm btn-success me-1" title="Modifier">
+                        <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger btn-delete-rp"
+                            data-bs-toggle="modal"
+                            data-bs-target="#confirmDeleteRPModal"
+                            data-rp-id="{{ rp.pk }}"
+                            data-rp-num="{{ rp.numero_rp|default:rp.pk }}"
+                            title="Supprimer">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">Aucun dossier RP enregistré.</div>
+    {% endif %}
+</div>
+
+{# Pagination #}
+{% include "pac/pagination.html" with page_obj=registres mode_actuel=mode search_query=search_query %}
+
+{# Modale confirmation suppression RP #}
+<div class="modal fade" id="confirmDeleteRPModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer le dossier RP <strong id="rp-num-to-delete"></strong> ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-delete-rp">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% load static %}
+<link href="{% static 'css/sweetalert2.min.css' %}" rel="stylesheet">
+<script src="{% static 'js/sweetalert211.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let rpIdToDelete = null;
+
+    function getCsrf() {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) v = decodeURIComponent(c.slice(10));
+        });
+        return v;
+    }
+
+    // Prépare la modale avec l'ID et le numéro RP
+    document.getElementById('confirmDeleteRPModal').addEventListener('show.bs.modal', function (event) {
+        const btn = event.relatedTarget;
+        rpIdToDelete = btn.dataset.rpId;
+        document.getElementById('rp-num-to-delete').textContent = btn.dataset.rpNum;
+    });
+
+    // Confirme et envoie la suppression en AJAX
+    document.getElementById('btn-confirm-delete-rp').addEventListener('click', function () {
+        if (!rpIdToDelete) return;
+
+        Swal.fire({ title: 'Suppression en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const body = new URLSearchParams({
+            csrfmiddlewaretoken: getCsrf(),
+            mode: 'delete_rp',
+            rp_id: rpIdToDelete
+        });
+
+        fetch("{% url 'pac:greffier' %}", { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+            .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+            .then(response => {
+                bootstrap.Modal.getInstance(document.getElementById('confirmDeleteRPModal'))?.hide();
+                Swal.fire({ icon: 'success', title: 'Supprimé !', text: response.message, timer: 1800, showConfirmButton: false })
+                .then(() => location.reload());
+            })
+            .catch(err => Swal.fire('Erreur', err?.message || 'Erreur lors de la suppression', 'error'));
+    });
+});
+</script>

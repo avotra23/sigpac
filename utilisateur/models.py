@@ -4,6 +4,7 @@ from django.db.models import  Max
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone 
 import os
+from django.conf import settings
 # Create your models here.
 
 class Direction(models.Model):
@@ -533,10 +534,10 @@ class RegistreST(models.Model):
 
 class RegistreCSCA(models.Model):
     # Relation avec le Registre Arrivé
-    registre_arrive = models.OneToOneField(
-        'RegistreArrive', 
+    registre_arrive = models.ForeignKey(
+        RegistreArrive, 
         on_delete=models.CASCADE, 
-        related_name='csca_detail',
+        related_name='registres_cscas', # Pluriel car il peut y en avoir plusieurs
         verbose_name="N° RA lié"
     )
     
@@ -574,3 +575,262 @@ class RegistreCSCA(models.Model):
     class Meta:
         verbose_name = "Registre CSCA"
         ordering = ['-date_creation']
+
+class RegistreRP(models.Model):
+    """Registre des procédures pénales (RP)."""
+
+    # Référence au Registre Arrivé (N° RA) — optionnel
+    registre_arrive = models.ForeignKey(
+        'RegistreArrive',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='rp_details',
+        verbose_name="N° RA lié"
+    )
+
+    # ── Numéro RP auto-généré (format : RP/ANNEE/0001) ──────
+    # editable=False : ne jamais laisser l'utilisateur le saisir
+    numero_rp = models.CharField(
+        max_length=50, unique=True,
+        editable=False, null=True, blank=True,
+        verbose_name="Numéro RP"
+    )
+
+    # ── Champs principaux ────────────────────────────────────
+    date_entree          = models.DateField(null=True, blank=True, verbose_name="Date d'entrée")
+    n_be_opj             = models.CharField(max_length=100, blank=True, verbose_name="N° BE OPJ")
+    plaignant            = models.CharField(max_length=255, blank=True, verbose_name="Plaignant")
+    infraction           = models.CharField(max_length=255, blank=True, verbose_name="Infraction")
+    date_infraction      = models.DateField(null=True, blank=True, verbose_name="Date d'infraction")
+    montant              = models.CharField(max_length=100, blank=True, verbose_name="Montant")
+    date_mandat_depot    = models.DateField(null=True, blank=True, verbose_name="Date mandat de dépôt")
+    css                  = models.CharField(max_length=255, blank=True, verbose_name="CSS")
+    observation          = models.CharField(max_length=500, blank=True, verbose_name="Observation")
+    ref_appel            = models.CharField(max_length=255, blank=True, verbose_name="Réf Appel")
+    ref_juge_instruction = models.CharField(max_length=255, blank=True, verbose_name="Réf Juge d'instruction")
+
+    # ── Traçabilité ──────────────────────────────────────────
+    utilisateur_creation = models.ForeignKey(
+        'Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='registres_rp',
+        verbose_name="Créé par"
+    )
+    date_creation     = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    # ── Génération automatique du numéro ────────────────────
+    def save(self, *args, **kwargs):
+        """
+        Génère le numéro RP à la première sauvegarde uniquement.
+        Format : RP/2026/0001  (même logique que CSCA)
+        Utilise select_for_update() pour éviter les doublons en cas
+        d'accès concurrent.
+        """
+        if not self.numero_rp:
+            with transaction.atomic():
+                current_year = timezone.now().year
+                last_entry   = RegistreRP.objects.select_for_update().order_by('-id').first()
+                next_number  = (last_entry.id if last_entry else 0) + 1
+                self.numero_rp = f"RP/{current_year}/{str(next_number).zfill(4)}"
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name          = "Registre RP"
+        verbose_name_plural   = "Registres RP"
+        ordering              = ['-date_creation']
+
+    def __str__(self):
+        return self.numero_rp or f"RP #{self.pk}"
+
+
+class PersonneMoraleRP(models.Model):
+    """Personne morale liée à un dossier RP."""
+
+    registre_rp     = models.ForeignKey(
+        RegistreRP,
+        on_delete=models.CASCADE,
+        related_name='personnes_morales',
+        verbose_name="Dossier RP"
+    )
+    raison_sociale  = models.CharField(max_length=255, blank=True, verbose_name="Raison sociale")
+    forme_juridique = models.CharField(max_length=100, blank=True, verbose_name="Forme juridique")
+    activite        = models.CharField(max_length=255, blank=True, verbose_name="Activité")
+
+    class Meta:
+        verbose_name          = "Personne Morale RP"
+        verbose_name_plural   = "Personnes Morales RP"
+
+    def __str__(self):
+        return self.raison_sociale or f"PM #{self.pk}"
+
+
+class PersonnePhysiqueRP(models.Model):
+    """Personne physique (plaignant ou prévenu) liée à un dossier RP."""
+
+    TYPE_CHOICES = [
+        ('plaignant', 'Plaignant'),
+        ('prevenu',   'Prévenu'),
+    ]
+
+    registre_rp     = models.ForeignKey(
+        RegistreRP,
+        on_delete=models.CASCADE,
+        related_name='personnes_physiques',
+        verbose_name="Dossier RP"
+    )
+    type_personne   = models.CharField(max_length=20, choices=TYPE_CHOICES, default='prevenu', verbose_name="Type")
+    numero_prevenu  = models.CharField(max_length=50,  blank=True, verbose_name="N° Prévenu")
+    nom             = models.CharField(max_length=150, blank=True, verbose_name="Nom")
+    prenom          = models.CharField(max_length=150, blank=True, verbose_name="Prénom")
+    age             = models.PositiveIntegerField(null=True, blank=True, verbose_name="Âge")
+    nationalite     = models.CharField(max_length=100, blank=True, verbose_name="Nationalité")
+    genre           = models.CharField(max_length=50,  blank=True, verbose_name="Genre")
+    fonction        = models.CharField(max_length=255, blank=True, verbose_name="Fonction")
+
+    class Meta:
+        verbose_name          = "Personne Physique RP"
+        verbose_name_plural   = "Personnes Physiques RP"
+
+    def __str__(self):
+        return f"{self.nom} {self.prenom} ({self.get_type_personne_display()})"
+
+
+class AutresMenuRP(models.Model):
+    """Suivi procédural complémentaire d'un dossier RP (OneToOne)."""
+
+    registre_rp = models.OneToOneField(
+        RegistreRP,
+        on_delete=models.CASCADE,
+        related_name='autres_menu',
+        verbose_name="Dossier RP"
+    )
+    mandat_arret         = models.CharField(max_length=255, blank=True, verbose_name="Mandat d'arrêt")
+    annee                = models.CharField(max_length=10,  blank=True, verbose_name="Année")
+    citation_directe     = models.CharField(max_length=255, blank=True, verbose_name="Citation directe")
+    renvoi_audience      = models.CharField(max_length=255, blank=True, verbose_name="Renvoi audience")
+    requisitoire_informe = models.CharField(max_length=255, blank=True, verbose_name="Réquisitoire informé")
+    renvoi_cco           = models.CharField(max_length=255, blank=True, verbose_name="Renvoi CCO")
+
+    class Meta:
+        verbose_name = "Autres Menu RP"
+
+    def __str__(self):
+        return f"Autres Menu — {self.registre_rp}"
+
+
+class RegistreCCO(models.Model):
+    """
+    Chambre Correctionnelle d'Ordre (CCO).
+    Un RegistreArrive peut être switché vers ce registre.
+    """
+
+    registre_arrive = models.ForeignKey(
+        'RegistreArrive',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='cco_details',
+        verbose_name="Registre Arrivée lié",
+    )
+
+    # ── Chrono auto ──────────────────────────────────────────────────────────
+    n_chrono = models.CharField(
+        max_length=50, unique=True, blank=True, null=True,
+        verbose_name="N° Chrono CCO",
+    )
+
+    # ── Champs métier ────────────────────────────────────────────────────────
+    n_chrono_st          = models.CharField(max_length=100, blank=True, verbose_name="N° Chrono ST")
+    date_cco             = models.DateField(null=True, blank=True,  verbose_name="Date CCO")
+    n_dossier            = models.CharField(max_length=100, blank=True, verbose_name="N° Dossier")
+    requisitoire_parquet = models.TextField(blank=True, verbose_name="Réquisitoire du parquet")
+    objet                = models.TextField(blank=True, verbose_name="Objet")
+    n_be_cco             = models.TextField(blank=True, verbose_name="N° BE CCO")
+
+    # ── Méta ─────────────────────────────────────────────────────────────────
+    utilisateur_creation = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='cco_crees',
+    )
+    date_creation     = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date_creation']
+        verbose_name = "Registre CCO"
+        verbose_name_plural = "Registres CCO"
+
+    def __str__(self):
+        return f"CCO {self.n_chrono or self.pk}"
+
+    def save(self, *args, **kwargs):
+        """Génère le numéro chrono CCO/YYYY/NNNN à la première sauvegarde."""
+        if not self.n_chrono:
+            from django.utils import timezone
+            year = timezone.now().year
+            last = RegistreCCO.objects.filter(
+                n_chrono__startswith=f"CCO/{year}/"
+            ).count()
+            self.n_chrono = f"CCO/{year}/{str(last + 1).zfill(4)}"
+        super().save(*args, **kwargs)
+
+
+class RegistreAppel(models.Model):
+    """
+    Registre d'Appel — DERNIÈRE étape du parcours d'un dossier.
+    Depuis la vue détail, on peut voir toute la chaîne :
+    Plainte/OPJ → RA → ST → CSCA → RP → CCO → Appel
+    """
+
+    registre_arrive = models.ForeignKey(
+        'RegistreArrive',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='appel_details',
+        verbose_name="Registre Arrivée lié",
+    )
+
+    # ── Chrono auto ──────────────────────────────────────────────────────────
+    n_chrono_appel = models.CharField(
+        max_length=50, unique=True, blank=True, null=True,
+        verbose_name="N° Chrono Appel",
+    )
+
+    # ── Champs métier ────────────────────────────────────────────────────────
+    date_appel           = models.DateField(null=True, blank=True, verbose_name="Date d'appel")
+    n_rp                 = models.CharField(max_length=100, blank=True, verbose_name="N° RP")
+    ref_juge_instruction = models.CharField(max_length=200, blank=True, verbose_name="Réf. Juge d'instruction")
+    resume_affaire       = models.TextField(blank=True, verbose_name="Résumé de l'affaire")
+    inculpation          = models.TextField(blank=True, verbose_name="Inculpation")
+    declaration_appel    = models.TextField(blank=True, verbose_name="Déclaration d'appel")
+    n_be_appel           = models.TextField(blank=True, verbose_name="N° BE Appel")
+
+    # ── Méta ─────────────────────────────────────────────────────────────────
+    utilisateur_creation = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='appels_crees',
+    )
+    date_creation     = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date_creation']
+        verbose_name = "Registre d'Appel"
+        verbose_name_plural = "Registres d'Appel"
+
+    def __str__(self):
+        return f"Appel {self.n_chrono_appel or self.pk}"
+
+    def save(self, *args, **kwargs):
+        """Génère le numéro chrono APPEL/YYYY/NNNN à la première sauvegarde."""
+        if not self.n_chrono_appel:
+            from django.utils import timezone
+            year = timezone.now().year
+            last = RegistreAppel.objects.filter(
+                n_chrono_appel__startswith=f"APPEL/{year}/"
+            ).count()
+            self.n_chrono_appel = f"APPEL/{year}/{str(last + 1).zfill(4)}"
+        super().save(*args, **kwargs)

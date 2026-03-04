@@ -1,0 +1,721 @@
+{% load static %}
+<div class="form-content">
+    <h2>Registre RP</h2>
+
+    {# Champs cachés #}
+    {% csrf_token %}
+    <input type="hidden" id="rp_id" value="{% if rp_instance %}{{ rp_instance.pk }}{% endif %}">
+
+    {# ── N° RA source (toujours depuis un dispatch RA → RP) ── #}
+    {# ra_source = RegistreArrive transmis via dispatch, rp_instance = édition #}
+    <input type="hidden" id="ra_id_value"
+           value="{% if ra_source %}{{ ra_source.pk }}{% elif rp_instance and rp_instance.registre_arrive %}{{ rp_instance.registre_arrive.pk }}{% endif %}">
+
+    {# ── Bandeau traçabilité : source originale du dossier ── #}
+    {% if opj_source or plainte_source %}
+    <div class="row mb-3">
+        <div class="col-lg-10">
+            {% if opj_source %}
+            <div class="alert alert-warning d-flex align-items-start gap-3 py-2 mb-0" role="alert"
+                 style="border-left:5px solid #fd7e14;background:#fff8f0;">
+                <i class="bi bi-shield-fill-exclamation fs-5 text-warning mt-1"></i>
+                <div>
+                    <strong>Source : Plainte OPJ</strong>
+                    <div class="row mt-1 small">
+                        <div class="col-sm-4"><span class="text-muted">N° Chrono OPJ :</span> <strong>{{ opj_source.n_chrono_opj }}</strong></div>
+                        <div class="col-sm-4"><span class="text-muted">Plaignant :</span> {{ opj_source.ny_mpitory }}</div>
+                        <div class="col-sm-4"><span class="text-muted">Date plainte :</span> {{ opj_source.date_plainte|date:"d/m/Y" }}</div>
+                        <div class="col-sm-6 mt-1"><span class="text-muted">Mis en cause :</span> {{ opj_source.ilay_olona_kolikoly }}</div>
+                        <div class="col-sm-6 mt-1"><span class="text-muted">Infraction :</span> {{ opj_source.tranga_kolikoly }}</div>
+                    </div>
+                </div>
+            </div>
+            {% elif plainte_source %}
+            <div class="alert alert-info d-flex align-items-start gap-3 py-2 mb-0" role="alert"
+                 style="border-left:5px solid #0dcaf0;background:#f0faff;">
+                <i class="bi bi-person-fill fs-5 text-info mt-1"></i>
+                <div>
+                    <strong>Source : Plainte en ligne</strong>
+                    <div class="row mt-1 small">
+                        <div class="col-sm-4"><span class="text-muted">N° Chrono :</span> <strong>{{ plainte_source.n_chrono_tkk }}</strong></div>
+                        <div class="col-sm-4"><span class="text-muted">Plaignant :</span> {{ plainte_source.ny_mpitory }}</div>
+                        <div class="col-sm-4"><span class="text-muted">Date plainte :</span> {{ plainte_source.date_plainte|date:"d/m/Y" }}</div>
+                        <div class="col-sm-6 mt-1"><span class="text-muted">Mis en cause :</span> {{ plainte_source.ilay_olona_kolikoly }}</div>
+                        <div class="col-sm-6 mt-1"><span class="text-muted">Objet :</span> {{ plainte_source.tranga_kolikoly }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mb-4 align-items-center">
+        <div class="col-lg-8">
+            <label class="form-label fw-semibold">RA Source</label>
+            <div class="input-group">
+                <span class="input-group-text bg-primary text-white">
+                    <i class="bi bi-envelope-paper-fill"></i>
+                </span>
+                <input type="text" class="form-control" readonly
+                       style="background-color:#e9ecef;font-weight:600;"
+                       value="{% if ra_source %}N° {{ ra_source.n_enr_arrive }} — {{ ra_source.expediteur|truncatechars:60 }}{% elif rp_instance and rp_instance.registre_arrive %}N° {{ rp_instance.registre_arrive.n_enr_arrive }} — {{ rp_instance.registre_arrive.expediteur|truncatechars:60 }}{% else %}Aucun RA lié{% endif %}">
+            </div>
+            {% if ra_source %}
+            <small class="text-muted">
+                Objet : {{ ra_source.objet_demande|truncatechars:80 }}
+            </small>
+            {% elif rp_instance and rp_instance.registre_arrive %}
+            <small class="text-muted">
+                Objet : {{ rp_instance.registre_arrive.objet_demande|truncatechars:80 }}
+            </small>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Numéro RP (auto) + Date d'entrée ── #}
+    <div class="row mb-4 align-items-end">
+        <div class="col-lg-4">
+            <label class="form-label">Numéro RP</label>
+            {# Généré automatiquement à la première sauvegarde — lecture seule #}
+            <div class="input-group">
+                <span class="input-group-text bg-light">
+                    <i class="bi bi-hash"></i>
+                </span>
+                <input type="text" class="form-control" id="numero_rp_display"
+                       readonly style="background-color:#e9ecef;font-weight:600;color:#4a759c;"
+                       placeholder="Généré automatiquement..."
+                       value="{% if rp_instance %}{{ rp_instance.numero_rp }}{% endif %}">
+            </div>
+            <small class="text-muted">Attribué lors du premier enregistrement</small>
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Date d'entrée</label>
+            <input type="date" class="form-control" id="date_entree"
+                   value="{% if rp_instance %}{{ rp_instance.date_entree|date:'Y-m-d' }}{% else %}{{ date_arrivee_systeme }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── N° BE OPJ + Plaignant ── #}
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <label class="form-label">N° BE OPJ</label>
+            <input type="text" class="form-control" id="n_be_opj"
+                   value="{% if rp_instance %}{{ rp_instance.n_be_opj }}{% elif pre_n_be_opj %}{{ pre_n_be_opj }}{% endif %}">
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Plaignant</label>
+            <input type="text" class="form-control" id="plaignant"
+                   value="{% if rp_instance %}{{ rp_instance.plaignant }}{% elif pre_plaignant %}{{ pre_plaignant }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── Infraction + Date infraction ── #}
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <label class="form-label">Infraction</label>
+            <input type="text" class="form-control" id="infraction"
+                   value="{% if rp_instance %}{{ rp_instance.infraction }}{% elif pre_infraction %}{{ pre_infraction }}{% endif %}">
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Date d'infraction</label>
+            <input type="date" class="form-control" id="date_infraction"
+                   value="{% if rp_instance %}{{ rp_instance.date_infraction|date:'Y-m-d' }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── Montant + Date mandat dépôt ── #}
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <label class="form-label">Montant</label>
+            <input type="text" class="form-control" id="montant"
+                   value="{% if rp_instance %}{{ rp_instance.montant }}{% endif %}">
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Date mandat de dépôt</label>
+            <input type="date" class="form-control" id="date_mandat_depot"
+                   value="{% if rp_instance %}{{ rp_instance.date_mandat_depot|date:'Y-m-d' }}{% else %}{{ date_arrivee_systeme }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── CSS (auto) + Observation ── #}
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <label class="form-label">CSS</label>
+            <input type="text" class="form-control" id="css" readonly
+                   style="background-color:#e0e0e0;"
+                   value="{% if rp_instance %}{{ rp_instance.css }}{% endif %}">
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Observation</label>
+            <input type="text" class="form-control" id="observation"
+                   value="{% if rp_instance %}{{ rp_instance.observation }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── Ref Appel + Ref juge ── #}
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <label class="form-label">Ref Appel</label>
+            <input type="text" class="form-control" id="ref_appel"
+                   value="{% if rp_instance %}{{ rp_instance.ref_appel }}{% endif %}">
+        </div>
+        <div class="col-lg-4">
+            <label class="form-label">Ref juge d'instruction</label>
+            <input type="text" class="form-control" id="ref_juge_instruction"
+                   value="{% if rp_instance %}{{ rp_instance.ref_juge_instruction }}{% endif %}">
+        </div>
+    </div>
+
+    {# ── Boutons sous-formulaires (actifs seulement après enregistrement RP) ── #}
+    <div class="row mb-4 mt-5">
+        {% if not rp_instance %}
+        <div class="col-lg-12 mb-3">
+            <div class="alert alert-info d-flex align-items-center py-2" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <small>Enregistrez d'abord le dossier RP pour pouvoir ajouter des personnes et le suivi procédural.</small>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-lg-12 d-flex gap-3">
+            <button type="button" class="btn btn-primary btn-sm" id="btn_open_pm"
+                    style="background-color:#4a759c;border-color:#4a759c;"
+                    {% if not rp_instance %}disabled title="Enregistrez d'abord le RP"{% endif %}>
+                <i class="bi bi-building me-1"></i> Personne Morale
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn_open_pp"
+                    style="background-color:#4a759c;border-color:#4a759c;"
+                    {% if not rp_instance %}disabled title="Enregistrez d'abord le RP"{% endif %}>
+                <i class="bi bi-people-fill me-1"></i> Personne Physique
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" id="btn_open_am"
+                    style="background-color:#4a759c;border-color:#4a759c;"
+                    {% if not rp_instance %}disabled title="Enregistrez d'abord le RP"{% endif %}>
+                <i class="bi bi-journal-text me-1"></i> Autres Menu
+            </button>
+        </div>
+    </div>
+</div>{# /form-content #}
+
+<div class="form-actions">
+    <a href="{% url 'pac:greffier' %}?type=rrp" class="btn btn-annuler">Annuler</a>
+    <button type="button" class="btn btn-enregistrer" id="btn_save_rp">Enregistrer</button>
+</div>
+
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# MODALE — Personne Morale (Identité société)                #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="modalPersonneMorale" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Identité société</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pm_id">
+                <div class="mb-3">
+                    <label class="form-label">Raison sociale</label>
+                    <input type="text" class="form-control" id="pm_raison_sociale">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Forme juridique</label>
+                    <input type="text" class="form-control" id="pm_forme_juridique">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Activité</label>
+                    <input type="text" class="form-control" id="pm_activite">
+                </div>
+
+                {# Mini-tableau des personnes morales déjà enregistrées #}
+                {% if rp_instance and rp_instance.personnes_morales.all %}
+                <h6 class="mt-3">Déjà enregistrées</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr><th>Raison sociale</th><th>Forme jur.</th><th>Activité</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for pm in rp_instance.personnes_morales.all %}
+                            <tr>
+                                <td>{{ pm.raison_sociale }}</td>
+                                <td>{{ pm.forme_juridique }}</td>
+                                <td>{{ pm.activite }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning btn-edit-pm"
+                                            data-pm-id="{{ pm.pk }}"
+                                            data-pm-rs="{{ pm.raison_sociale }}"
+                                            data-pm-fj="{{ pm.forme_juridique }}"
+                                            data-pm-act="{{ pm.activite }}">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger btn-del-pm" data-pm-id="{{ pm.pk }}">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" id="btn_save_pm">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# MODALE — Personne Physique (Identité d'une personne)       #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="modalPersonnePhysique" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Identité d'une personne</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pp_id">
+
+                {# Type + N° Prévenu #}
+                <div class="row mb-3">
+                    <div class="col-md-5">
+                        <select class="form-select" id="pp_type_personne">
+                            <option value="plaignant">PLAIGNANT</option>
+                            <option value="prevenu" selected>PRÉVENU</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">N° prévenu</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="pp_numero_prevenu"
+                                   placeholder="ex: p1, p2">
+                            <button class="btn btn-outline-secondary" type="button" id="btn_add_pp_row">
+                                <i class="bi bi-plus"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Nom</label>
+                        <input type="text" class="form-control" id="pp_nom">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Âge</label>
+                        <input type="number" class="form-control" id="pp_age">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Prénom</label>
+                        <input type="text" class="form-control" id="pp_prenom">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Nationalité</label>
+                        <input type="text" class="form-control" id="pp_nationalite">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Genre</label>
+                        <input type="text" class="form-control" id="pp_genre">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Fonction</label>
+                        <input type="text" class="form-control" id="pp_fonction">
+                    </div>
+                </div>
+
+                {# Tableau récapitulatif #}
+                <h6 class="mt-3">
+                    LISTE PERSONNE PHYSIQUE
+                    {% if rp_instance %}— {{ rp_instance.numero_rp }}{% endif %}
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle" id="table_pp">
+                        <thead class="table-light">
+                            <tr>
+                                <th>N° prévenu</th><th>Nom</th><th>Prénom</th>
+                                <th>Fonction</th><th>Âge</th><th>Nationalité</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_pp">
+                            {% if rp_instance %}
+                                {% for pp in rp_instance.personnes_physiques.all %}
+                                <tr data-pp-id="{{ pp.pk }}">
+                                    <td>{{ pp.numero_prevenu }}</td>
+                                    <td>{{ pp.nom }}</td>
+                                    <td>{{ pp.prenom }}</td>
+                                    <td>{{ pp.fonction }}</td>
+                                    <td>{{ pp.age|default:"-" }}</td>
+                                    <td>{{ pp.nationalite }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger btn-del-pp"
+                                                data-pp-id="{{ pp.pk }}">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" id="btn_save_pp">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# MODALE — Autres Menu                                       #}
+{# ═══════════════════════════════════════════════════════════ #}
+<div class="modal fade" id="modalAutresMenu" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Autres menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Mandat d'arrêt</label>
+                        <input type="text" class="form-control" id="am_mandat_arret"
+                               value="{% if rp_instance and rp_instance.autres_menu %}{{ rp_instance.autres_menu.mandat_arret }}{% endif %}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Année</label>
+                        <input type="text" class="form-control" id="am_annee"
+                               value="{% if rp_instance and rp_instance.autres_menu %}{{ rp_instance.autres_menu.annee }}{% endif %}">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Citation directe</label>
+                        <input type="text" class="form-control" id="am_citation_directe"
+                               value="{% if rp_instance and rp_instance.autres_menu %}{{ rp_instance.autres_menu.citation_directe }}{% endif %}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Renvoi audience</label>
+                        <input type="text" class="form-control" id="am_renvoi_audience"
+                               value="{% if rp_instance and rp_instance.autres_menu %}{{ rp_instance.autres_menu.renvoi_audience }}{% endif %}">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Réquisitoire informé</label>
+                        <input type="text" class="form-control" id="am_requisitoire_informe"
+                               value="{% if rp_instance and rp_instance.autres_menu %}{{ rp_instance.autres_menu.requisitoire_informe }}{% endif %}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Renvoi CCO</label>
+                        <input type="text" class="form-control" id="am_renvoi_cco"
+                               value="{% if rp_instance and rp_instance.autres_menu %}{{ rp_instance.autres_menu.renvoi_cco }}{% endif %}">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" id="btn_save_am">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# ═══════════════════════════════════════════════════════════ #}
+{# JAVASCRIPT — vanilla JS, pas de dépendance jQuery          #}
+{# SweetAlert2 chargé depuis CDN (même version que le projet) #}
+{# ═══════════════════════════════════════════════════════════ #}
+{% load static %}
+<link href="{% static 'css/sweetalert2.min.css' %}" rel="stylesheet">
+<script src="{% static 'js/sweetalert211.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const baseUrl    = "{% url 'pac:greffier' %}";
+    let   currentRpId = document.getElementById('rp_id').value || null;
+
+    // ─── Helpers ────────────────────────────────────────────
+    function val(id)  { return document.getElementById(id)?.value ?? ''; }
+    function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+
+    function getCsrf() {
+        let v = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith('csrftoken=')) v = decodeURIComponent(c.slice(10));
+        });
+        return v;
+    }
+
+    // fetch POST → retourne une Promise qui resolve avec le JSON ou rejette avec l'erreur
+    function ajaxPost(modeVal, extraData) {
+        const body = new URLSearchParams({ csrfmiddlewaretoken: getCsrf(), mode: modeVal, ...extraData });
+        return fetch(baseUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+            .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)));
+    }
+
+    // ─── Vérifier que le RP est enregistré avant d'ouvrir les modales ───
+    function requireRp(callback) {
+        if (currentRpId) { callback(); return; }
+        Swal.fire({
+            title: 'Enregistrement requis',
+            text: "Veuillez d'abord enregistrer le dossier RP principal.",
+            icon: 'warning',
+            confirmButtonText: 'OK'
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  ENREGISTRER RP PRINCIPAL
+    // ═══════════════════════════════════════════════════════
+    document.getElementById('btn_save_rp').addEventListener('click', function () {
+        Swal.fire({
+            title: currentRpId ? 'Confirmer la modification' : "Confirmer l'enregistrement",
+            text:  currentRpId ? 'Voulez-vous mettre à jour ce dossier RP ?' : 'Voulez-vous enregistrer ce dossier RP ?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: currentRpId ? 'Oui, modifier' : 'Oui, enregistrer',
+            cancelButtonText: 'Annuler'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            Swal.fire({ title: 'Traitement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            ajaxPost('save_rp', {
+                rp_id:                currentRpId || '',
+                ra_id:                val('ra_id_value'),
+                numero_rp:            val('numero_rp'),
+                date_entree:          val('date_entree'),
+                n_be_opj:             val('n_be_opj'),
+                plaignant:            val('plaignant'),
+                infraction:           val('infraction'),
+                date_infraction:      val('date_infraction'),
+                montant:              val('montant'),
+                date_mandat_depot:    val('date_mandat_depot'),
+                css:                  val('css'),
+                observation:          val('observation'),
+                ref_appel:            val('ref_appel'),
+                ref_juge_instruction: val('ref_juge_instruction'),
+            })
+            .then(response => {
+                currentRpId = response.rp_id;
+                setVal('rp_id', currentRpId);
+
+                // Afficher le numéro RP généré dans le champ lecture seule
+                const displayEl = document.getElementById('numero_rp_display');
+                if (displayEl && response.numero_rp) {
+                    displayEl.value = response.numero_rp;
+                }
+
+                // Si c'est une création (pas une mise à jour), rediriger vers
+                // le mode édition pour permettre d'ajouter PM / PP / Autres Menu
+                if (response.is_new) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Dossier RP créé !',
+                        html: `N° attribué : <strong>${response.numero_rp}</strong><br>
+                               Vous pouvez maintenant ajouter les personnes et le suivi procédural.`,
+                        confirmButtonText: 'Continuer',
+                        confirmButtonColor: '#4a759c',
+                    }).then(() => {
+                        window.location.href = "{% url 'pac:greffier' %}?mode=edit_rp&type=rrp&detail_id=" + currentRpId;
+                    });
+                } else {
+                    Swal.fire({ icon: 'success', title: 'Mis à jour !', text: response.message, timer: 2000, showConfirmButton: false });
+                }
+            })
+            .catch(err => Swal.fire('Erreur', err?.message || "Erreur lors de l'enregistrement", 'error'));
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════
+    //  OUVERTURE MODALES
+    // ═══════════════════════════════════════════════════════
+    document.getElementById('btn_open_pm').addEventListener('click', function () {
+        requireRp(() => {
+            ['pm_id','pm_raison_sociale','pm_forme_juridique','pm_activite'].forEach(id => setVal(id,''));
+            new bootstrap.Modal(document.getElementById('modalPersonneMorale')).show();
+        });
+    });
+    document.getElementById('btn_open_pp').addEventListener('click', function () {
+        requireRp(() => new bootstrap.Modal(document.getElementById('modalPersonnePhysique')).show());
+    });
+    document.getElementById('btn_open_am').addEventListener('click', function () {
+        requireRp(() => new bootstrap.Modal(document.getElementById('modalAutresMenu')).show());
+    });
+
+    // ═══════════════════════════════════════════════════════
+    //  PERSONNE MORALE — Enregistrer
+    // ═══════════════════════════════════════════════════════
+    document.getElementById('btn_save_pm').addEventListener('click', function () {
+        Swal.fire({ title: 'Traitement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        ajaxPost('save_pm_rp', {
+            rp_id:          currentRpId,
+            pm_id:          val('pm_id'),
+            raison_sociale: val('pm_raison_sociale'),
+            forme_juridique:val('pm_forme_juridique'),
+            activite:       val('pm_activite'),
+        })
+        .then(response => {
+            Swal.fire({ icon: 'success', title: 'Enregistré !', text: response.message, timer: 1800, showConfirmButton: false })
+            .then(() => location.reload());
+        })
+        .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+    });
+
+    // Personne Morale — édition depuis mini-tableau (délégation)
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-edit-pm');
+        if (!btn) return;
+        setVal('pm_id',              btn.dataset.pmId);
+        setVal('pm_raison_sociale',  btn.dataset.pmRs);
+        setVal('pm_forme_juridique', btn.dataset.pmFj);
+        setVal('pm_activite',        btn.dataset.pmAct);
+    });
+
+    // Personne Morale — suppression
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-del-pm');
+        if (!btn) return;
+        const pmId = btn.dataset.pmId;
+        Swal.fire({
+            title: 'Supprimer ?', icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Supprimer', cancelButtonText: 'Annuler'
+        }).then(r => {
+            if (!r.isConfirmed) return;
+            ajaxPost('delete_pm_rp', { pm_id: pmId })
+            .then(() => location.reload())
+            .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════
+    //  PERSONNE PHYSIQUE — Ajouter une ligne
+    // ═══════════════════════════════════════════════════════
+    document.getElementById('btn_add_pp_row').addEventListener('click', function () {
+        const num    = val('pp_numero_prevenu').trim();
+        if (!num) { Swal.fire('Attention', 'Saisissez un N° prévenu.', 'warning'); return; }
+
+        const nom      = val('pp_nom');
+        const prenom   = val('pp_prenom');
+        const age      = val('pp_age');
+        const nat      = val('pp_nationalite');
+        const genre    = val('pp_genre');
+        const fonction = val('pp_fonction');
+        const type_p   = val('pp_type_personne');
+        const tbody    = document.getElementById('tbody_pp');
+
+        function clearPpFields() {
+            ['pp_numero_prevenu','pp_nom','pp_prenom','pp_age','pp_nationalite','pp_genre','pp_fonction']
+                .forEach(id => setVal(id,''));
+        }
+
+        if (currentRpId) {
+            ajaxPost('save_pp_rp', {
+                rp_id: currentRpId, pp_id: '',
+                type_personne: type_p, numero_prevenu: num,
+                nom, prenom, age, nationalite: nat, genre, fonction
+            })
+            .then(response => {
+                const tr = document.createElement('tr');
+                tr.dataset.ppId = response.pp_id;
+                tr.innerHTML = `<td>${num}</td><td>${nom}</td><td>${prenom}</td>
+                    <td>${fonction}</td><td>${age || '-'}</td><td>${nat}</td>
+                    <td><button class="btn btn-sm btn-danger btn-del-pp"
+                        data-pp-id="${response.pp_id}"><i class="bi bi-trash-fill"></i></button></td>`;
+                tbody.appendChild(tr);
+                clearPpFields();
+            })
+            .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+        } else {
+            const tr = document.createElement('tr');
+            tr.dataset.ppId = 'new';
+            tr.innerHTML = `<td>${num}</td><td>${nom}</td><td>${prenom}</td>
+                <td>${fonction}</td><td>${age || '-'}</td><td>${nat}</td>
+                <td><button class="btn btn-sm btn-danger btn-del-pp-new">
+                    <i class="bi bi-trash-fill"></i></button></td>`;
+            tbody.appendChild(tr);
+            clearPpFields();
+        }
+    });
+
+    // PP — suppression ligne enregistrée
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-del-pp');
+        if (!btn) return;
+        const ppId = btn.dataset.ppId;
+        const row  = btn.closest('tr');
+        Swal.fire({
+            title: 'Supprimer cette personne ?', icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Supprimer', cancelButtonText: 'Annuler'
+        }).then(r => {
+            if (!r.isConfirmed) return;
+            ajaxPost('delete_pp_rp', { pp_id: ppId })
+            .then(() => row.remove())
+            .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+        });
+    });
+
+    // PP — suppression ligne "new"
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-del-pp-new');
+        if (!btn) return;
+        btn.closest('tr').remove();
+    });
+
+    // PP — Fermer la modale
+    document.getElementById('btn_save_pp').addEventListener('click', function () {
+        bootstrap.Modal.getInstance(document.getElementById('modalPersonnePhysique'))?.hide();
+        Swal.fire({ icon: 'success', title: 'Liste mise à jour', timer: 1500, showConfirmButton: false });
+    });
+
+    // ═══════════════════════════════════════════════════════
+    //  AUTRES MENU — Enregistrer
+    // ═══════════════════════════════════════════════════════
+    document.getElementById('btn_save_am').addEventListener('click', function () {
+        Swal.fire({ title: 'Traitement...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        ajaxPost('save_autres_rp', {
+            rp_id:                currentRpId,
+            mandat_arret:         val('am_mandat_arret'),
+            annee:                val('am_annee'),
+            citation_directe:     val('am_citation_directe'),
+            renvoi_audience:      val('am_renvoi_audience'),
+            requisitoire_informe: val('am_requisitoire_informe'),
+            renvoi_cco:           val('am_renvoi_cco'),
+        })
+        .then(response => {
+            Swal.fire({ icon: 'success', title: 'Enregistré !', text: response.message, timer: 1800, showConfirmButton: false });
+            bootstrap.Modal.getInstance(document.getElementById('modalAutresMenu'))?.hide();
+        })
+        .catch(err => Swal.fire('Erreur', err?.message || 'Erreur', 'error'));
+    });
+
+});
+</script>

@@ -1,0 +1,79 @@
+{% load static %}
+{# ══════════════════════════════════════════════════════════════════════ #}
+{#  pac/parcours_badges.html                                              #}
+{#  Bandeau visuel montrant toutes les étapes du parcours d'un dossier.   #}
+{#  Variables attendues : ra_source, st_associe, csca_associe,            #}
+{#                        cco_associe, appel_associe, current (étape)     #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4 p-3 rounded-3"
+     style="background:#f8fafc;border:1px solid #e2e8f0;">
+    <small class="text-muted fw-semibold me-2">PARCOURS :</small>
+
+    {# ── Plainte / OPJ source ── #}
+    {% if plainte_source %}
+    <span class="step-badge step-badge-done">
+        <i class="bi bi-person-fill"></i> Plainte {{ plainte_source.n_chrono_tkk }}
+    </span>
+    {% elif opj_source %}
+    <span class="step-badge step-badge-done">
+        <i class="bi bi-shield-fill-exclamation"></i> OPJ {{ opj_source.n_chrono_opj }}
+    </span>
+    {% endif %}
+
+    {% if plainte_source or opj_source %}<i class="bi bi-arrow-right text-muted"></i>{% endif %}
+
+    {# ── RA ── #}
+    {% if ra_source %}
+    <span class="step-badge {% if current == 'RA' %}step-badge-done{% else %}step-badge-done{% endif %}"
+          style="background:#dbeafe;color:#1d4ed8;">
+        <i class="bi bi-envelope-paper-fill"></i> RA {{ ra_source.n_enr_arrive|default:"—" }}
+    </span>
+    {% else %}
+    <span class="step-badge step-badge-none"><i class="bi bi-envelope-paper"></i> RA —</span>
+    {% endif %}
+
+    <i class="bi bi-arrow-right text-muted"></i>
+
+    {# ── ST ── #}
+    {% if st_associe %}
+    <span class="step-badge step-badge-done" style="background:#fef9c3;color:#92400e;">
+        <i class="bi bi-gear-fill"></i> ST {{ st_associe.n_chrono }}
+    </span>
+    {% else %}
+    <span class="step-badge step-badge-none"><i class="bi bi-gear"></i> ST —</span>
+    {% endif %}
+
+    <i class="bi bi-arrow-right text-muted"></i>
+
+    {# ── CSCA ── #}
+    {% if csca_associe %}
+    <span class="step-badge step-badge-done" style="background:#cffafe;color:#0e7490;">
+        <i class="bi bi-gavel"></i> CSCA {{ csca_associe.n_chrono }}
+    </span>
+    {% else %}
+    <span class="step-badge step-badge-none"><i class="bi bi-gavel"></i> CSCA —</span>
+    {% endif %}
+
+    <i class="bi bi-arrow-right text-muted"></i>
+
+    {# ── CCO ── #}
+    {% if cco_associe %}
+    <span class="step-badge step-badge-done" style="background:#ffedd5;color:#c2410c;">
+        <i class="bi bi-bank2"></i> CCO {{ cco_associe.n_chrono }}
+    </span>
+    {% else %}
+    <span class="step-badge step-badge-none"><i class="bi bi-bank2"></i> CCO —</span>
+    {% endif %}
+
+    <i class="bi bi-arrow-right text-muted"></i>
+
+    {# ── APPEL (dernière étape) ── #}
+    {% if appel_associe %}
+    <span class="step-badge step-badge-done" style="background:#ede9fe;color:#5b21b6;">
+        <i class="bi bi-flag-fill"></i> Appel {{ appel_associe.n_chrono_appel }}
+    </span>
+    {% else %}
+    <span class="step-badge step-badge-none"><i class="bi bi-flag"></i> Appel —</span>
+    {% endif %}
+</div>

@@ -1,5 +1,5 @@
 <div class="table-responsive">
-    <table class="table table-striped table-hover align-middle">
+    <table class="table table-striped table-hover align-middle" id="tableCSCA">
         <thead class="table-dark">
             <tr>
                 <th>N° Chrono</th>
@@ -22,7 +22,16 @@
                 <td>{{ csca.objet|truncatechars:30 }}</td>
                 <td>{{ csca.decision|truncatechars:30 }}</td>
                 <td>
-                    <button class="btn btn-sm btn-light border"><i class="bi bi-eye"></i></button>
+                    <div class="btn-group">
+                            <a href="?type=csca&detail_id={{ csca.pk }}" 
+                                class="btn btn-sm btn-info me-1" 
+                                title="Voir l'historique complet">
+                                    <i class="bi bi-eye-fill"></i>
+                            </a>
+                            <a href="?mode=edit_csca&detail_id={{ csca.pk }}&type=csca" class="btn btn-sm btn-success me-1" title="Modifier">
+                                   <i class="bi bi-pencil-fill"></i>
+                            </a>
+                        </div>
                 </td>
             </tr>
             {% empty %}
