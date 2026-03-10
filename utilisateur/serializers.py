@@ -50,7 +50,6 @@ class PublicInscriptionSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         # On hash le mot de passe avant de sauvegarder
         validated_data['password'] = make_password(validated_data['password'])
-        
         user = super().create(validated_data)
         
         # Ajout au groupe 'public'
@@ -76,7 +75,7 @@ class OPJInscriptionSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         # On hash le mot de passe avant de sauvegarder
         validated_data['password'] = make_password(validated_data['password'])
-        
+        validated_data['is_active'] = False
         user = super().create(validated_data)
         
         # Ajout au groupe 'opj'

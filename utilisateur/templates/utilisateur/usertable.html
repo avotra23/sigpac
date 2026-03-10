@@ -1,3 +1,20 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 text-muted small text-uppercase">Trier </h5>
+    
+    <form method="GET" class="d-flex gap-2">
+        <select name="group_id" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 200px;">
+            <option value="">Tous les groupes</option>
+            {% for g in all_groups %}
+                <option value="{{ g.id }}" {% if request.GET.group_id == g.id|stringformat:"i" %}selected{% endif %}>
+                    {{ g.name|upper }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if request.GET.group_id %}
+            <a href="?mode=utilisateur" class="btn btn-sm btn-outline-secondary">Effacer</a>
+        {% endif %}
+    </form>
+</div>
 <table class="table table-pac-modern align-middle">
     <thead>
         <tr>
@@ -5,6 +22,7 @@
             <th>Identité</th>
             <th>Contact</th>
             <th>Poste / Localité</th>
+            <th>Group</th>
             <th>Statut</th>
             <th class="text-center">Action</th>
         </tr>
@@ -34,6 +52,13 @@
                     <span class="badge-role bg-secondary text-white">Utilisateur</span>
                 {% endif %}
             </td>
+            <td>
+                {% if i.is_active %}
+                    <span class="badge-role bg-info text-white">Activer</span>
+                {% else %}
+                    <span class="badge-role bg-danger text-white">Desactiver</span>
+                {% endif %}
+            </td>
             <td class="text-center">
                 <div class="btn-group">
                     <a href="{% url 'utilisateur:modifier_utilisateur' i.pk %}" class="btn btn-sm btn-outline-primary" title="Modifier">
@@ -43,6 +68,27 @@
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
+
+                <div class="modal fade" id="confirmDeleteModal-{{ i.pk }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la Suppression</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            Êtes-vous sûr de vouloir supprimer l'utilisateur **{{ i.nom }} {{ i.prenom }}** (ID: {{ i.pk }}) ?
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                            <form method="POST" action="{% url 'utilisateur:supprimer_utilisateur' i.pk %}" style="display:inline;">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                 </td>
         </tr>
         {% empty %}

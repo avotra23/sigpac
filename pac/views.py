@@ -636,7 +636,6 @@ def acc_procureur(request):
 def acc_greffier(request):
 
     # ── 1. PARAMÈTRES ────────────────────────────────────────────────────────
-    # Lire 'mode' depuis POST (AJAX) ou GET (navigation)
     if request.method == 'POST':
         mode = request.POST.get('mode', request.GET.get('mode', 'list'))
     else:
@@ -823,7 +822,7 @@ def acc_greffier(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     # ════════════════════════════════════════════════════════════════════════
-    #  SAVE / DELETE CCO  ← NOUVEAU
+    #  SAVE / DELETE CCO
     # ════════════════════════════════════════════════════════════════════════
     if request.method == 'POST' and mode == 'save_cco':
         try:
@@ -861,7 +860,7 @@ def acc_greffier(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     # ════════════════════════════════════════════════════════════════════════
-    #  SAVE / DELETE APPEL  ← NOUVEAU
+    #  SAVE / DELETE APPEL
     # ════════════════════════════════════════════════════════════════════════
     if request.method == 'POST' and mode == 'save_appel':
         try:
@@ -887,9 +886,8 @@ def acc_greffier(request):
                 appel_obj.n_be_appel           = request.POST.get('n_be_appel', '')
                 appel_obj.save()
 
-                # ── Remonter jusqu'à la source et passer en TRAITEE ──────────
-                source_maj = None   # objet Plainte ou OPJ mis à jour
-                source_type = None  # 'plainte' ou 'opj'
+                source_maj  = None
+                source_type = None
 
                 if appel_obj.registre_arrive:
                     ra = appel_obj.registre_arrive
@@ -918,10 +916,7 @@ def acc_greffier(request):
                             source_maj  = plainte
                             source_type = 'plainte'
 
-                # ── Message de retour ─────────────────────────────────────────
-                message = (
-                    f"Appel {'créé' if is_new else 'mis à jour'} — N° {appel_obj.n_chrono_appel}"
-                )
+                message = f"Appel {'créé' if is_new else 'mis à jour'} — N° {appel_obj.n_chrono_appel}"
                 if source_maj:
                     ref = (
                         source_maj.n_chrono_opj if source_type == 'opj'
@@ -962,125 +957,89 @@ def acc_greffier(request):
         return redirect('pac:greffier')
 
     # ════════════════════════════════════════════════════════════════════════
-    #  4. LOGIQUE DÉTAILS  (reg_type détermine l'objet affiché)
+    #  4. LOGIQUE DÉTAILS
     # ════════════════════════════════════════════════════════════════════════
     if detail_id:
         context['mode']     = 'detail'
         context['reg_type'] = reg_type
 
+        # ── 1. Résoudre l'objet courant + son RA ─────────────────────────
         if reg_type == 'st':
-            st_obj = get_object_or_404(
+            reg_obj = get_object_or_404(
                 RegistreST.objects.select_related('registre_arrive', 'utilisateur_creation'),
                 pk=detail_id
             )
-            ra = st_obj.registre_arrive
-            context.update({
-                'reg_detail':    st_obj,
-                'ra_source':     ra,
-                'is_st': True, 'is_csca': False, 'is_cco': False, 'is_appel': False,
-                'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra).first()  if ra else None,
-                'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra).first()   if ra else None,
-                'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first() if ra else None,
-            })
+            ra = reg_obj.registre_arrive
 
         elif reg_type == 'csca':
-            csca_obj = get_object_or_404(
+            reg_obj = get_object_or_404(
                 RegistreCSCA.objects.select_related('registre_arrive', 'utilisateur_creation'),
                 pk=detail_id
             )
-            ra = csca_obj.registre_arrive
-            context.update({
-                'reg_detail':    csca_obj,
-                'ra_source':     ra,
-                'is_st': False, 'is_csca': True, 'is_cco': False, 'is_appel': False,
-                'st_associe':    RegistreST.objects.filter(registre_arrive=ra).first()    if ra else None,
-                'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra).first()   if ra else None,
-                'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first() if ra else None,
-            })
+            ra = reg_obj.registre_arrive
 
         elif reg_type == 'rrp':
-            rp_obj = get_object_or_404(
+            reg_obj = get_object_or_404(
                 RegistreRP.objects.select_related(
-                    'registre_arrive', 'registre_arrive__plainte_origine', 'utilisateur_creation'
+                    'registre_arrive',
+                    'registre_arrive__plainte_origine',
+                    'utilisateur_creation'
                 ).prefetch_related('personnes_physiques', 'personnes_morales'),
                 pk=detail_id
             )
-            context.update({
-                'reg_detail': rp_obj,
-                'is_st': False, 'is_csca': False, 'is_cco': False, 'is_appel': False,
-            })
-            ra = rp_obj.registre_arrive
-            if ra:
-                context.update({
-                    'ra_source':     ra,
-                    'st_associe':    ra.st_details.first(),
-                    'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra).first(),
-                    'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra).first(),
-                    'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first(),
-                })
-                context.update(_resolve_source(ra))
-            else:
-                context.update({
-                    'ra_source': None, 'st_associe': None, 'csca_associe': None,
-                    'cco_associe': None, 'appel_associe': None,
-                    'plainte_source': None, 'opj_source': None,
-                })
+            ra = reg_obj.registre_arrive
 
-        # ── DÉTAIL CCO ← NOUVEAU ─────────────────────────────────────────────
         elif reg_type == 'cco':
-            cco_obj = get_object_or_404(
+            reg_obj = get_object_or_404(
                 RegistreCCO.objects.select_related('registre_arrive', 'utilisateur_creation'),
                 pk=detail_id
             )
-            ra = cco_obj.registre_arrive
-            context.update({
-                'reg_detail': cco_obj,
-                'ra_source':  ra,
-                'is_st': False, 'is_csca': False, 'is_cco': True, 'is_appel': False,
-            })
-            if ra:
-                context.update({
-                    'st_associe':    ra.st_details.first(),
-                    'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra).first(),
-                    'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra).first(),
-                })
-                context.update(_resolve_source(ra))
+            ra = reg_obj.registre_arrive
 
-        # ── DÉTAIL APPEL ← NOUVEAU ───────────────────────────────────────────
         elif reg_type == 'appel':
-            appel_obj = get_object_or_404(
+            reg_obj = get_object_or_404(
                 RegistreAppel.objects.select_related('registre_arrive', 'utilisateur_creation'),
                 pk=detail_id
             )
-            ra = appel_obj.registre_arrive
-            context.update({
-                'reg_detail': appel_obj,
-                'ra_source':  ra,
-                'is_st': False, 'is_csca': False, 'is_cco': False, 'is_appel': True,
-            })
-            if ra:
-                context.update({
-                    'st_associe':   ra.st_details.first(),
-                    'csca_associe': RegistreCSCA.objects.filter(registre_arrive=ra).first(),
-                    'cco_associe':  RegistreCCO.objects.filter(registre_arrive=ra).first(),
-                })
-                context.update(_resolve_source(ra))
+            ra = reg_obj.registre_arrive
 
         else:
-            # ── DÉTAIL RA (pre_ra / arrive) ──────────────────────────────────
-            ra_obj = get_object_or_404(
+            # Détail RA (pre_ra / arrive)
+            reg_obj = get_object_or_404(
                 RegistreArrive.objects.select_related('utilisateur_creation'),
                 pk=detail_id
             )
-            context.update({
-                'reg_detail':    ra_obj,
-                'ra_source':     ra_obj,
-                'is_st': False, 'is_csca': False, 'is_cco': False, 'is_appel': False,
-                'st_associe':    ra_obj.st_details.first(),
-                'csca_associe':  RegistreCSCA.objects.filter(registre_arrive=ra_obj).first(),
-                'cco_associe':   RegistreCCO.objects.filter(registre_arrive=ra_obj).first(),
-                'appel_associe': RegistreAppel.objects.filter(registre_arrive=ra_obj).first(),
-            })
+            ra = reg_obj
+
+        # ── 2. Charger TOUTES les listes liées au RA ─────────────────────
+        if ra:
+            st_list    = list(RegistreST.objects.filter(registre_arrive=ra).order_by('date_st'))
+            csca_list  = list(RegistreCSCA.objects.filter(registre_arrive=ra).order_by('date_csca'))
+            rp_list    = list(
+                RegistreRP.objects
+                .filter(registre_arrive=ra)
+                .order_by('date_entree')
+                .prefetch_related('personnes_physiques', 'personnes_morales')
+            )
+            cco_list   = list(RegistreCCO.objects.filter(registre_arrive=ra).order_by('date_cco'))
+            appel_list = list(RegistreAppel.objects.filter(registre_arrive=ra).order_by('date_appel'))
+        else:
+            st_list = csca_list = rp_list = cco_list = appel_list = []
+
+        # ── 3. Résoudre le dossier source (Plainte TKK ou OPJ) ───────────
+        source = _resolve_source(ra) if ra else {'plainte_source': None, 'opj_source': None}
+
+        # ── 4. Alimenter le contexte ──────────────────────────────────────
+        context.update({
+            'reg_detail':  reg_obj,
+            'ra_source':   ra,
+            'st_list':     st_list,
+            'csca_list':   csca_list,
+            'rp_list':     rp_list,
+            'cco_list':    cco_list,
+            'appel_list':  appel_list,
+            **source,
+        })
 
     # ════════════════════════════════════════════════════════════════════════
     #  5. FORMULAIRE RA (création classique)
@@ -1128,26 +1087,22 @@ def acc_greffier(request):
         elif target_type == 'CSCA':
             context.update({'mode': 'form_csca', 'ra_source': ra_source, 'titre': "Transfert CSCA"})
 
-        # ── CCO ← pré-remplir n_chrono_st et n_dossier depuis ST + RA ──────────
         elif target_type == 'CCO':
             st_lie = ra_source.st_details.first()
             context.update({
                 'mode':               'form_cco',
                 'ra_source':          ra_source,
                 'titre':              f"Nouveau CCO — RA N° {ra_source.n_enr_arrive}",
-                # ST → n_chrono_st  |  RA → n_dossier (nbe_dossier ou n_enr_arrive)
                 'pre_n_chrono_st':    st_lie.n_chrono  if st_lie else '',
                 'pre_n_dossier':      ra_source.nbe_dossier or ra_source.n_enr_arrive or '',
             })
 
-        # ── APPEL ← pré-remplir n_rp et ref_juge depuis RegistreRP lié ──────
-        elif target_type == 'RA':   # "RA" dans le <select> = Registre d'Appel
+        elif target_type == 'RA':
             rp_lie = RegistreRP.objects.filter(registre_arrive=ra_source).first()
             context.update({
                 'mode':                   'form_appel',
                 'ra_source':              ra_source,
                 'titre':                  f"Nouveau Registre d'Appel — RA N° {ra_source.n_enr_arrive}",
-                # RP → n_rp (numero_rp)  |  RP → ref_juge_instruction
                 'pre_n_rp':               rp_lie.numero_rp           if rp_lie else '',
                 'pre_ref_juge':           rp_lie.ref_juge_instruction if rp_lie else '',
             })
@@ -1193,7 +1148,6 @@ def acc_greffier(request):
         })
         return render(request, 'pac/acc_greffier.html', context)
 
-    # ── EDIT CCO ← NOUVEAU ───────────────────────────────────────────────────
     if mode == 'edit_cco' and detail_id:
         cco_instance = get_object_or_404(RegistreCCO, pk=detail_id)
         context.update({
@@ -1203,7 +1157,6 @@ def acc_greffier(request):
         })
         return render(request, 'pac/acc_greffier.html', context)
 
-    # ── EDIT APPEL ← NOUVEAU ─────────────────────────────────────────────────
     if mode == 'edit_appel' and detail_id:
         appel_instance = get_object_or_404(RegistreAppel, pk=detail_id)
         context.update({
@@ -1234,13 +1187,13 @@ def acc_greffier(request):
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_creation')
         context['titre'] = "Registre RP"
 
-    elif reg_type == 'cco':   # ← NOUVEAU
+    elif reg_type == 'cco':
         queryset = RegistreCCO.objects.filter(
             utilisateur_creation__localite=request.user.localite
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_creation')
         context['titre'] = "Registre CCO"
 
-    elif reg_type == 'appel':   # ← NOUVEAU
+    elif reg_type == 'appel':
         queryset = RegistreAppel.objects.filter(
             utilisateur_creation__localite=request.user.localite
         ).select_related('registre_arrive', 'utilisateur_creation').order_by('-date_creation')
@@ -1257,7 +1210,7 @@ def acc_greffier(request):
             queryset = queryset.filter(n_enr_arrive__isnull=True).order_by('-date_arrivee')
             context['titre'] = "Pre-RA"
 
-    # Recherche (elif pour ne pas écraser le queryset)
+    # Recherche
     if search_query:
         if reg_type == "st":
             queryset = queryset.filter(
@@ -1306,7 +1259,7 @@ def acc_greffier(request):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  HELPERS PRIVÉS (à placer juste après acc_greffier dans views.py)
+#  HELPERS PRIVÉS
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _resolve_source(ra):
@@ -1354,4 +1307,3 @@ def _ra_valides(request):
         utilisateur_creation__localite=request.user.localite,
         n_enr_arrive__isnull=False
     ).order_by('-date_arrivee')
-

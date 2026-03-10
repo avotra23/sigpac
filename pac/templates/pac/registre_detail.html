@@ -3,642 +3,1002 @@
 <link rel="stylesheet" href="{% static 'css/bootstrap-icons.css'%}">
 
 <style>
-    .detail-view-container {
-        --primary-blue: #4f46e5; --primary-yellow: #f59e0b;
-        --bg-gray: #f8fafc;     --text-dark: #1e293b;
-        font-family: 'Inter', sans-serif; color: var(--text-dark); font-size: 16px;
+/* ── Base ── */
+.detail-view-container {
+    font-family:'Inter',sans-serif;
+    color:#1e293b;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.container-fluid {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+/* Les tableaux scrollent horizontalement dans leur wrapper, pas la page */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+.custom-card {
+    border:none !important; border-radius:16px; overflow:hidden;
+    margin-bottom:20px; background:#fff;
+    box-shadow:0 0.125rem 0.5rem rgba(0,0,0,0.08) !important;
+    width:100%; box-sizing:border-box;
+}
+.card-header-styled {
+    padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:8px;
+}
+.icon-box {
+    width:38px; height:38px; display:flex; align-items:center;
+    justify-content:center; border-radius:9px; margin-right:11px; flex-shrink:0;
+}
+/* ── Couleurs par registre ── */
+.hdr-ra    { background:rgba(79,70,229,0.08);  color:#4f46e5; }
+.hdr-st    { background:rgba(245,158,11,0.08); color:#92400e; }
+.hdr-csca  { background:rgba(6,182,212,0.08);  color:#0e7490; }
+.hdr-rp    { background:rgba(74,117,156,0.08); color:#4a759c; }
+.hdr-cco   { background:rgba(234,88,12,0.08);  color:#c2410c; }
+.hdr-appel { background:rgba(124,58,237,0.08); color:#5b21b6; }
+
+/* ── Tableaux de détail ── */
+.detail-table thead th {
+    background:#f8fafc; color:#64748b;
+    font-size:.70rem; text-transform:uppercase; letter-spacing:.06em;
+    font-weight:700; border-bottom:2px solid #e2e8f0; white-space:nowrap;
+    padding:9px 13px;
+}
+.detail-table tbody td { vertical-align:middle; padding:10px 13px; font-size:.93rem; }
+
+/* ── Carte source ── */
+.source-card {
+    border:2px solid #dc2626 !important; border-radius:16px; overflow:hidden;
+    margin-bottom:20px; background:#fff;
+    box-shadow:0 4px 16px rgba(220,38,38,0.10) !important;
+    width:100%; box-sizing:border-box;
+}
+.source-table thead th {
+    background:#fef2f2; color:#991b1b;
+    font-size:.70rem; text-transform:uppercase; letter-spacing:.06em;
+    font-weight:700; border-bottom:2px solid #fca5a5; padding:9px 13px;
+}
+.source-table tbody td { vertical-align:middle; font-size:.90rem; padding:10px 13px; }
+.source-long {
+    background:#fef2f2; border-left:5px solid #dc2626;
+    padding:10px 14px; border-radius:0 8px 8px 0;
+    font-size:.90rem; line-height:1.6; color:#1e293b;
+}
+/* ── Champs longs ── */
+.long-text-box {
+    background:#f8fafc; border:1px solid #e2e8f0; border-left:5px solid #cbd5e1;
+    padding:10px 14px; border-radius:0 8px 8px 0;
+    font-size:.90rem; line-height:1.6; color:#334155;
+}
+/* ── Chronogramme ── */
+.parcours-bar {
+    display:flex; align-items:center; flex-wrap:wrap; gap:4px;
+    background:#f8fafc; border-radius:12px; padding:12px 16px;
+    margin-bottom:20px; border:1px solid #e2e8f0;
+    width:100%; box-sizing:border-box;
+}
+.p-step {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 12px; border-radius:20px; font-size:.78rem; font-weight:600;
+}
+.p-step-done    { background:#dcfce7; color:#16a34a; }
+.p-step-current { background:#dbeafe; color:#1d4ed8; border:2px solid #3b82f6; }
+.p-step-pending { background:#f1f5f9; color:#94a3b8; }
+.p-arrow        { color:#94a3b8; font-size:.9rem; }
+
+/* ── Pièce jointe ── */
+.pj-embed {
+    border-radius:8px;
+    border:1px solid #fca5a5;
+    display:block;
+    width:100%;
+    height:420px;
+    margin-top:10px;
+}
+.pj-img {
+    max-width:100%;
+    max-height:420px;
+    border-radius:8px;
+    border:2px solid #fca5a5;
+    display:block;
+    margin-top:10px;
+}
+
+/* ── Impression ── */
+#print-report { display:none; }
+@media print {
+    .no-print { display:none !important; }
+    #print-report { display:block !important; }
+    body * { visibility:hidden !important; }
+    #print-report, #print-report * { visibility:visible !important; }
+    #print-report {
+        position:absolute !important; left:0; top:0; width:100%;
+        padding:24px; font-family:"Times New Roman",serif;
+        background:white; color:black; font-size:11pt; line-height:1.5;
     }
-    .detail-view-container .custom-card {
-        border: none !important; border-radius: 16px; overflow: hidden;
-        margin-bottom: 30px; background: #fff;
-        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075) !important;
-    }
-    .detail-view-container .card-header-styled {
-        padding: 20px 25px; display: flex;
-        align-items: center; justify-content: space-between;
-    }
-    .detail-view-container .icon-box {
-        width:45px; height:45px; display:flex; align-items:center;
-        justify-content:center; border-radius:12px; margin-right:15px;
-    }
-    .detail-view-container .header-blue   { background-color:rgba(79,70,229,0.1);   color:#4f46e5; }
-    .detail-view-container .header-yellow { background-color:rgba(245,158,11,0.1);  color:#92400e; }
-    .detail-view-container .header-rp     { background-color:rgba(74,117,156,0.1);  color:#4a759c; }
-    .detail-view-container .header-green  { background-color:rgba(16,185,129,0.1);  color:#065f46; }
-    .detail-view-container .header-purple { background-color:rgba(139,92,246,0.1);  color:#5b21b6; }
-    .detail-view-container .header-cco    { background-color:rgba(234,88,12,0.1);   color:#c2410c; }
-    .detail-view-container .header-appel  { background-color:rgba(124,58,237,0.1);  color:#5b21b6; }
-    .detail-view-container .info-label {
-        font-size:.8rem; text-transform:uppercase; letter-spacing:.05em;
-        font-weight:700; color:#64748b; margin-bottom:4px;
-    }
-    .detail-view-container .info-value { font-size:1.1rem; font-weight:700; color:#000; }
-    .detail-view-container .objet-box {
-        background:#f8fafc; border:1px solid #e2e8f0; border-left:6px solid #4f46e5;
-        padding:20px; border-radius:0 12px 12px 0; font-size:1rem; line-height:1.6;
-    }
-    .detail-view-container .rp-info-box {
-        background:#f8fafc; border:1px solid #e2e8f0; border-left:6px solid #4a759c;
-        padding:20px; border-radius:0 12px 12px 0; font-size:1rem; line-height:1.6;
-    }
-    /* Badge étape parcours */
-    .step-badge {
-        display:inline-flex; align-items:center; gap:6px;
-        padding:4px 12px; border-radius:20px; font-size:.78rem; font-weight:600;
-    }
-    .step-badge-done   { background:#dcfce7; color:#16a34a; }
-    .step-badge-none   { background:#f1f5f9; color:#94a3b8; }
-    .section-divider { border:0; border-top:2px dashed #e2e8f0; margin:10px 0 30px; }
-    #print-report { display:none; }
-    @media print {
-        body * { visibility:hidden !important; }
-        #print-report, #print-report * { visibility:visible !important; display:block !important; }
-        #print-report { position:absolute !important; left:0 !important; top:0 !important;
-            width:100% !important; padding:20px !important;
-            font-family:"Times New Roman",serif !important; background:white !important; color:black !important; }
-        .print-title { text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:30px; }
-        @page { margin:1.5cm; }
-    }
+    .pr-title { text-align:center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:24px; }
+    .pr-section { margin-bottom:16px; }
+    .pr-section h3 { font-size:12pt; border-bottom:1px solid #aaa; margin-bottom:6px; }
+    .pr-table { width:100%; border-collapse:collapse; font-size:10pt; margin-bottom:8px; }
+    .pr-table th { background:#eee; border:1px solid #999; padding:4px 7px; text-align:left; }
+    .pr-table td { border:1px solid #ccc; padding:4px 7px; }
+    @page { margin:1.5cm; }
+}
 </style>
 
-
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{# ── DÉTAIL RP                                                            #}
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{% if reg_type == 'rrp' %}
-{% with rp=reg_detail %}
+{# ═══════════════════════════════════════════════════════════════════ #}
+{# VUE ÉCRAN                                                           #}
+{# ═══════════════════════════════════════════════════════════════════ #}
 <div class="detail-view-container no-print">
 <div class="container-fluid px-0 py-2">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0" style="font-size:1.5rem;">
-            Dossier RP — {{ rp.numero_rp|default:rp.pk }}
+{# ── En-tête + boutons ── #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0" style="font-size:1.4rem;">
+            <i class="bi bi-folder2-open me-2 text-primary"></i>
+            Dossier — RA N° {{ ra_source.n_enr_arrive|default:ra_source.pk }}
         </h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'pac:greffier' %}?mode=edit_rp&type=rrp&detail_id={{ rp.pk }}"
-               class="btn btn-warning shadow-sm text-white">
-                <i class="bi bi-pencil-fill me-2"></i>Modifier
-            </a>
-            <button onclick="window.print()" class="btn btn-dark shadow-sm">
-                <i class="bi bi-printer me-2"></i>Imprimer
-            </button>
-            <a href="?type=rrp" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+        <small class="text-muted">
+            Consulté depuis :
+            <span class="badge
+                {% if reg_type == 'st' %}bg-warning text-dark
+                {% elif reg_type == 'csca' %}bg-info text-dark
+                {% elif reg_type == 'rrp' %}bg-secondary
+                {% elif reg_type == 'cco' %}bg-danger
+                {% elif reg_type == 'appel' %}bg-purple text-white
+                {% else %}bg-primary{% endif %}" style="font-size:.8rem;">
+                {{ reg_type|upper }}
+            </span>
+        </small>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-dark shadow-sm">
+            <i class="bi bi-printer me-2"></i>Imprimer le dossier complet
+        </button>
+        <a href="?type={{ reg_type }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-lg"></i>
+        </a>
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 1. CHRONOGRAMME DU PARCOURS                                         #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="parcours-bar">
+    <span class="p-step {% if plainte_source or opj_source %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if plainte_source or opj_source %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        {% if plainte_source %}PLAINTE TKK{% elif opj_source %}OPJ{% else %}SOURCE{% endif %}
+    </span>
+    <span class="p-arrow"><i class="bi bi-chevron-right"></i></span>
+
+    <span class="p-step {% if ra_source %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if ra_source %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        RA {% if ra_source %}<small class="fw-normal opacity-75">{{ ra_source.n_enr_arrive }}</small>{% endif %}
+    </span>
+    <span class="p-arrow"><i class="bi bi-chevron-right"></i></span>
+
+    <span class="p-step {% if st_list %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if st_list %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        ST {% if st_list %}<small class="fw-normal opacity-75">×{{ st_list|length }}</small>{% endif %}
+    </span>
+    <span class="p-arrow"><i class="bi bi-chevron-right"></i></span>
+
+    <span class="p-step {% if csca_list %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if csca_list %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        CSCA {% if csca_list %}<small class="fw-normal opacity-75">×{{ csca_list|length }}</small>{% endif %}
+    </span>
+    <span class="p-arrow"><i class="bi bi-chevron-right"></i></span>
+
+    <span class="p-step {% if rp_list %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if rp_list %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        RP {% if rp_list %}<small class="fw-normal opacity-75">×{{ rp_list|length }}</small>{% endif %}
+    </span>
+    <span class="p-arrow"><i class="bi bi-chevron-right"></i></span>
+
+    <span class="p-step {% if cco_list %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if cco_list %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        CCO {% if cco_list %}<small class="fw-normal opacity-75">×{{ cco_list|length }}</small>{% endif %}
+    </span>
+    <span class="p-arrow"><i class="bi bi-chevron-right"></i></span>
+
+    <span class="p-step {% if appel_list %}p-step-done{% else %}p-step-pending{% endif %}">
+        <i class="bi {% if appel_list %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i>
+        APPEL {% if appel_list %}<small class="fw-normal opacity-75">×{{ appel_list|length }}</small>{% endif %}
+    </span>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 2. DOSSIER SOURCE (Plainte TKK ou OPJ)                              #}
+{# ════════════════════════════════════════════════════════════════════ #}
+{% if plainte_source or opj_source %}
+<div class="source-card">
+    <div style="background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <i class="bi {% if plainte_source %}bi-file-earmark-person-fill{% else %}bi-shield-fill-exclamation{% endif %} fs-5 text-white"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0 fs-6 text-white">
+                    {% if plainte_source %}Dossier Source — Plainte en ligne (TKK){% else %}Dossier Source — Plainte OPJ{% endif %}
+                </h5>
+                <small style="color:rgba(255,255,255,0.85);">
+                    Réf. : {% if plainte_source %}{{ plainte_source.n_chrono_tkk }}{% else %}{{ opj_source.n_chrono_opj }}{% endif %}
+                </small>
+            </div>
+        </div>
+        <span class="badge fs-6 px-3 py-2" style="background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);">
+            SOURCE ORIGINALE
+        </span>
+    </div>
+    <div class="p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 source-table">
+                <thead>
+                    <tr>
+                        <th>N° Référence</th>
+                        <th>Date</th>
+                        <th>Plaignant (Ny Mpitory)</th>
+                        <th>Auteur (Ilay Olona Kolikoly)</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <span class="badge bg-danger px-2 py-1" style="font-size:.88rem;">
+                                {% if plainte_source %}{{ plainte_source.n_chrono_tkk }}{% else %}{{ opj_source.n_chrono_opj }}{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <i class="bi bi-calendar3 text-danger me-1"></i>
+                            {% if plainte_source %}{{ plainte_source.date_plainte|date:"d/m/Y" }}{% else %}{{ opj_source.date_plainte|date:"d/m/Y" }}{% endif %}
+                        </td>
+                        <td class="fw-semibold">
+                            {% if plainte_source %}{{ plainte_source.ny_mpitory|default:"—" }}{% else %}{{ opj_source.ny_mpitory|default:"—" }}{% endif %}
+                        </td>
+                        <td>
+                            {% if plainte_source %}{{ plainte_source.ilay_olona_kolikoly|default:"—" }}{% else %}{{ opj_source.ilay_olona_kolikoly|default:"—" }}{% endif %}
+                        </td>
+                        <td>
+                            {% if plainte_source %}
+                                {% with st=plainte_source.statut %}
+                                <span class="badge {% if st == 'TRAITEE' %}bg-success{% elif st == 'COURS' %}bg-primary{% elif st == 'CSS' %}bg-secondary{% elif st == 'DISPATCHE' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">
+                                    {{ plainte_source.get_statut_display }}
+                                </span>
+                                {% endwith %}
+                            {% else %}
+                                {% with st=opj_source.statut %}
+                                <span class="badge {% if st == 'TRAITEE' %}bg-success{% elif st == 'COURS' %}bg-primary{% elif st == 'CSS' %}bg-secondary{% elif st == 'DISPATCHE' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">
+                                    {{ opj_source.get_statut_display }}
+                                </span>
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {# ── Champs texte longs + pièce jointe ── #}
+        <div class="p-3 border-top">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="small text-danger fw-bold text-uppercase mb-1" style="font-size:.70rem;letter-spacing:.06em;">Fait / Acte de corruption (Tranga Kolikoly)</div>
+                    <div class="source-long">
+                        {% if plainte_source %}{{ plainte_source.tranga_kolikoly|default:"—" }}{% else %}{{ opj_source.tranga_kolikoly|default:"—" }}{% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-danger fw-bold text-uppercase mb-1" style="font-size:.70rem;letter-spacing:.06em;">Lieu — Bureau — Service (Toerana / Birao)</div>
+                    <div class="source-long">
+                        {% if plainte_source %}{{ plainte_source.toorna_birao|default:"Non précisé" }}{% else %}{{ opj_source.toerana_birao|default:"Non précisé" }}{% endif %}
+                    </div>
+                </div>
+
+                {% if plainte_source and plainte_source.observation %}
+                <div class="col-12">
+                    <div class="small text-danger fw-bold text-uppercase mb-1" style="font-size:.70rem;letter-spacing:.06em;">Observation / Antony</div>
+                    <div class="source-long">{{ plainte_source.observation }}</div>
+                </div>
+                {% elif opj_source and opj_source.observation %}
+                <div class="col-12">
+                    <div class="small text-danger fw-bold text-uppercase mb-1" style="font-size:.70rem;letter-spacing:.06em;">Observation / Antony</div>
+                    <div class="source-long">{{ opj_source.observation }}</div>
+                </div>
+                {% endif %}
+
+                {# ── Pièce jointe Plainte TKK ── #}
+                {% if plainte_source and plainte_source.piece_jointe %}
+                <div class="col-12">
+                    <div class="small text-danger fw-bold text-uppercase mb-1" style="font-size:.70rem;letter-spacing:.06em;">
+                        <i class="bi bi-paperclip me-1"></i>Pièce Jointe
+                    </div>
+                    <div class="source-long">
+                        {% with fname=plainte_source.piece_jointe.name|lower %}
+                            {% if '.pdf' in fname %}
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-4"></i>
+                                    <a href="{{ plainte_source.piece_jointe.url }}" target="_blank" class="text-danger fw-semibold">
+                                        Ouvrir le PDF dans un nouvel onglet
+                                    </a>
+                                </div>
+                                <embed src="{{ plainte_source.piece_jointe.url }}" type="application/pdf" class="pj-embed" />
+                            {% elif '.png' in fname or '.jpg' in fname or '.jpeg' in fname or '.gif' in fname or '.webp' in fname %}
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-file-earmark-image text-danger fs-4"></i>
+                                    <a href="{{ plainte_source.piece_jointe.url }}" target="_blank" class="text-danger fw-semibold">
+                                        Voir l'image en taille réelle
+                                    </a>
+                                </div>
+                                <img src="{{ plainte_source.piece_jointe.url }}" alt="Pièce jointe" class="pj-img" />
+                            {% else %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-arrow-down text-danger fs-4"></i>
+                                    <a href="{{ plainte_source.piece_jointe.url }}" target="_blank" class="text-danger fw-semibold">
+                                        Télécharger la pièce jointe
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                {# ── Pièce jointe OPJ ── #}
+                {% elif opj_source and opj_source.piece_jointe %}
+                <div class="col-12">
+                    <div class="small text-danger fw-bold text-uppercase mb-1" style="font-size:.70rem;letter-spacing:.06em;">
+                        <i class="bi bi-paperclip me-1"></i>Pièce Jointe
+                    </div>
+                    <div class="source-long">
+                        {% with fname=opj_source.piece_jointe.name|lower %}
+                            {% if '.pdf' in fname %}
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-4"></i>
+                                    <a href="{{ opj_source.piece_jointe.url }}" target="_blank" class="text-danger fw-semibold">
+                                        Ouvrir le PDF dans un nouvel onglet
+                                    </a>
+                                </div>
+                                <embed src="{{ opj_source.piece_jointe.url }}" type="application/pdf" class="pj-embed" />
+                            {% elif '.png' in fname or '.jpg' in fname or '.jpeg' in fname or '.gif' in fname or '.webp' in fname %}
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-file-earmark-image text-danger fs-4"></i>
+                                    <a href="{{ opj_source.piece_jointe.url }}" target="_blank" class="text-danger fw-semibold">
+                                        Voir l'image en taille réelle
+                                    </a>
+                                </div>
+                                <img src="{{ opj_source.piece_jointe.url }}" alt="Pièce jointe" class="pj-img" />
+                            {% else %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-arrow-down text-danger fs-4"></i>
+                                    <a href="{{ opj_source.piece_jointe.url }}" target="_blank" class="text-danger fw-semibold">
+                                        Télécharger la pièce jointe
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>{# /row #}
         </div>
     </div>
+</div>
+{% else %}
+<div class="alert alert-secondary border-0 mb-4" style="border-left:5px solid #94a3b8 !important;">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Aucun dossier source lié.</strong> Ce registre a été créé directement sans plainte TKK ni OPJ associé.
+</div>
+{% endif %}
 
-    {# ── Bandeau parcours ────────────────────────────────────────────────── #}
-    {% include "pac/parcours_badges.html" with ra_source=ra_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco_associe appel_associe=appel_associe current="RP" %}
-
-    {# ── Carte infos RP ─────────────────────────────────────────────────── #}
-    <div class="card custom-card">
-        <div class="card-header-styled header-rp">
-            <div class="d-flex align-items-center">
-                <div class="icon-box text-white" style="background-color:#4a759c;"><i class="bi bi-folder2-open"></i></div>
-                <h5 class="mb-0 fw-bold">Informations Registre RP</h5>
-            </div>
-            <span class="badge px-3 py-2" style="background-color:#4a759c;">RP</span>
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 3. REGISTRE D'ARRIVÉE (RA)                                          #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="custom-card">
+    <div class="card-header-styled hdr-ra">
+        <div class="d-flex align-items-center">
+            <div class="icon-box bg-primary text-white"><i class="bi bi-envelope-paper"></i></div>
+            <h5 class="mb-0 fw-bold">Registre d'Arrivée (RA)</h5>
         </div>
-        <div class="card-body p-4">
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="info-label">N° RP</div>
-                    <div class="info-value" style="color:#4a759c;">{{ rp.numero_rp|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">N° RA lié</div>
-                    <div class="info-value">{{ rp.registre_arrive.n_enr_arrive|default:"Non lié" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">Date d'entrée</div>
-                    <div class="info-value"><i class="bi bi-calendar3 me-1 text-muted"></i>{{ rp.date_entree|date:"d/m/Y"|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">N° BE OPJ</div>
-                    <div class="info-value">{{ rp.n_be_opj|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="info-label">Plaignant</div>
-                    <div class="info-value"><i class="bi bi-person-fill me-1 text-muted"></i>{{ rp.plaignant|default:"-" }}</div>
-                </div>
-                <div class="col-md-5 border-start ps-4">
-                    <div class="info-label">Infraction</div>
-                    <div class="info-value">{{ rp.infraction|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">Date d'infraction</div>
-                    <div class="info-value">{{ rp.date_infraction|date:"d/m/Y"|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="info-label">Montant</div><div class="info-value">{{ rp.montant|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">Date mandat dépôt</div><div class="info-value">{{ rp.date_mandat_depot|date:"d/m/Y"|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">CSS</div><div class="info-value">{{ rp.css|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">Ref Appel</div><div class="info-value">{{ rp.ref_appel|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="row mb-2">
-                <div class="col-md-4">
-                    <div class="info-label">Ref Juge d'instruction</div><div class="info-value">{{ rp.ref_juge_instruction|default:"-" }}</div>
-                </div>
-                <div class="col-md-8 border-start ps-4">
-                    <div class="info-label">Observation</div>
-                    <div class="rp-info-box">{{ rp.observation|default:"Aucune observation." }}</div>
-                </div>
-            </div>
-        </div>
+        <span class="badge bg-primary px-3 py-2">{{ ra_source.n_enr_arrive|default:"PRE-RA" }}</span>
     </div>
-
-    {# ── Personnes physiques ─────────────────────────────────────────────── #}
-    <div class="card custom-card">
-        <div class="card-header-styled header-green">
-            <div class="d-flex align-items-center">
-                <div class="icon-box bg-success text-white"><i class="bi bi-people-fill"></i></div>
-                <h5 class="mb-0 fw-bold">Personnes Physiques</h5>
-            </div>
-            <span class="badge bg-success px-3 py-2">{{ rp.personnes_physiques.count }} enregistrée(s)</span>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 detail-table">
+                <thead>
+                    <tr>
+                        <th>N° Enregistrement</th>
+                        <th>Expéditeur</th>
+                        <th>Date de réception</th>
+                        <th>Date de correspondance</th>
+                        <th>Nature du document</th>
+                        <th>Statut traitement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="fw-bold text-primary">{{ ra_source.n_enr_arrive|default:"En attente" }}</span></td>
+                        <td class="fw-semibold"><i class="bi bi-building me-1 text-muted"></i>{{ ra_source.expediteur }}</td>
+                        <td><i class="bi bi-calendar3 me-1 text-muted"></i>{{ ra_source.date_arrivee|date:"d/m/Y" }}</td>
+                        <td>{{ ra_source.date_correspondance|date:"d/m/Y"|default:"—" }}</td>
+                        <td><span class="badge bg-secondary">{{ ra_source.get_nature_display }}</span></td>
+                        <td>
+                            {% with s=ra_source.statut_traitement %}
+                            <span class="badge {% if s == 'TRAITEE' %}bg-success{% elif s == 'COURS' %}bg-primary{% elif s == 'CSS' %}bg-secondary{% elif s == 'DISPATCHE' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">
+                                {{ ra_source.get_statut_traitement_display }}
+                            </span>
+                            {% endwith %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="card-body p-4">
-            {% if rp.personnes_physiques.all %}
+        {% if ra_source.objet_demande %}
+        <div class="p-3 border-top">
+            <div class="small fw-bold text-uppercase mb-1" style="color:#4f46e5;font-size:.70rem;letter-spacing:.06em;">Objet du dossier</div>
+            <div class="long-text-box" style="border-left-color:#4f46e5;">{{ ra_source.objet_demande }}</div>
+        </div>
+        {% endif %}
+        {% if ra_source.observation %}
+        <div class="p-3 border-top">
+            <div class="small fw-bold text-uppercase mb-1" style="color:#4f46e5;font-size:.70rem;letter-spacing:.06em;">Observation</div>
+            <div class="long-text-box" style="border-left-color:#4f46e5;">{{ ra_source.observation }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 4. SOIT TRANSMIS (ST) — tous ceux liés au RA                        #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="custom-card">
+    <div class="card-header-styled hdr-st">
+        <div class="d-flex align-items-center">
+            <div class="icon-box bg-warning text-dark"><i class="bi bi-gear-fill"></i></div>
+            <h5 class="mb-0 fw-bold">Soit Transmis (ST)</h5>
+        </div>
+        <span class="badge bg-warning text-dark px-3 py-2">
+            {% if st_list %}{{ st_list|length }} enregistrement(s){% else %}Aucun{% endif %}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if st_list %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 detail-table">
+                <thead>
+                    <tr>
+                        <th>N° Chrono ST</th>
+                        <th>Date ST</th>
+                        <th>Destinataire</th>
+                        <th>Objet</th>
+                        <th>Rappel</th>
+                        <th>Résultat</th>
+                        <th>Observation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for st in st_list %}
+                    <tr>
+                        <td><span class="badge bg-warning text-dark">{{ st.n_chrono|default:"-" }}</span></td>
+                        <td><i class="bi bi-calendar3 me-1 text-muted"></i>{{ st.date_st|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="fw-semibold">{{ st.destinataire|default:"-" }}</td>
+                        <td>{{ st.objet|default:"-"|truncatechars:50 }}</td>
+                        <td>{{ st.rappel|default:"—" }}</td>
+                        <td>
+                            {% if st.resultat %}
+                            <span class="text-success"><i class="bi bi-check2-all me-1"></i>{{ st.resultat|truncatechars:30 }}</span>
+                            {% else %}
+                            <span class="text-muted small">En attente</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ st.observation|default:"—"|truncatechars:40 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-hourglass me-2"></i>Aucun soit-transmis enregistré pour ce dossier.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 5. COMMISSION SUPÉRIEURE (CSCA) — tous ceux liés au RA              #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="custom-card">
+    <div class="card-header-styled hdr-csca">
+        <div class="d-flex align-items-center">
+            <div class="icon-box bg-info text-white"><i class="bi bi-gavel"></i></div>
+            <h5 class="mb-0 fw-bold">Commission Supérieure (CSCA)</h5>
+        </div>
+        <span class="badge bg-info text-dark px-3 py-2">
+            {% if csca_list %}{{ csca_list|length }} enregistrement(s){% else %}Aucun{% endif %}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if csca_list %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 detail-table">
+                <thead>
+                    <tr>
+                        <th>N° Chrono CSCA</th>
+                        <th>Date CSCA</th>
+                        <th>Demandeur</th>
+                        <th>Entité</th>
+                        <th>Objet</th>
+                        <th>Réquisitoire MP</th>
+                        <th>Intitulé</th>
+                        <th>Décision</th>
+                        <th>Appel</th>
+                        <th>Résultat appel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for csca in csca_list %}
+                    <tr>
+                        <td><span class="badge bg-info text-dark">{{ csca.n_chrono|default:"-" }}</span></td>
+                        <td><i class="bi bi-calendar3 me-1 text-muted"></i>{{ csca.date_csca|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="fw-semibold">{{ csca.demandeur|default:"-" }}</td>
+                        <td>{{ csca.entite|default:"-" }}</td>
+                        <td>{{ csca.objet|default:"-"|truncatechars:40 }}</td>
+                        <td>{{ csca.requisitoire_mp|default:"—"|truncatechars:40 }}</td>
+                        <td>{{ csca.intitule|default:"—"|truncatechars:40 }}</td>
+                        <td>
+                            <span class="badge {% if 'Favorable' in csca.decision %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ csca.decision|default:"—"|truncatechars:30 }}
+                            </span>
+                        </td>
+                        <td>{{ csca.appel|default:"—"|truncatechars:30 }}</td>
+                        <td>{{ csca.resultat_appel|default:"—"|truncatechars:30 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-hourglass me-2"></i>Ce dossier n'est pas encore passé en CSCA.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 6. REGISTRE RP — tous ceux liés au RA                               #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="custom-card">
+    <div class="card-header-styled hdr-rp">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white" style="background:#4a759c;"><i class="bi bi-folder2-open"></i></div>
+            <h5 class="mb-0 fw-bold">Registre RP</h5>
+        </div>
+        <span class="badge px-3 py-2" style="background:#4a759c;">
+            {% if rp_list %}{{ rp_list|length }} enregistrement(s){% else %}Aucun{% endif %}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if rp_list %}
+        {% for rp in rp_list %}
+        <div class="{% if not forloop.first %}border-top pt-2{% endif %}">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr><th>Type</th><th>N° Prévenu</th><th>Nom</th><th>Prénom</th><th>Âge</th><th>Nationalité</th><th>Genre</th><th>Fonction</th></tr>
+                <table class="table table-hover align-middle mb-0 detail-table">
+                    <thead>
+                        <tr>
+                            <th>N° RP</th>
+                            <th>Date entrée</th>
+                            <th>N° BE OPJ</th>
+                            <th>Réf. Appel</th>
+                            <th>Réf. Juge instruction</th>
+                            <th>Plaignant</th>
+                            <th>Infraction</th>
+                            <th>Date infraction</th>
+                            <th>Montant</th>
+                            <th>Date mandat dépôt</th>
+                            <th>CSS</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        {% for pp in rp.personnes_physiques.all %}
                         <tr>
-                            <td><span class="badge {% if pp.type_personne == 'plaignant' %}bg-info{% else %}bg-warning text-dark{% endif %}">{{ pp.get_type_personne_display }}</span></td>
-                            <td class="fw-semibold">{{ pp.numero_prevenu|default:"-" }}</td>
-                            <td>{{ pp.nom|default:"-" }}</td><td>{{ pp.prenom|default:"-" }}</td>
-                            <td>{{ pp.age|default:"-" }}</td><td>{{ pp.nationalite|default:"-" }}</td>
-                            <td>{{ pp.genre|default:"-" }}</td><td>{{ pp.fonction|default:"-" }}</td>
+                            <td><span class="fw-bold" style="color:#4a759c;">{{ rp.numero_rp|default:"-" }}</span></td>
+                            <td>{{ rp.date_entree|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ rp.n_be_opj|default:"-" }}</td>
+                            <td>{{ rp.ref_appel|default:"-" }}</td>
+                            <td>{{ rp.ref_juge_instruction|default:"-" }}</td>
+                            <td class="fw-semibold">{{ rp.plaignant|default:"-" }}</td>
+                            <td>{{ rp.infraction|default:"-" }}</td>
+                            <td>{{ rp.date_infraction|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ rp.montant|default:"-" }}</td>
+                            <td>{{ rp.date_mandat_depot|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ rp.css|default:"-" }}</td>
                         </tr>
-                        {% endfor %}
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Aucune personne physique enregistrée.</p></div>
-            {% endif %}
-        </div>
-    </div>
-
-    {# ── Personnes morales ───────────────────────────────────────────────── #}
-    <div class="card custom-card">
-        <div class="card-header-styled header-purple">
-            <div class="d-flex align-items-center">
-                <div class="icon-box text-white" style="background-color:#7c3aed;"><i class="bi bi-building"></i></div>
-                <h5 class="mb-0 fw-bold">Personnes Morales</h5>
+            {% if rp.observation %}
+            <div class="px-3 pb-2 border-top">
+                <div class="small fw-bold text-uppercase mt-2 mb-1" style="color:#4a759c;font-size:.70rem;">Observation</div>
+                <div class="long-text-box" style="border-left-color:#4a759c;">{{ rp.observation }}</div>
             </div>
-            <span class="badge px-3 py-2" style="background-color:#7c3aed;">{{ rp.personnes_morales.count }} enregistrée(s)</span>
-        </div>
-        <div class="card-body p-4">
+            {% endif %}
+            {% if rp.personnes_physiques.all %}
+            <div class="px-3 pb-2 border-top bg-light">
+                <div class="small fw-bold text-uppercase mt-2 mb-1" style="color:#16a34a;font-size:.70rem;">
+                    <i class="bi bi-people-fill me-1"></i>Personnes Physiques
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0 detail-table">
+                        <thead><tr><th>Type</th><th>N° Prévenu</th><th>Nom</th><th>Prénom</th><th>Âge</th><th>Nationalité</th><th>Genre</th><th>Fonction</th></tr></thead>
+                        <tbody>
+                            {% for pp in rp.personnes_physiques.all %}
+                            <tr>
+                                <td><span class="badge {% if pp.type_personne == 'plaignant' %}bg-info text-dark{% else %}bg-warning text-dark{% endif %}">{{ pp.get_type_personne_display }}</span></td>
+                                <td>{{ pp.numero_prevenu|default:"-" }}</td>
+                                <td>{{ pp.nom|default:"-" }}</td>
+                                <td>{{ pp.prenom|default:"-" }}</td>
+                                <td>{{ pp.age|default:"-" }}</td>
+                                <td>{{ pp.nationalite|default:"-" }}</td>
+                                <td>{{ pp.genre|default:"-" }}</td>
+                                <td>{{ pp.fonction|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
             {% if rp.personnes_morales.all %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light"><tr><th>Raison Sociale</th><th>Forme Juridique</th><th>Activité</th></tr></thead>
-                    <tbody>
-                        {% for pm in rp.personnes_morales.all %}
-                        <tr><td class="fw-semibold">{{ pm.raison_sociale|default:"-" }}</td><td>{{ pm.forme_juridique|default:"-" }}</td><td>{{ pm.activite|default:"-" }}</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="px-3 pb-2 border-top bg-light">
+                <div class="small fw-bold text-uppercase mt-2 mb-1" style="color:#5b21b6;font-size:.70rem;">
+                    <i class="bi bi-building me-1"></i>Personnes Morales
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0 detail-table">
+                        <thead><tr><th>Raison Sociale</th><th>Forme Juridique</th><th>Activité</th></tr></thead>
+                        <tbody>
+                            {% for pm in rp.personnes_morales.all %}
+                            <tr>
+                                <td class="fw-semibold">{{ pm.raison_sociale|default:"-" }}</td>
+                                <td>{{ pm.forme_juridique|default:"-" }}</td>
+                                <td>{{ pm.activite|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            {% else %}
-            <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Aucune personne morale enregistrée.</p></div>
+            {% endif %}
+            {% if rp.autres_menu %}
+            <div class="px-3 pb-2 border-top bg-light">
+                <div class="small fw-bold text-uppercase mt-2 mb-1" style="color:#92400e;font-size:.70rem;">
+                    <i class="bi bi-journal-text me-1"></i>Suivi et Procédures
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0 detail-table">
+                        <thead><tr><th>Mandat d'arrêt</th><th>Année</th><th>Citation directe</th><th>Renvoi audience</th><th>Réquisitoire informé</th><th>Renvoi CCO</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ rp.autres_menu.mandat_arret|default:"-" }}</td>
+                                <td>{{ rp.autres_menu.annee|default:"-" }}</td>
+                                <td>{{ rp.autres_menu.citation_directe|default:"-" }}</td>
+                                <td>{{ rp.autres_menu.renvoi_audience|default:"-" }}</td>
+                                <td>{{ rp.autres_menu.requisitoire_informe|default:"-" }}</td>
+                                <td>{{ rp.autres_menu.renvoi_cco|default:"-" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {% endif %}
         </div>
-    </div>
-
-    {# ── Suivi procédural ─────────────────────────────────────────────────── #}
-    {% with am=rp.autres_menu %}
-    <div class="card custom-card">
-        <div class="card-header-styled header-yellow">
-            <div class="d-flex align-items-center">
-                <div class="icon-box bg-warning text-dark"><i class="bi bi-journal-text"></i></div>
-                <h5 class="mb-0 fw-bold">Suivi et Procédures</h5>
-            </div>
-            <span class="badge bg-warning text-dark px-3 py-2">AUTRES MENU</span>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-hourglass me-2"></i>Aucun dossier RP enregistré pour ce dossier.
         </div>
-        <div class="card-body p-4">
-            {% if am %}
-            <div class="row mb-3">
-                <div class="col-md-4"><div class="info-label">Mandat d'arrêt</div><div class="info-value">{{ am.mandat_arret|default:"-" }}</div></div>
-                <div class="col-md-4 border-start ps-4"><div class="info-label">Année</div><div class="info-value">{{ am.annee|default:"-" }}</div></div>
-                <div class="col-md-4 border-start ps-4"><div class="info-label">Citation directe</div><div class="info-value">{{ am.citation_directe|default:"-" }}</div></div>
-            </div>
-            <div class="row">
-                <div class="col-md-4"><div class="info-label">Renvoi audience</div><div class="info-value">{{ am.renvoi_audience|default:"-" }}</div></div>
-                <div class="col-md-4 border-start ps-4"><div class="info-label">Réquisitoire informé</div><div class="info-value">{{ am.requisitoire_informe|default:"-" }}</div></div>
-                <div class="col-md-4 border-start ps-4"><div class="info-label">Renvoi CCO</div><div class="info-value">{{ am.renvoi_cco|default:"-" }}</div></div>
-            </div>
-            {% else %}
-            <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Aucun suivi procédural enregistré.</p></div>
-            {% endif %}
-        </div>
-    </div>
-    {% endwith %}
-
-    {# ── TRAÇABILITÉ COMPLÈTE ─────────────────────────────────────────────── #}
-    {% if ra_source %}
-        {% include "pac/tracabilite_chain.html" with ra_source=ra_source opj_source=opj_source plainte_source=plainte_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco_associe appel_associe=appel_associe %}
-    {% endif %}
-
-</div>
-</div>
-{% endwith %}
-
-
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{# ── DÉTAIL CCO  ← NOUVEAU                                               #}
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{% elif reg_type == 'cco' %}
-{% with cco=reg_detail %}
-<div class="detail-view-container no-print">
-<div class="container-fluid px-0 py-2">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0" style="font-size:1.5rem;">
-            Dossier CCO — {{ cco.n_chrono|default:cco.pk }}
-        </h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'pac:greffier' %}?mode=edit_cco&type=cco&detail_id={{ cco.pk }}"
-               class="btn btn-warning shadow-sm text-white">
-                <i class="bi bi-pencil-fill me-2"></i>Modifier
-            </a>
-            <button onclick="window.print()" class="btn btn-dark shadow-sm">
-                <i class="bi bi-printer me-2"></i>Imprimer
-            </button>
-            <a href="?type=cco" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
-        </div>
-    </div>
-
-    {% include "pac/parcours_badges.html" with ra_source=ra_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco appel_associe=appel_associe current="CCO" %}
-
-    <div class="card custom-card">
-        <div class="card-header-styled header-cco">
-            <div class="d-flex align-items-center">
-                <div class="icon-box text-white" style="background:#ea580c;"><i class="bi bi-bank2"></i></div>
-                <h5 class="mb-0 fw-bold">Informations Registre CCO</h5>
-            </div>
-            <span class="badge px-3 py-2" style="background:#ea580c;">CCO</span>
-        </div>
-        <div class="card-body p-4">
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="info-label">N° Chrono CCO</div>
-                    <div class="info-value" style="color:#ea580c;">{{ cco.n_chrono|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">N° RA lié</div>
-                    <div class="info-value">{{ cco.registre_arrive.n_enr_arrive|default:"Non lié" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">Date CCO</div>
-                    <div class="info-value"><i class="bi bi-calendar3 me-1 text-muted"></i>{{ cco.date_cco|date:"d/m/Y"|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">N° Chrono ST</div>
-                    <div class="info-value">{{ cco.n_chrono_st|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="info-label">N° Dossier</div>
-                    <div class="info-value">{{ cco.n_dossier|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="mb-4">
-                <div class="info-label">Réquisitoire du parquet</div>
-                <div class="rp-info-box" style="border-left-color:#ea580c;">{{ cco.requisitoire_parquet|default:"—" }}</div>
-            </div>
-            <div class="mb-4">
-                <div class="info-label">Objet</div>
-                <div class="objet-box" style="border-left-color:#ea580c;">{{ cco.objet|default:"—" }}</div>
-            </div>
-            <div>
-                <div class="info-label">N° BE CCO</div>
-                <div class="info-value">{{ cco.n_be_cco|default:"-" }}</div>
-            </div>
-        </div>
-    </div>
-
-    {% if ra_source %}
-        {% include "pac/tracabilite_chain.html" with ra_source=ra_source opj_source=opj_source plainte_source=plainte_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco appel_associe=appel_associe %}
-    {% endif %}
-
-</div>
-</div>
-{% endwith %}
-
-
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{# ── DÉTAIL APPEL  ← NOUVEAU                                             #}
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{% elif reg_type == 'appel' %}
-{% with appel=reg_detail %}
-<div class="detail-view-container no-print">
-<div class="container-fluid px-0 py-2">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0" style="font-size:1.5rem;">
-            Dossier d'Appel — {{ appel.n_chrono_appel|default:appel.pk }}
-        </h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'pac:greffier' %}?mode=edit_appel&type=appel&detail_id={{ appel.pk }}"
-               class="btn btn-warning shadow-sm text-white">
-                <i class="bi bi-pencil-fill me-2"></i>Modifier
-            </a>
-            <button onclick="window.print()" class="btn btn-dark shadow-sm">
-                <i class="bi bi-printer me-2"></i>Imprimer
-            </button>
-            <a href="?type=appel" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
-        </div>
-    </div>
-
-    {% include "pac/parcours_badges.html" with ra_source=ra_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco_associe appel_associe=appel current="APPEL" %}
-
-    <div class="card custom-card">
-        <div class="card-header-styled header-appel">
-            <div class="d-flex align-items-center">
-                <div class="icon-box text-white" style="background:#7c3aed;"><i class="bi bi-flag-fill"></i></div>
-                <h5 class="mb-0 fw-bold">Informations Registre d'Appel</h5>
-            </div>
-            <span class="badge px-3 py-2" style="background:#7c3aed;">APPEL</span>
-        </div>
-        <div class="card-body p-4">
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="info-label">N° Chrono Appel</div>
-                    <div class="info-value" style="color:#7c3aed;">{{ appel.n_chrono_appel|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">N° RA lié</div>
-                    <div class="info-value">{{ appel.registre_arrive.n_enr_arrive|default:"Non lié" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">Date d'Appel</div>
-                    <div class="info-value"><i class="bi bi-calendar3 me-1 text-muted"></i>{{ appel.date_appel|date:"d/m/Y"|default:"-" }}</div>
-                </div>
-                <div class="col-md-3 border-start ps-4">
-                    <div class="info-label">N° RP</div>
-                    <div class="info-value">{{ appel.n_rp|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="info-label">Réf. Juge d'instruction</div>
-                    <div class="info-value">{{ appel.ref_juge_instruction|default:"-" }}</div>
-                </div>
-            </div>
-            <div class="mb-4">
-                <div class="info-label">Résumé de l'affaire</div>
-                <div class="objet-box" style="border-left-color:#7c3aed;">{{ appel.resume_affaire|default:"—" }}</div>
-            </div>
-            <div class="mb-4">
-                <div class="info-label">Inculpation</div>
-                <div class="rp-info-box" style="border-left-color:#7c3aed;">{{ appel.inculpation|default:"—" }}</div>
-            </div>
-            <div class="mb-4">
-                <div class="info-label">Déclaration d'appel</div>
-                <div class="rp-info-box" style="border-left-color:#7c3aed;">{{ appel.declaration_appel|default:"—" }}</div>
-            </div>
-            <div>
-                <div class="info-label">N° BE Appel</div>
-                <div class="info-value">{{ appel.n_be_appel|default:"-" }}</div>
-            </div>
-        </div>
-    </div>
-
-    {# Traçabilité complète depuis l'Appel #}
-    {% if ra_source %}
-        {% include "pac/tracabilite_chain.html" with ra_source=ra_source opj_source=opj_source plainte_source=plainte_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco_associe appel_associe=appel %}
-    {% endif %}
-
-</div>
-</div>
-{% endwith %}
-
-
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{# ── DÉTAIL RA / ST / CSCA  (code original conservé)                     #}
-{# ═══════════════════════════════════════════════════════════════════════ #}
-{% else %}
-<div class="detail-view-container no-print">
-    <div class="container-fluid px-0 py-2">
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold mb-0" style="font-size:1.5rem;">
-                Dossier N° {{ ra_source.n_enr_arrive|default:ra_source.id }}
-            </h2>
-            <div class="d-flex gap-2">
-                <button onclick="window.print()" class="btn btn-dark shadow-sm">
-                    <i class="bi bi-printer me-2"></i>Imprimer la fiche
-                </button>
-                <a href="?type={{ request.GET.type }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
-            </div>
-        </div>
-
-        {# Bandeau parcours #}
-        {% include "pac/parcours_badges.html" with ra_source=ra_source st_associe=st_associe csca_associe=csca_associe cco_associe=cco_associe appel_associe=appel_associe current=reg_type %}
-
-        {# ── Source RA ────────────────────────────────────────────────────── #}
-        <div class="card custom-card">
-            <div class="card-header-styled header-blue">
-                <div class="d-flex align-items-center">
-                    <div class="icon-box bg-primary text-white"><i class="bi bi-envelope-paper"></i></div>
-                    <h5 class="mb-0 fw-bold">Informations Générales (Source)</h5>
-                </div>
-                <span class="badge bg-primary px-3 py-2">ORIGINAL</span>
-            </div>
-            <div class="card-body p-4">
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="info-label">Expéditeur</div>
-                        <div class="info-value text-primary"><i class="bi bi-building me-2"></i>{{ ra_source.expediteur }}</div>
-                    </div>
-                    <div class="col-md-4 border-start ps-4">
-                        <div class="info-label">Date de Réception</div>
-                        <div class="info-value"><i class="bi bi-calendar3 me-2 text-muted"></i>{{ ra_source.date_arrivee|date:"d F Y" }}</div>
-                    </div>
-                    <div class="col-md-4 border-start ps-4">
-                        <div class="info-label">Nature du document</div>
-                        <div class="info-value"><span class="text-uppercase" style="font-size:.9rem;color:#475569;">{{ ra_source.get_nature_display }}</span></div>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <div class="info-label">Objet du dossier</div>
-                    <div class="objet-box">{{ ra_source.objet_demande }}</div>
-                </div>
-            </div>
-        </div>
-
-        {# ── ST ────────────────────────────────────────────────────────────── #}
-        <div class="card custom-card border-top border-warning border-4">
-            <div class="card-header-styled header-yellow">
-                <div class="d-flex align-items-center">
-                    <div class="icon-box bg-warning text-dark"><i class="bi bi-gear-fill"></i></div>
-                    <h5 class="mb-0 fw-bold">Soit Transmis (ST)</h5>
-                </div>
-                <div class="badge bg-dark px-3 py-2">
-                    CHRONO # {% if is_st %}{{ reg_detail.n_chrono }}{% elif st_associe %}{{ st_associe.n_chrono }}{% else %}---{% endif %}
-                </div>
-            </div>
-            <div class="card-body p-4">
-                {% if is_st or st_associe %}
-                {% with d=st_associe|default:reg_detail %}
-                <div class="row align-items-center">
-                    <div class="col-md-4 mb-3">
-                        <div class="info-label text-warning">Destinataire</div>
-                        <div class="info-value"><i class="bi bi-person-badge me-2"></i>{{ d.destinataire }}</div>
-                    </div>
-                    <div class="col-md-4 mb-3 border-start ps-4">
-                        <div class="info-label text-warning">Date de transfert</div>
-                        <div class="info-value"><i class="bi bi-clock-history me-2 text-muted"></i>{{ d.date_st|date:"d/m/Y" }}</div>
-                    </div>
-                    <div class="col-md-4 mb-3 border-start ps-4">
-                        <div class="info-label text-warning">Rappel</div>
-                        <div class="info-value">{{ d.rappel|default:"-" }}</div>
-                    </div>
-                </div>
-                {% endwith %}
-                {% else %}
-                <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Aucun soit-transmis enregistré.</p></div>
-                {% endif %}
-            </div>
-        </div>
-
-        {# ── CSCA ─────────────────────────────────────────────────────────── #}
-        <div class="card custom-card shadow-sm">
-            <div class="card-header-styled" style="background-color:rgba(6,182,212,0.08);">
-                <div class="d-flex align-items-center">
-                    <div class="icon-box bg-info text-white"><i class="bi bi-gavel"></i></div>
-                    <h5 class="mb-0 fw-bold">Commission Supérieure (CSCA)</h5>
-                </div>
-                <div class="badge bg-info text-dark px-3 py-2">
-                    {% if is_csca %}CHRONO # {{ reg_detail.n_chrono }}{% elif csca_associe %}CHRONO # {{ csca_associe.n_chrono }}{% else %}EN ATTENTE{% endif %}
-                </div>
-            </div>
-            <div class="card-body p-4">
-                {% if is_csca or csca_associe %}
-                {% with d=csca_associe|default:reg_detail %}
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="info-label text-info">Demandeur / Entité</div>
-                        <div class="info-value">{{ d.demandeur }}</div>
-                        <div class="small text-muted">{{ d.entite }}</div>
-                    </div>
-                    <div class="col-md-4 border-start ps-4">
-                        <div class="info-label text-info">Date CSCA</div>
-                        <div class="info-value"><i class="bi bi-calendar-event me-2"></i>{{ d.date_csca|date:"d/m/Y" }}</div>
-                    </div>
-                    <div class="col-md-4 border-start ps-4">
-                        <div class="info-label text-info">Décision</div>
-                        <div class="info-value">
-                            <span class="badge {% if 'Favorable' in d.decision %}bg-success{% else %}bg-secondary{% endif %}">{{ d.decision }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="info-label text-info">Intitulé de l'affaire</div>
-                        <div class="p-3 bg-light rounded border-start border-3 border-info">{{ d.intitule }}</div>
-                    </div>
-                </div>
-                {% endwith %}
-                {% else %}
-                <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Ce dossier n'est pas encore passé en CSCA.</p></div>
-                {% endif %}
-            </div>
-        </div>
-
-        {# ── CCO associé ← NOUVEAU ────────────────────────────────────────── #}
-        <div class="card custom-card shadow-sm">
-            <div class="card-header-styled header-cco">
-                <div class="d-flex align-items-center">
-                    <div class="icon-box text-white" style="background:#ea580c;"><i class="bi bi-bank2"></i></div>
-                    <h5 class="mb-0 fw-bold">Chambre Correctionnelle (CCO)</h5>
-                </div>
-                <div class="badge px-3 py-2" style="background:#ea580c;">
-                    {% if cco_associe %}CCO # {{ cco_associe.n_chrono }}{% else %}EN ATTENTE{% endif %}
-                </div>
-            </div>
-            <div class="card-body p-4">
-                {% if cco_associe %}
-                <div class="row mb-3">
-                    <div class="col-md-4"><div class="info-label" style="color:#ea580c;">N° Dossier</div><div class="info-value">{{ cco_associe.n_dossier|default:"-" }}</div></div>
-                    <div class="col-md-4 border-start ps-4"><div class="info-label" style="color:#ea580c;">Date CCO</div><div class="info-value">{{ cco_associe.date_cco|date:"d/m/Y"|default:"-" }}</div></div>
-                    <div class="col-md-4 border-start ps-4"><div class="info-label" style="color:#ea580c;">N° Chrono ST</div><div class="info-value">{{ cco_associe.n_chrono_st|default:"-" }}</div></div>
-                </div>
-                <div><div class="info-label" style="color:#ea580c;">Objet</div>
-                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#ea580c !important;">{{ cco_associe.objet|default:"—" }}</div></div>
-                {% else %}
-                <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Ce dossier n'est pas encore passé en CCO.</p></div>
-                {% endif %}
-            </div>
-        </div>
-
-        {# ── APPEL associé ← NOUVEAU ──────────────────────────────────────── #}
-        <div class="card custom-card shadow-sm">
-            <div class="card-header-styled header-appel">
-                <div class="d-flex align-items-center">
-                    <div class="icon-box text-white" style="background:#7c3aed;"><i class="bi bi-flag-fill"></i></div>
-                    <h5 class="mb-0 fw-bold">Registre d'Appel</h5>
-                </div>
-                <div class="badge px-3 py-2" style="background:#7c3aed;">
-                    {% if appel_associe %}APPEL # {{ appel_associe.n_chrono_appel }}{% else %}EN ATTENTE{% endif %}
-                </div>
-            </div>
-            <div class="card-body p-4">
-                {% if appel_associe %}
-                <div class="row mb-3">
-                    <div class="col-md-4"><div class="info-label" style="color:#7c3aed;">N° RP</div><div class="info-value">{{ appel_associe.n_rp|default:"-" }}</div></div>
-                    <div class="col-md-4 border-start ps-4"><div class="info-label" style="color:#7c3aed;">Date d'appel</div><div class="info-value">{{ appel_associe.date_appel|date:"d/m/Y"|default:"-" }}</div></div>
-                    <div class="col-md-4 border-start ps-4"><div class="info-label" style="color:#7c3aed;">Réf. Juge instruction</div><div class="info-value">{{ appel_associe.ref_juge_instruction|default:"-" }}</div></div>
-                </div>
-                <div><div class="info-label" style="color:#7c3aed;">Inculpation</div>
-                <div class="p-3 bg-light rounded border-start border-3" style="border-color:#7c3aed !important;">{{ appel_associe.inculpation|default:"—" }}</div></div>
-                {% else %}
-                <div class="text-center py-3 bg-light rounded-3"><p class="text-muted mb-0 small">Ce dossier n'a pas encore fait l'objet d'un appel.</p></div>
-                {% endif %}
-            </div>
-        </div>
-
+        {% endif %}
     </div>
 </div>
 
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 7. CHAMBRE CORRECTIONNELLE (CCO) — tous ceux liés au RA             #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="custom-card">
+    <div class="card-header-styled hdr-cco">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white" style="background:#ea580c;"><i class="bi bi-bank2"></i></div>
+            <h5 class="mb-0 fw-bold">Chambre Correctionnelle (CCO)</h5>
+        </div>
+        <span class="badge px-3 py-2" style="background:#ea580c;">
+            {% if cco_list %}{{ cco_list|length }} enregistrement(s){% else %}Aucun{% endif %}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if cco_list %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 detail-table">
+                <thead>
+                    <tr>
+                        <th>N° Chrono CCO</th>
+                        <th>Date CCO</th>
+                        <th>N° Chrono ST</th>
+                        <th>N° Dossier</th>
+                        <th>N° BE CCO</th>
+                        <th>Réquisitoire parquet</th>
+                        <th>Objet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cco in cco_list %}
+                    <tr>
+                        <td><span class="fw-bold" style="color:#ea580c;">{{ cco.n_chrono|default:"-" }}</span></td>
+                        <td><i class="bi bi-calendar3 me-1 text-muted"></i>{{ cco.date_cco|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ cco.n_chrono_st|default:"-" }}</td>
+                        <td>{{ cco.n_dossier|default:"-" }}</td>
+                        <td>{{ cco.n_be_cco|default:"-"|truncatechars:30 }}</td>
+                        <td>{{ cco.requisitoire_parquet|default:"—"|truncatechars:50 }}</td>
+                        <td>{{ cco.objet|default:"—"|truncatechars:50 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-hourglass me-2"></i>Ce dossier n'est pas encore passé en CCO.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# 8. REGISTRE D'APPEL — tous ceux liés au RA                          #}
+{# ════════════════════════════════════════════════════════════════════ #}
+<div class="custom-card">
+    <div class="card-header-styled hdr-appel">
+        <div class="d-flex align-items-center">
+            <div class="icon-box text-white" style="background:#7c3aed;"><i class="bi bi-flag-fill"></i></div>
+            <h5 class="mb-0 fw-bold">Registre d'Appel</h5>
+        </div>
+        <span class="badge px-3 py-2" style="background:#7c3aed;">
+            {% if appel_list %}{{ appel_list|length }} enregistrement(s){% else %}Aucun{% endif %}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        {% if appel_list %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 detail-table">
+                <thead>
+                    <tr>
+                        <th>N° Chrono Appel</th>
+                        <th>Date d'Appel</th>
+                        <th>N° RP</th>
+                        <th>Réf. Juge instruction</th>
+                        <th>N° BE Appel</th>
+                        <th>Résumé de l'affaire</th>
+                        <th>Inculpation</th>
+                        <th>Déclaration d'appel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appel in appel_list %}
+                    <tr>
+                        <td><span class="fw-bold" style="color:#7c3aed;">{{ appel.n_chrono_appel|default:"-" }}</span></td>
+                        <td><i class="bi bi-calendar3 me-1 text-muted"></i>{{ appel.date_appel|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ appel.n_rp|default:"-" }}</td>
+                        <td>{{ appel.ref_juge_instruction|default:"-" }}</td>
+                        <td>{{ appel.n_be_appel|default:"-"|truncatechars:30 }}</td>
+                        <td>{{ appel.resume_affaire|default:"—"|truncatechars:50 }}</td>
+                        <td>{{ appel.inculpation|default:"—"|truncatechars:50 }}</td>
+                        <td>{{ appel.declaration_appel|default:"—"|truncatechars:50 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-hourglass me-2"></i>Ce dossier n'a pas encore fait l'objet d'un appel.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</div>{# /container #}
+</div>{# /no-print #}
+
+{# ════════════════════════════════════════════════════════════════════ #}
+{# RAPPORT D'IMPRESSION COMPLET                                         #}
+{# ════════════════════════════════════════════════════════════════════ #}
 <div id="print-report">
-    <div class="print-title">
-        <h1 style="font-size:22pt;margin:0;">FICHE DE SUIVI DE DOSSIER</h1>
-        <p style="font-size:14pt;">Référence : <strong>{% if is_st %}{{ reg_detail.registre_arrive.n_enr_arrive }}{% else %}{{ reg_detail.n_enr_arrive }}{% endif %}</strong></p>
+    <div class="pr-title">
+        <h1 style="font-size:20pt;margin:0;">FICHE DE SUIVI DE DOSSIER COMPLET</h1>
+        <p style="font-size:13pt;margin:4px 0;">
+            RA N° <strong>{{ ra_source.n_enr_arrive|default:ra_source.pk }}</strong>
+            &mdash; Expéditeur : <strong>{{ ra_source.expediteur }}</strong>
+            &mdash; Imprimé le {% now "d/m/Y à H:i" %}
+        </p>
     </div>
-    <div style="font-size:12pt;line-height:1.6;">
-        <p>Réceptionné le <strong>{% if is_st %}{{ reg_detail.registre_arrive.date_arrivee|date:"d F Y" }}{% else %}{{ reg_detail.date_arrivee|date:"d F Y" }}{% endif %}</strong>
-        — Expéditeur : <strong>{% if is_st %}{{ reg_detail.registre_arrive.expediteur }}{% else %}{{ reg_detail.expediteur }}{% endif %}</strong></p>
-        <p><strong>Objet :</strong> {% if is_st %}{{ reg_detail.registre_arrive.objet_demande }}{% else %}{{ reg_detail.objet_demande }}{% endif %}</p>
-        {% if st_associe or is_st %}
-        <p><strong>ST N° :</strong> {% if is_st %}{{ reg_detail.n_chrono }}{% else %}{{ st_associe.n_chrono }}{% endif %} — Destinataire : {% if is_st %}{{ reg_detail.destinataire }}{% else %}{{ st_associe.destinataire }}{% endif %}</p>
+
+    {% if plainte_source or opj_source %}
+    <div class="pr-section">
+        <h3>{% if plainte_source %}Dossier Source — Plainte TKK{% else %}Dossier Source — OPJ{% endif %}</h3>
+        <table class="pr-table">
+            <tr><th>N° Référence</th><th>Date</th><th>Plaignant</th><th>Auteur</th><th>Statut</th></tr>
+            <tr>
+                {% if plainte_source %}
+                <td>{{ plainte_source.n_chrono_tkk }}</td>
+                <td>{{ plainte_source.date_plainte|date:"d/m/Y" }}</td>
+                <td>{{ plainte_source.ny_mpitory|default:"—" }}</td>
+                <td>{{ plainte_source.ilay_olona_kolikoly|default:"—" }}</td>
+                <td>{{ plainte_source.get_statut_display }}</td>
+                {% else %}
+                <td>{{ opj_source.n_chrono_opj }}</td>
+                <td>{{ opj_source.date_plainte|date:"d/m/Y" }}</td>
+                <td>{{ opj_source.ny_mpitory|default:"—" }}</td>
+                <td>{{ opj_source.ilay_olona_kolikoly|default:"—" }}</td>
+                <td>{{ opj_source.get_statut_display }}</td>
+                {% endif %}
+            </tr>
+        </table>
+        <p><strong>Tranga Kolikoly :</strong>
+            {% if plainte_source %}{{ plainte_source.tranga_kolikoly|default:"—" }}{% else %}{{ opj_source.tranga_kolikoly|default:"—" }}{% endif %}
+        </p>
+        <p><strong>Toerana / Birao :</strong>
+            {% if plainte_source %}{{ plainte_source.toorna_birao|default:"Non précisé" }}{% else %}{{ opj_source.toerana_birao|default:"Non précisé" }}{% endif %}
+        </p>
+        {% if plainte_source and plainte_source.piece_jointe %}
+        <p><strong>Pièce jointe :</strong> {{ plainte_source.piece_jointe.name }}</p>
+        {% elif opj_source and opj_source.piece_jointe %}
+        <p><strong>Pièce jointe :</strong> {{ opj_source.piece_jointe.name }}</p>
         {% endif %}
-        {% if csca_associe or is_csca %}
-        <p><strong>CSCA :</strong> Décision {{ csca_associe.decision|default:reg_detail.decision }} — Date : {{ csca_associe.date_csca|date:"d/m/Y"|default:reg_detail.date_csca|date:"d/m/Y" }}</p>
+    </div>
+    {% endif %}
+
+    <div class="pr-section">
+        <h3>Registre d'Arrivée (RA)</h3>
+        <table class="pr-table">
+            <tr><th>N° RA</th><th>Expéditeur</th><th>Date réception</th><th>Nature</th><th>Statut</th></tr>
+            <tr>
+                <td>{{ ra_source.n_enr_arrive|default:"Non attribué" }}</td>
+                <td>{{ ra_source.expediteur }}</td>
+                <td>{{ ra_source.date_arrivee|date:"d/m/Y" }}</td>
+                <td>{{ ra_source.get_nature_display }}</td>
+                <td>{{ ra_source.get_statut_traitement_display }}</td>
+            </tr>
+        </table>
+        {% if ra_source.objet_demande %}<p><strong>Objet :</strong> {{ ra_source.objet_demande }}</p>{% endif %}
+    </div>
+
+    {% if st_list %}
+    <div class="pr-section">
+        <h3>Soit Transmis (ST) &mdash; {{ st_list|length }} enregistrement(s)</h3>
+        <table class="pr-table">
+            <tr><th>N° Chrono</th><th>Date</th><th>Destinataire</th><th>Objet</th><th>Rappel</th><th>Résultat</th></tr>
+            {% for st in st_list %}
+            <tr>
+                <td>{{ st.n_chrono|default:"-" }}</td>
+                <td>{{ st.date_st|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ st.destinataire|default:"-" }}</td>
+                <td>{{ st.objet|default:"-" }}</td>
+                <td>{{ st.rappel|default:"—" }}</td>
+                <td>{{ st.resultat|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if csca_list %}
+    <div class="pr-section">
+        <h3>Commission Supérieure (CSCA) &mdash; {{ csca_list|length }} enregistrement(s)</h3>
+        <table class="pr-table">
+            <tr><th>N° Chrono</th><th>Date</th><th>Demandeur</th><th>Entité</th><th>Décision</th><th>Appel</th><th>Résultat appel</th></tr>
+            {% for csca in csca_list %}
+            <tr>
+                <td>{{ csca.n_chrono|default:"-" }}</td>
+                <td>{{ csca.date_csca|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ csca.demandeur|default:"-" }}</td>
+                <td>{{ csca.entite|default:"-" }}</td>
+                <td>{{ csca.decision|default:"—" }}</td>
+                <td>{{ csca.appel|default:"—" }}</td>
+                <td>{{ csca.resultat_appel|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if rp_list %}
+    <div class="pr-section">
+        <h3>Registre RP &mdash; {{ rp_list|length }} enregistrement(s)</h3>
+        {% for rp in rp_list %}
+        <table class="pr-table">
+            <tr><th>N° RP</th><th>Date entrée</th><th>Plaignant</th><th>Infraction</th><th>Montant</th><th>Date mandat</th><th>CSS</th></tr>
+            <tr>
+                <td>{{ rp.numero_rp|default:"-" }}</td>
+                <td>{{ rp.date_entree|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ rp.plaignant|default:"-" }}</td>
+                <td>{{ rp.infraction|default:"-" }}</td>
+                <td>{{ rp.montant|default:"-" }}</td>
+                <td>{{ rp.date_mandat_depot|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ rp.css|default:"-" }}</td>
+            </tr>
+        </table>
+        {% if rp.personnes_physiques.all %}
+        <p style="margin:4px 0 2px;font-size:10pt;"><em>Personnes physiques :</em></p>
+        <table class="pr-table">
+            <tr><th>Type</th><th>N° Prévenu</th><th>Nom</th><th>Prénom</th><th>Âge</th><th>Nationalité</th><th>Fonction</th></tr>
+            {% for pp in rp.personnes_physiques.all %}
+            <tr>
+                <td>{{ pp.get_type_personne_display }}</td><td>{{ pp.numero_prevenu|default:"-" }}</td>
+                <td>{{ pp.nom|default:"-" }}</td><td>{{ pp.prenom|default:"-" }}</td>
+                <td>{{ pp.age|default:"-" }}</td><td>{{ pp.nationalite|default:"-" }}</td>
+                <td>{{ pp.fonction|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
         {% endif %}
-        {% if cco_associe %}<p><strong>CCO N° :</strong> {{ cco_associe.n_chrono }} — Date : {{ cco_associe.date_cco|date:"d/m/Y" }}</p>{% endif %}
-        {% if appel_associe %}<p><strong>Appel N° :</strong> {{ appel_associe.n_chrono_appel }} — Date : {{ appel_associe.date_appel|date:"d/m/Y" }}</p>{% endif %}
+        {% if not forloop.last %}<hr style="margin:8px 0;">{% endif %}
+        {% endfor %}
     </div>
-    <div style="margin-top:50px;">
-        <div style="float:left;width:50%;">Date : {% now "d/m/Y" %}</div>
-        <div style="float:right;width:50%;text-align:right;"><p>Signature et Cachet :</p><div style="margin-top:50px;">_________________________</div></div>
-        <div style="clear:both;"></div>
+    {% endif %}
+
+    {% if cco_list %}
+    <div class="pr-section">
+        <h3>Chambre Correctionnelle (CCO) &mdash; {{ cco_list|length }} enregistrement(s)</h3>
+        <table class="pr-table">
+            <tr><th>N° CCO</th><th>Date</th><th>N° Chrono ST</th><th>N° Dossier</th><th>N° BE</th><th>Objet</th></tr>
+            {% for cco in cco_list %}
+            <tr>
+                <td>{{ cco.n_chrono|default:"-" }}</td>
+                <td>{{ cco.date_cco|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ cco.n_chrono_st|default:"-" }}</td>
+                <td>{{ cco.n_dossier|default:"-" }}</td>
+                <td>{{ cco.n_be_cco|default:"-" }}</td>
+                <td>{{ cco.objet|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
-</div>
-<hr class="no-print">
-{% endif %}
+    {% endif %}
+
+    {% if appel_list %}
+    <div class="pr-section">
+        <h3>Registre d'Appel &mdash; {{ appel_list|length }} enregistrement(s)</h3>
+        <table class="pr-table">
+            <tr><th>N° Appel</th><th>Date</th><th>N° RP</th><th>Réf. Juge</th><th>N° BE</th><th>Inculpation</th></tr>
+            {% for appel in appel_list %}
+            <tr>
+                <td>{{ appel.n_chrono_appel|default:"-" }}</td>
+                <td>{{ appel.date_appel|date:"d/m/Y"|default:"-" }}</td>
+                <td>{{ appel.n_rp|default:"-" }}</td>
+                <td>{{ appel.ref_juge_instruction|default:"-" }}</td>
+                <td>{{ appel.n_be_appel|default:"-" }}</td>
+                <td>{{ appel.inculpation|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:40px;display:flex;justify-content:space-between;">
+        <div>Date d'impression : {% now "d/m/Y à H:i" %}</div>
+        <div style="text-align:right;">
+            Signature et Cachet :<br><br>
+            <span style="border-top:1px solid #000;display:inline-block;width:180px;margin-top:28px;"></span>
+        </div>
+    </div>
+</div>{# /print-report #}

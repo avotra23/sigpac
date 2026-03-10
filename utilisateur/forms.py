@@ -93,7 +93,13 @@ class AdminModificationForm(forms.ModelForm):
         }
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['poste'].required = False
+        self.fields['localite'].required = False
         
+        # Si vous voulez aussi autoriser les valeurs nulles en base de données :
+        # (Ceci est nécessaire si votre modèle définit blank=False, null=False sur ces champs)
+        self.fields['poste'].empty_value = None
+        self.fields['localite'].empty_value = None
         # Si le formulaire est chargé avec une instance (pour modification)
         if self.instance and self.instance.pk:
             current_group = self.instance.groups.first()

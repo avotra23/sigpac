@@ -86,12 +86,20 @@ def acc_admin(request, mode='utilisateur'):
     data_list = []
     title = ""
     template_name = 'utilisateur/acc_admin.html' # Le même template
+    all_groups = None
 
     if mode == 'utilisateur':
         # 1. Liste des Utilisateurs
         title = "LISTE DES UTILISATEURS"
-        data_list = Utilisateur.objects.all().select_related('poste', 'localite').prefetch_related('groups')
+        queryset = Utilisateur.objects.all().select_related('poste', 'localite').prefetch_related('groups').order_by('-id')
         
+        # Récupération du filtre 'group_id' depuis l'URL (?group_id=...)
+        selected_group = request.GET.get('group_id')
+        if selected_group:
+            queryset = queryset.filter(groups__id=selected_group)
+        
+        data_list = queryset
+        all_groups = Group.objects.all() # Liste pour le template
         form = " "
     elif mode == 'groupe':
         # 2. Liste des Groupes avec le nombre d'utilisateurs
@@ -119,6 +127,7 @@ def acc_admin(request, mode='utilisateur'):
         'title': title,
         'mode': mode,         
         'form' : form,
+        'all_groups' : all_groups,
         'groups' : "admin",
     }
     
