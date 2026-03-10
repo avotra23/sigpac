@@ -5,20 +5,27 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone 
 import os
 from django.conf import settings
+
+# Outils d' audit 
+from auditlog.registry import auditlog
+from auditlog.models import AuditlogHistoryField
 # Create your models here.
 
 class Direction(models.Model):
+    history = AuditlogHistoryField()
     nom_dir = models.CharField(max_length=150)
     def __str__(self):
         return self.nom_dir
 
 class Fonction(models.Model):
+    history = AuditlogHistoryField()
     nom_fc = models.CharField(max_length=150)
     direction = models.ForeignKey(Direction,on_delete=models.CASCADE)
     def __str__(self):
         return self.nom_fc
 
 class Poste(models.Model):
+    history = AuditlogHistoryField()
     id_dir = models.ForeignKey(Direction,on_delete=models.CASCADE)
     id_fonc = models.ForeignKey(Fonction, on_delete=models.CASCADE)
     def __str__(self):
@@ -26,6 +33,7 @@ class Poste(models.Model):
 
 #Gestion utilisateur personnalise
 class UtilisateurManager(BaseUserManager):
+    history = AuditlogHistoryField()
     def create_user(self, email,password=None, **extra_fields):
         if not email:
             raise ValueError("Les utilisateurs doivent avoirs une email")
@@ -60,6 +68,7 @@ class Localite(models.Model):
 
 #Utilisateur personnalise
 class Utilisateur(AbstractBaseUser):
+    history = AuditlogHistoryField()
     #Les champs obligatoires
     email = models.EmailField(verbose_name='Adresse e-mail',max_length=200,unique=True)
     is_active = models.BooleanField(default=True)
@@ -132,6 +141,7 @@ def plainte_directory_path(instance, filename):
 
 
 class Plainte(models.Model):
+    history = AuditlogHistoryField()
     # Champs auto-générés et non modifiables
     n_chrono_tkk = models.CharField(
         max_length=50,  
@@ -249,6 +259,7 @@ class Plainte(models.Model):
         return None
 
 class OPJ(models.Model):
+    history = AuditlogHistoryField()
     # Champs auto-générés et non modifiables
     n_chrono_opj = models.CharField(
         max_length=50,  
@@ -364,6 +375,7 @@ class OPJ(models.Model):
     
 #Pour discussion entre user
 class MessageChat(models.Model):
+    history = AuditlogHistoryField()
     # Contextes (Source 1, 4)
     plainte = models.ForeignKey(Plainte, on_delete=models.CASCADE, null=True, blank=True, related_name='messages')
     opj = models.ForeignKey(OPJ, on_delete=models.CASCADE, null=True, blank=True, related_name='messages')
@@ -381,6 +393,7 @@ class MessageChat(models.Model):
 
 
 class RegistreArrive(models.Model):
+    history = AuditlogHistoryField()
     NATURE_CHOICES = [
         ('lettre', 'Lettre'),
         ('email', 'Email'),
@@ -495,6 +508,7 @@ class RegistreArrive(models.Model):
 
 
 class RegistreST(models.Model):
+    history = AuditlogHistoryField()
     # Lien unique avec le Registre Arrivé
     registre_arrive = models.ForeignKey(
         RegistreArrive, 
@@ -533,6 +547,7 @@ class RegistreST(models.Model):
         ordering = ['-date_creation']
 
 class RegistreCSCA(models.Model):
+    history = AuditlogHistoryField()
     # Relation avec le Registre Arrivé
     registre_arrive = models.ForeignKey(
         RegistreArrive, 
@@ -577,6 +592,7 @@ class RegistreCSCA(models.Model):
         ordering = ['-date_creation']
 
 class RegistreRP(models.Model):
+    history = AuditlogHistoryField()
     """Registre des procédures pénales (RP)."""
 
     # Référence au Registre Arrivé (N° RA) — optionnel
@@ -646,6 +662,7 @@ class RegistreRP(models.Model):
 
 
 class PersonneMoraleRP(models.Model):
+    history = AuditlogHistoryField()
     """Personne morale liée à un dossier RP."""
 
     registre_rp     = models.ForeignKey(
@@ -667,6 +684,7 @@ class PersonneMoraleRP(models.Model):
 
 
 class PersonnePhysiqueRP(models.Model):
+    history = AuditlogHistoryField()
     """Personne physique (plaignant ou prévenu) liée à un dossier RP."""
 
     TYPE_CHOICES = [
@@ -698,6 +716,7 @@ class PersonnePhysiqueRP(models.Model):
 
 
 class AutresMenuRP(models.Model):
+    history = AuditlogHistoryField()
     """Suivi procédural complémentaire d'un dossier RP (OneToOne)."""
 
     registre_rp = models.OneToOneField(
@@ -721,6 +740,7 @@ class AutresMenuRP(models.Model):
 
 
 class RegistreCCO(models.Model):
+    history = AuditlogHistoryField()
     """
     Chambre Correctionnelle d'Ordre (CCO).
     Un RegistreArrive peut être switché vers ce registre.
@@ -778,6 +798,7 @@ class RegistreCCO(models.Model):
 
 
 class RegistreAppel(models.Model):
+    history = AuditlogHistoryField()
     """
     Registre d'Appel — DERNIÈRE étape du parcours d'un dossier.
     Depuis la vue détail, on peut voir toute la chaîne :
@@ -834,3 +855,17 @@ class RegistreAppel(models.Model):
             ).count()
             self.n_chrono_appel = f"APPEL/{year}/{str(last + 1).zfill(4)}"
         super().save(*args, **kwargs)
+
+
+# Gestion audit de chaque modele
+auditlog.register(Plainte)
+auditlog.register(OPJ)
+auditlog.register(RegistreArrive)
+auditlog.register(RegistreST)
+auditlog.register(RegistreCSCA)
+auditlog.register(RegistreRP)
+auditlog.register(RegistreCCO)
+auditlog.register(RegistreAppel)
+auditlog.register(Utilisateur)
+auditlog.register(PersonneMoraleRP)
+auditlog.register(PersonnePhysiqueRP)

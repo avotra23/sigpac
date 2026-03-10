@@ -1,0 +1,197 @@
+<!-- ── FILTRES ── -->
+<form method="get" action="{% url 'utilisateur:acc_admin' mode='log' %}"
+      class="row g-2 mb-4 p-3 bg-light rounded border">
+
+    <div class="col-md-3">
+        <label class="form-label fw-bold">Recherche</label>
+        <input type="text" name="q" class="form-control"
+               placeholder="Email, objet, contenu..."
+               value="{{ all_groups.filters.q|default:'' }}">
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label fw-bold">Utilisateur</label>
+        <select name="actor" class="form-select">
+            <option value="">Tous</option>
+            {% for u in all_groups.utilisateurs %}
+                <option value="{{ u.id }}"
+                    {% if all_groups.filters.actor == u.id|stringformat:"s" %}selected{% endif %}>
+                    {{ u.email }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label fw-bold">Modèle</label>
+        <select name="model" class="form-select">
+            <option value="">Tous</option>
+            {% for ct in all_groups.content_types %}
+                <option value="{{ ct.model }}"
+                    {% if all_groups.filters.model == ct.model %}selected{% endif %}>
+                    {{ ct.model|upper }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-1">
+        <label class="form-label fw-bold">Action</label>
+        <select name="action" class="form-select">
+            <option value="">Toutes</option>
+            <option value="0" {% if all_groups.filters.action == '0' %}selected{% endif %}>CRÉÉ</option>
+            <option value="1" {% if all_groups.filters.action == '1' %}selected{% endif %}>MODIFIÉ</option>
+            <option value="2" {% if all_groups.filters.action == '2' %}selected{% endif %}>SUPPRIMÉ</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label fw-bold">Du</label>
+        <input type="date" name="date_debut" class="form-control"
+               value="{{ all_groups.filters.date_debut|default:'' }}">
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label fw-bold">Au</label>
+        <input type="date" name="date_fin" class="form-control"
+               value="{{ all_groups.filters.date_fin|default:'' }}">
+    </div>
+
+    <div class="col-12 d-flex gap-2 mt-1">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-funnel"></i> Filtrer
+        </button>
+        <a href="{% url 'utilisateur:acc_admin' mode='log' %}"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Réinitialiser
+        </a>
+    </div>
+</form>
+
+<!-- ── COMPTEUR ── -->
+<p class="text-muted small">
+    <strong>{{ data_list.paginator.count }}</strong> entrée(s) trouvée(s)
+    — Page {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+</p>
+
+<!-- ── TABLEAU ── -->
+<div class="custom-table-container">
+    <table class="table table-pac-modern">
+        <thead>
+            <tr>
+                <th style="width:130px">Date / Heure</th>
+                <th>Utilisateur</th>
+                <th style="width:90px">Action</th>
+                <th style="width:120px">Modèle</th>
+                <th>Objet</th>
+                <th>Modifications</th>
+                <th style="width:70px">Détail</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for log in data_list %}
+            <tr>
+                <td>
+                    <small class="d-block text-nowrap">{{ log.timestamp|date:"d/m/Y" }}</small>
+                    <small class="text-muted">{{ log.timestamp|date:"H:i:s" }}</small>
+                </td>
+
+                <td>
+                    {% if log.actor %}
+                        <span class="fw-semibold small">{{ log.actor.email }}</span>
+                    {% else %}
+                        <span class="text-muted fst-italic small">Système</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if log.action == 0 %}
+                        <span class="badge bg-success">CRÉÉ</span>
+                    {% elif log.action == 1 %}
+                        <span class="badge bg-warning text-dark">MODIFIÉ</span>
+                    {% elif log.action == 2 %}
+                        <span class="badge bg-danger">SUPPRIMÉ</span>
+                    {% else %}
+                        <span class="badge bg-info">ACCÈS</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    <span class="badge bg-secondary badge-role">
+                        {{ log.content_type.model|upper }}
+                    </span>
+                </td>
+
+                <td><small>{{ log.object_repr }}</small></td>
+
+                <td>
+                    {% if log.changes_dict %}
+                        {% for champ, valeurs in log.changes_dict.items %}
+                            <small class="d-block">
+                                <span class="text-secondary">{{ champ }}</span> :
+                                <span class="text-danger text-decoration-line-through">
+                                    {{ valeurs.0|default:"—"|truncatechars:25 }}
+                                </span>
+                                →
+                                <span class="text-success fw-semibold">
+                                    {{ valeurs.1|truncatechars:25 }}
+                                </span>
+                            </small>
+                        {% endfor %}
+                    {% else %}
+                        <small class="text-muted">—</small>
+                    {% endif %}
+                </td>
+
+                <td class="text-center">
+                    <a href="{% url 'utilisateur:audit_detail_objet' log.content_type.id log.object_id %}"
+                       class="btn btn-outline-primary btn-sm"
+                       title="Historique complet">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="7" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                    Aucun log trouvé.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ── PAGINATION ── -->
+{% if data_list.has_other_pages %}
+<nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+
+        {% if data_list.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+               href="?page={{ data_list.previous_page_number }}&q={{ all_groups.filters.q|default:'' }}&actor={{ all_groups.filters.actor|default:'' }}&model={{ all_groups.filters.model|default:'' }}&action={{ all_groups.filters.action|default:'' }}&date_debut={{ all_groups.filters.date_debut|default:'' }}&date_fin={{ all_groups.filters.date_fin|default:'' }}">
+                «
+            </a>
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                {{ data_list.number }} / {{ data_list.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if data_list.has_next %}
+        <li class="page-item">
+            <a class="page-link"
+               href="?page={{ data_list.next_page_number }}&q={{ all_groups.filters.q|default:'' }}&actor={{ all_groups.filters.actor|default:'' }}&model={{ all_groups.filters.model|default:'' }}&action={{ all_groups.filters.action|default:'' }}&date_debut={{ all_groups.filters.date_debut|default:'' }}&date_fin={{ all_groups.filters.date_fin|default:'' }}">
+                »
+            </a>
+        </li>
+        {% endif %}
+
+    </ul>
+</nav>
+{% endif %}

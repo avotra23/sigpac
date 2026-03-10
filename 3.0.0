@@ -1,0 +1,18 @@
+Collecting django-auditlog
+  Downloading django_auditlog-3.4.1-py3-none-any.whl.metadata (3.9 kB)
+Requirement already satisfied: Django>=4.2 in .\venv\Lib\site-packages (from django-auditlog) (5.2.8)
+Collecting python-dateutil>=2.7.0 (from django-auditlog)
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Requirement already satisfied: asgiref>=3.8.1 in .\venv\Lib\site-packages (from Django>=4.2->django-auditlog) (3.10.0)
+Requirement already satisfied: sqlparse>=0.3.1 in .\venv\Lib\site-packages (from Django>=4.2->django-auditlog) (0.5.3)
+Requirement already satisfied: tzdata in .\venv\Lib\site-packages (from Django>=4.2->django-auditlog) (2025.2)
+Requirement already satisfied: six>=1.5 in .\venv\Lib\site-packages (from python-dateutil>=2.7.0->django-auditlog) (1.17.0)
+Downloading django_auditlog-3.4.1-py3-none-any.whl (49 kB)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Installing collected packages: python-dateutil, django-auditlog
+  Attempting uninstall: python-dateutil
+    Found existing installation: python-dateutil 2.6.0
+    Uninstalling python-dateutil-2.6.0:
+      Successfully uninstalled python-dateutil-2.6.0
+
+Successfully installed django-auditlog-3.4.1 python-dateutil-2.9.0.post0

@@ -134,6 +134,9 @@
                         {% endif %}
 
                     </div>
+                    {% if mode == 'log' %}
+                        {% include 'utilisateur/audit_log.html'%}
+                    {% endif %}
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 

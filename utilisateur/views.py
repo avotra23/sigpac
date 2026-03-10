@@ -15,8 +15,10 @@ from .forms import *
 from django.contrib import messages
 from .decorators import *
 from django.utils import timezone
-import qrcode
-from io import BytesIO
+# Gestion de log
+from auditlog.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 
 # ----API MODULE  + Ajout de serializers
 from rest_framework.decorators import api_view, permission_classes, parser_classes, authentication_classes
@@ -121,6 +123,55 @@ def acc_admin(request, mode='utilisateur'):
             utilisateur_creation__localite=request.user.localite
             ).order_by('-date_arrivee')
         data_list = plaintes_filtrees
+    elif mode == 'log':
+        form = " "
+        from django.core.paginator import Paginator
+        title = "JOURNAL D'AUDIT"
+
+        logs = LogEntry.objects.select_related('actor', 'content_type').order_by('-timestamp')
+
+        actor_id   = request.GET.get('actor')
+        model_name = request.GET.get('model')
+        action     = request.GET.get('action')
+        date_debut = request.GET.get('date_debut')
+        date_fin   = request.GET.get('date_fin')
+        search     = request.GET.get('q')
+
+        if actor_id:
+            logs = logs.filter(actor_id=actor_id)
+        if model_name:
+            logs = logs.filter(content_type__model=model_name)
+        if action in ['0', '1', '2']:
+            logs = logs.filter(action=int(action))
+        if date_debut:
+            logs = logs.filter(timestamp__date__gte=date_debut)
+        if date_fin:
+            logs = logs.filter(timestamp__date__lte=date_fin)
+        if search:
+            logs = logs.filter(
+                Q(actor__email__icontains=search) |
+                Q(object_repr__icontains=search)  |
+                Q(changes__icontains=search)
+            )
+
+        paginator = Paginator(logs, 50)
+        data_list = paginator.get_page(request.GET.get('page', 1))
+
+        # all_groups réutilisé pour transporter les données de filtre
+        all_groups = {
+            'utilisateurs' : Utilisateur.objects.all().order_by('nom'),
+            'content_types': ContentType.objects.filter(
+                                logentry__isnull=False
+                             ).distinct().order_by('model'),
+            'filters': {
+                'actor'     : actor_id,
+                'model'     : model_name,
+                'action'    : action,
+                'date_debut': date_debut,
+                'date_fin'  : date_fin,
+                'q'         : search,
+            }
+        }
     context = {
         'user': request.user,
         'data_list': data_list,
@@ -135,65 +186,145 @@ def acc_admin(request, mode='utilisateur'):
     return render(request, template_name, context)
 
 # --- Vue pour la MODIFICATION d'un utilisateur ---
+# ---- MODIFICATION DES VUES EXISTANTES POUR LOGGUER MANUELLEMENT ----
+
 @login_required
 @user_passes_test(is_admin, login_url='accueil')
 @transaction.atomic
 def modifier_utilisateur(request, pk):
     utilisateur = get_object_or_404(Utilisateur, pk=pk)
-    
-    # Le template à utiliser est maintenant le même que pour acc_admin
-    template_name = 'utilisateur/acc_admin.html' 
-    
+    template_name = 'utilisateur/acc_admin.html'
+
     if request.method == 'POST':
-        
         form = AdminModificationForm(request.POST, instance=utilisateur)
         if form.is_valid():
             form.save()
-            messages.success(request, f"L'utilisateur **{utilisateur.pk}** a été modifié avec succès.")
-            
-            return redirect('utilisateur:acc_admin', mode='utilisateur') 
+            # ── LOG MANUEL modification utilisateur ──
+            LogEntry.objects.log_create(
+                instance=utilisateur,
+                action=LogEntry.Action.UPDATE,
+                actor=request.user,
+                changes=f"Modification de l'utilisateur {utilisateur.email} (id={utilisateur.pk})"
+            )
+            messages.success(request, f"L'utilisateur {utilisateur.pk} a été modifié avec succès.")
+            return redirect('utilisateur:acc_admin', mode='utilisateur')
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
         form = AdminModificationForm(instance=utilisateur)
-        
-    # NOUVEAU : Définissez ici les champs à exclure du rendu automatique
-    champs_speciaux_a_exclure = ['groups', 'is_active', 'is_superuser']
 
+    champs_speciaux_a_exclure = ['groups', 'is_active', 'is_superuser']
     context = {
-        'user': request.user,
-        'data_list': [],
-        'title': f"MODIFIER L'UTILISATEUR id: {utilisateur.pk}",
-        'form': form,
-        'mode': 'modifier',
-        'utilisateur_a_modifier': utilisateur,
-        'champs_speciaux_a_exclure': champs_speciaux_a_exclure, 
+        'user'                   : request.user,
+        'data_list'              : [],
+        'title'                  : f"MODIFIER L'UTILISATEUR id: {utilisateur.pk}",
+        'form'                   : form,
+        'mode'                   : 'modifier',
+        'utilisateur_a_modifier' : utilisateur,
+        'champs_speciaux_a_exclure': champs_speciaux_a_exclure,
     }
-    
     return render(request, "utilisateur/acc_admin.html", context)
-    
+
+
+
 # --- Vue pour la SUPPRESSION d'un utilisateur ---
 @login_required
 @user_passes_test(is_admin, login_url='accueil')
 @transaction.atomic
 def supprimer_utilisateur(request, pk):
-    # Récupère l'utilisateur ou renvoie une 404
     utilisateur = get_object_or_404(Utilisateur, pk=pk)
-    
-    # On vérifie que c'est une requête POST (sécurité)
+
     if request.method == 'POST':
-        # Empêche la suppression de l'utilisateur actuellement connecté ou du superutilisateur (si vous voulez)
         if utilisateur.is_superuser:
-             messages.error(request, f"Impossible de supprimer le superutilisateur {utilisateur.email}.")
-             return redirect('acc_admin', mode='utilisateur')
-        
+            messages.error(request, f"Impossible de supprimer le superutilisateur {utilisateur.email}.")
+            return redirect('utilisateur:acc_admin', mode='utilisateur')
+
         email_supprime = utilisateur.email
+        # ── LOG MANUEL suppression utilisateur ──
+        LogEntry.objects.log_create(
+            instance=utilisateur,
+            action=LogEntry.Action.DELETE,
+            actor=request.user,
+            changes=f"Suppression de l'utilisateur {email_supprime} (id={pk})"
+        )
         utilisateur.delete()
-        messages.success(request, f"L'utilisateur **{email_supprime}** a été supprimé avec succès.")
-        
-    return redirect('acc_admin', mode='utilisateur')
+        messages.success(request, f"L'utilisateur {email_supprime} a été supprimé avec succès.")
+
+    return redirect('utilisateur:acc_admin', mode='utilisateur')
+
+#---- Vue pour la gestion de log 
+
+@login_required
+@user_passes_test(is_admin, login_url='accueil')
+def audit_log(request):
+    logs = LogEntry.objects.select_related('actor', 'content_type').order_by('-timestamp')
+
+    actor_id   = request.GET.get('actor')
+    model_name = request.GET.get('model')
+    action     = request.GET.get('action')
+    date_debut = request.GET.get('date_debut')
+    date_fin   = request.GET.get('date_fin')
+    search     = request.GET.get('q')
+
+    if actor_id:
+        logs = logs.filter(actor_id=actor_id)
+    if model_name:
+        logs = logs.filter(content_type__model=model_name)
+    if action in ['0', '1', '2']:
+        logs = logs.filter(action=int(action))
+    if date_debut:
+        logs = logs.filter(timestamp__date__gte=date_debut)
+    if date_fin:
+        logs = logs.filter(timestamp__date__lte=date_fin)
+    if search:
+        logs = logs.filter(
+            Q(actor__email__icontains=search) |
+            Q(object_repr__icontains=search)  |
+            Q(changes__icontains=search)
+        )
+
+    from django.core.paginator import Paginator
+    paginator  = Paginator(logs, 50)
+    logs_page  = paginator.get_page(request.GET.get('page', 1))
+
+    context = {
+        'logs'          : logs_page,
+        'utilisateurs'  : Utilisateur.objects.all().order_by('nom'),
+        'content_types' : ContentType.objects.filter(logentry__isnull=False).distinct().order_by('model'),
+        'filters': {
+            'actor'     : actor_id,
+            'model'     : model_name,
+            'action'    : action,
+            'date_debut': date_debut,
+            'date_fin'  : date_fin,
+            'q'         : search,
+        },
+        'groups': 'admin',
+    }
+    return render(request, 'utilisateur/audit_log.html', context)
 
 
+@login_required
+@user_passes_test(is_admin, login_url='accueil')
+def audit_detail_objet(request, content_type_id, object_id):
+    ct   = get_object_or_404(ContentType, pk=content_type_id)
+    logs = LogEntry.objects.filter(
+        content_type=ct,
+        object_id=str(object_id)
+    ).select_related('actor').order_by('-timestamp')
+
+    context = {
+        'logs'      : logs,
+        'model_name': ct.model,
+        'object_id' : object_id,
+        'groups'    : 'admin',
+    }
+    return render(request, 'utilisateur/audit_detail.html', context)
+
+# ---- FIN VUE AUDIT LOG ----
+
+
+# --- FIN VUE LOG
 
 
 #----API--------

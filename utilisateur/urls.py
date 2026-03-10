@@ -22,6 +22,11 @@ urlpatterns = [
     path('gestion/utilisateur/modifier/<int:pk>/', modifier_utilisateur, name='modifier_utilisateur'),
     path('gestion/utilisateur/supprimer/<int:pk>/', supprimer_utilisateur, name='supprimer_utilisateur'),
     
+    # url audit
+    path('admin/audit/',audit_log,name='audit_log'),
+    path('admin/audit/<int:content_type_id>/<int:object_id>/',audit_detail_objet,  name='audit_detail_objet'),
+
+
 # API URL
     #-Authentification
     path('api/login/', api_login_view, name='api_login'),
