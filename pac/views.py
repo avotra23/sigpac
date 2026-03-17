@@ -17,6 +17,9 @@ import qrcode
 from io import BytesIO
 from utilisateur.models import *
 from django.http import JsonResponse
+
+# Gestion notification
+from .notifications import notify_plainte
 # ----API MODULE  + Ajout de serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -214,7 +217,14 @@ def api_public_plaintes(request, plainte_id=None):
     # --- LOGIQUE DE SUPPRESSION ---
     if request.method == 'DELETE':
         plainte = get_object_or_404(Plainte, pk=plainte_id, utilisateur_creation=request.user)
+        plainte_info = {
+            "id": plainte.id,
+            "n_chrono_tkk": plainte.n_chrono_tkk,
+            "statut": plainte.statut
+        }
+        user_id = request.user.id
         plainte.delete()
+        notify_plainte('deleted', plainte_info, user_id)
         return Response({"detail": "Supprimé avec succès"}, status=200)
 
     # --- LOGIQUE D'ENREGISTREMENT / MODIFICATION ---
@@ -223,7 +233,7 @@ def api_public_plaintes(request, plainte_id=None):
         p_id = plainte_id or request.data.get('plainte_id') or request.data.get('id')
         
         instance = Plainte.objects.filter(pk=p_id, utilisateur_creation=request.user).first() if p_id else None
-        
+        is_update = instance is not None
         
         serializer = PlainteCreationSerializer(instance=instance, data=request.data, partial=True)
         
@@ -233,6 +243,10 @@ def api_public_plaintes(request, plainte_id=None):
                 utilisateur_creation=(instance.utilisateur_creation if instance else request.user),
                 utilisateur_modification=request.user
             )
+            action = 'updated' if is_update else 'created'
+            
+            # Notification WebSocket
+            notify_plainte(action, plainte, request.user.id)
             msg = "Modifiée avec succès" if instance else "Enregistrée avec succès"
             return Response({"detail": msg, "id": plainte.id}, status=200)
         
@@ -359,7 +373,7 @@ def acc_dcn(request):
         if statute:
             plaintes_qs = plaintes_qs.filter(statut=statute)
     else:
-        plaintes_qs = Plainte.objects.all().order_by('-date_plainte')
+        plaintes_qs = Plainte.objects.filter(statut='ATTENTE').order_by('-date_plainte')
 
     if search_query:
         plaintes_qs = plaintes_qs.filter(

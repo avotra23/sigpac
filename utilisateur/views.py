@@ -20,6 +20,10 @@ from auditlog.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
+# Gestion DRF
+from rest_framework.authtoken.models import Token  
+
+
 # ----API MODULE  + Ajout de serializers
 from rest_framework.decorators import api_view, permission_classes, parser_classes, authentication_classes
 from rest_framework.response import Response
@@ -358,7 +362,8 @@ def reset_password_api(request):
         return Response({
             "detail": "Les informations fournies ne correspondent pas à nos registres."
         }, status=status.HTTP_404_NOT_FOUND)
-#APILogin
+#APILogin avant drf
+'''
 @csrf_exempt
 @api_view(['POST'])
 def api_login_view(request):
@@ -402,12 +407,74 @@ def api_login_view(request):
             {"detail": "Identifiants invalides."}, 
             status=status.HTTP_401_UNAUTHORIZED
         )
+'''
+# APILogin apres DRF
+from rest_framework.authtoken.models import Token  # ← Ajouter cet import en haut
 
+@csrf_exempt
+@api_view(['POST'])
+def api_login_view(request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+
+    if not email or not password:
+        return Response(
+            {"detail": "Email et mot de passe sont requis."}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    user = authenticate(request, email=email, password=password)
+    if user is not None:
+        login(request, user)  # ← Conservé : session web toujours fonctionnelle
+        
+        # Rôle (inchangé)
+        role = 'simple' 
+        if is_admin(user):       role = 'admin'
+        elif is_procureur(user): role = 'procureur'
+        elif is_greffier(user):  role = 'greffier'
+        elif is_public(user):    role = 'public'
+        elif is_opj(user):       role = 'opj'
+        elif is_dcn(user):       role = 'dcn'
+            
+        user_data = UtilisateurSerializer(user).data
+        csrf_token = get_token(request)
+        
+        # ← AJOUT : Créer ou récupérer le DRF Token pour Android/WebSocket
+        drf_token, _ = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            "detail": f"Connexion réussie. Bienvenue, {user.nom}.",
+            "user": user_data,
+            "role": role, 
+            "token": csrf_token,           # ← Conservé pour le web
+            "auth_token": drf_token.key,   # ← NOUVEAU : pour Android + WebSocket
+        })
+    else:
+        return Response(
+            {"detail": "Identifiants invalides."}, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+'''API LOGOUT AVANT DRF
 @api_view(['POST','GET'])
 def api_logout_view(request):
     logout(request)
     return redirect("utilisateur:login")
+ '''
 
+# api logout avec DRF
+@api_view(['POST', 'GET'])
+def api_logout_view(request):
+    # Supprimer le DRF Token si existant (déconnexion Android)
+    if request.user.is_authenticated:
+        try:
+            from rest_framework.authtoken.models import Token
+            Token.objects.filter(user=request.user).delete()
+        except Exception:
+            pass
+    
+    logout(request)  # ← Session web toujours déconnectée
+    return redirect("utilisateur:login")
 
 @api_view(['POST'])
 @authentication_classes([])
